@@ -1,0 +1,221 @@
+@startuml
+
+' fixme: replace "static" for class members and "const" by according uml notation
+
+class CodeObject {
+  String where/get_location()
+  String what/get_text()
+  static leaf?()
+  static REG_EXP
+  PpConditional[] when()
+  static void register()
+  static CodeObject[] get_all()           ' get all "is_a?"
+  static CodeObject[] get_all_instances() ' get all "instance_of?"
+  CodeObject parent
+}
+
+note as NoteCodeObject
+  All classes in this diagram
+  shall be (direct or indirect)
+  subclasses of CodeObject.
+end note
+NoteCodeObject .. CodeObject
+
+File <|-- Sourcefile
+File <|-- Headerfile
+File "1" *-- "*" PhysicLine
+
+class File {
+  String rel_path
+  String abs_path
+  int lines
+  bool valid?/exists?
+  void update()
+}
+
+PhysicLine "1" *-- "*" LogicLine
+
+class PhysicLine {
+  int char_length
+  int real_line_number       # 'ordinary' line number
+  int specified_line_number  # line number wrt #line preprocessor directive
+}
+
+'note as NoteLogicLine
+'  Comments have already
+'  been removed from what
+'  we call LogicLines here.
+'end note
+'NoteLogicLine .. LogicLine
+'=> deprecated: comments are still part of logical lines
+
+LogicLine "1" *-- "1" PpDirective
+PpDirective <|-- PpDefine
+PpDirective <|-- PpUndef
+PpDirective <|-- PpPragma
+PpDirective <|-- PpLine
+PpDirective <|-- PpError
+PpDirective <|-- PpInclude
+PpInclude "1" o-- "1" File
+PpDirective <|-- PpConditional
+PpConditional "1" o-- "*" PhysicLine
+PpConditional <|-- PpCondIf
+PpConditional <|-- PpCondElif
+PpConditional <|-- PpCondElse
+PpConditional <|-- PpCondEndif
+PpCondIf "1" *-- "1" PpCondElse
+PpCondIf "1" *-- "*" PpCondElif
+PpCondIf "1" *-- "1" PpCondEndif
+
+LogicLine "*" -- "*" Statement
+
+Statement <|-- CompoundStatement
+CompoundStatement "1" o-- "*" Statement
+
+Statement <|-- StmntMDefinition
+Statement <|-- StmntMDeclaration
+
+Statement <|-- StmntMControl
+StmntMControl <|-- IfStatement
+IfStatement "1" o-- "1" KwIf
+IfStatement "1" o-- "0..1" KwElse
+IfStatement "1" -- "1..2" Statement
+IfStatement "1" -- "1" BoolExpression
+StmntMControl <|-- SwitchStatement
+SwitchStatement "1" o-- "1" KwSwitch
+SwitchStatement "1" o-- "*" SwitchStatementCase
+SwitchStatement "1" o-- "1" SwitchStatementDefault
+StmntMControl <|-- SwitchStatementCase
+SwitchStatementCase "1" o-- "*" KwMCrtlSwitch
+SwitchStatementCase "1" -- "*" Statement
+SwitchStatementCase <|-- SwitchStatementDefault
+StmntMControl <|-- DoWhileStatement
+DoWhileStatement "1" -- "1" Statement
+DoWhileStatement "1" -- "1" BoolExpression
+StmntMControl <|-- WhileStatement
+WhileStatement "1" -- "1" Statement
+WhileStatement "1" -- "1" BoolExpression
+StmntMControl <|-- ForStatement
+ForStatement "1" -- "1" Statement
+ForStatement "1" -- "1" BoolExpression
+
+Identifier <|-- Function
+Identifier <|-- Variable
+
+Identifier "1" -- "*" IdentifierDeclaration
+
+'Identifier "1" -- "1" IdentifierDefinition
+
+IdentifierDefinition  "1" -- "1" IdentifierSignature
+IdentifierDeclaration "1" -- "1" IdentifierSignature
+
+IdentifierDefinition <|-- FunctionDefinition
+IdentifierDefinition <|-- VariableDefinition
+
+IdentifierDeclaration <|-- VariableDeclaration
+
+Function -- FunctionDefinition
+FunctionDefinition "1" -- "1" CompoundStatement
+
+Variable -- VariableDefinition
+VariableDefinition "1" -- "1" Expression : init_value
+
+StmntMDefinition <|-- StmntTypedef
+StmntMDefinition <|-- IdentifierDefinition
+StmntMDefinition <|-- TagDefinition
+StmntMDefinition <|-- LabelDefinition
+
+TagDefinition "1" -- "*" VariableDeclaration
+
+StmntMDeclaration <|-- IdentifierDeclaration
+StmntMDeclaration <|-- TagDeclaration
+
+
+Token <|-- TkWord
+TkWord <|-- Keyword
+TkWord <|-- Identifier
+Identifier <|-- IdOrdinary
+Identifier <|-- IdTag
+Identifier <|-- IdLabel
+Identifier <|-- IdMember
+
+Token <|-- Stringliteral
+Token <|-- TkNumber
+TkNumber <|-- IntLiteral
+TkNumber <|-- FloatLiteral
+
+Token <|-- Symbol
+
+class Symbol {
+  String text
+  static leaf?() = true
+}
+
+Token <|-- Expression
+
+Expression <|-- BoolExpression
+
+
+Whitespace <|-- Comment
+Comment "*" -- "*" PhysicLine
+
+class Keyword {
+  static const String TEXT
+  static leaf?() = true
+}
+
+Keyword <|-- KwMStdType
+KwMStdType <|-- Kw_Bool
+KwMStdType <|-- KwChar
+KwMStdType <|-- KwDouble
+KwMStdType <|-- KwFloat
+KwMStdType <|-- KwInt
+KwMStdType <|-- KwVoid
+
+Keyword <|-- KwMTypeVariant
+KwMTypeVariant <|-- KwLong
+KwMTypeVariant <|-- KwShort
+KwMTypeVariant <|-- KwSigned
+KwMTypeVariant <|-- KwUnsigned
+
+Keyword <|-- KwMTypedef
+KwMTypedef <|-- KwEnum
+KwMTypedef <|-- KwStruct
+KwMTypedef <|-- KwTypedef
+KwMTypedef <|-- KwUnion
+
+Keyword <|-- KwMTypeQualifier
+KwMTypeQualifier <|-- KwMonst
+KwMTypeQualifier <|-- KwRestrict
+KwMTypeQualifier <|-- KwVolatile
+
+Keyword <|-- KwMStorageQualifier
+KwMStorageQualifier <|-- KwAuto
+KwMStorageQualifier <|-- KwExtern
+KwMStorageQualifier <|-- KwRegister
+KwMStorageQualifier <|-- KwStatic
+
+Keyword <|-- KwMControl
+KwMControl <|-- KwBreak
+KwMControl <|-- KwContinue
+KwMControl <|-- KwDo
+KwMControl <|-- KwElse
+KwMControl <|-- KwFor
+KwMControl <|-- KwGoto
+KwMControl <|-- KwIf
+KwMControl <|-- KwReturn
+KwMControl <|-- KwSwitch
+KwMControl <|-- KwWhile 
+KwMControl <|-- KwMCrtlSwitch
+KwMCrtlSwitch <|-- KwCase
+KwMCrtlSwitch <|-- KwDefault
+
+Keyword <|-- KwMMisc
+KwMMisc <|-- Kw_Complex
+KwMMisc <|-- Kw_Imaginary
+
+Keyword <|-- KwInline
+Keyword <|-- KwSizeof
+
+
+@enduml

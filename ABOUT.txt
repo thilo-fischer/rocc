@@ -1,0 +1,4 @@
+ooccor - Object Oriented C Code Operations in Ruby
+
+Collection of Ruby scripts to operate on C-ish source code.
+(Currently only C is supported, support for C++ planned. Support for Objective-C, C#, Java, etc. not yet planned, but might be considered in future.)
