@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+raise "DEPRECATED"
+
 require_relative '../CodeObjects/Tokens'
 
 class Tokenizer

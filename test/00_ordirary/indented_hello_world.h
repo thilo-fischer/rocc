@@ -2,5 +2,6 @@
 #define SBC_H_INCLUDE_GUARD
 
 #define MAX_INDENTATION 40
+#define ARG_TO_STR(ARG) #ARG
 
 #endif // SBC_H_INCLUDE_GUARD

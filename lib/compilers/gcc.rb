@@ -22,7 +22,7 @@ class CompilerGcc < Compiler
       begin
         option_parser.order!
       rescue OptionParser::InvalidOption
-        warn "Unsupported compiler argument. (The one before `#{ARGV[0]}'.)" # fixme
+        warn "Ignoring unsupported compiler argument. (The one before `#{ARGV[0]}'.)" # fixme
         redo
       end
     end

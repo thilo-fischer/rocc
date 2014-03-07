@@ -24,6 +24,9 @@ go on in this line?
 // should warn of whitespace \  
 after backslash
 
+#define foo unsigned \ // what now?
+int i;
+
 DECLARE_INT(i01);
 DECLARE_INT(i02);
 
@@ -32,6 +35,11 @@ DECLARE_INT(i02);
 
 DECLARE_SHORT(s01);
 DECALRE_LONG (l01);
+
+#define FOO(A)
+#define BAR (A)
+#define BAZ/* . */(A)
+#define QUX/* . */ (A)
 
 #if 0
 /*

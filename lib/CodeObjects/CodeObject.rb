@@ -1,38 +1,14 @@
 # -*- coding: utf-8 -*-
 
-=begin
-class Position
-  attr_reader :code_object, :offset
-
-  def initialize(code_object, offset)
-    @code_object = code_object
-    @offset = offset
-  end
-
-  def to_s
-    @code_object.to_s + ":" + @offset.to_s
-  end
-
-end
-
-class Origin
-  attr_reader :position
-
-  def initialize(position)
-    @position = position
-  end
-end
-=end
-
+dbg __FILE__
 
 class CodeObject
   attr_reader :origin
 
-  @instances = []
-
   def initialize(origin = nil)
-    @origin = validate_origin origin
-    CodeObject.register self
+#    @origin = validate_origin origin
+    @origin = origin
+    @origin.register(self) if @origin
   end
 
   def to_s
@@ -42,27 +18,31 @@ class CodeObject
       self.class.to_s
     end
   end
+  
+  def list(format = :short)
+    if format == :short
+      self.class.to_s
+    else
+      to_s
+    end
+  end
 
-  def process(env)
-    content.map{ |c| c.process(env) }
+  def expand(env)
+    env.expansion_stack.push self
+    dbg "expansion stack: #{env.expansion_stack.inspect}"
+    content.map{ |c| c.expand(env) }
+    env.expansion_stack.pop
   end
 
   def leaf?
     false
   end
 
-  def self.register(ref)
-    @instances.push(ref)
+  def register(obj)
+    @origin.register obj
   end
 
-  def self.get_all_of_class
-    @instances
-  end
-
-  def self.get_all_of_kind
-    @instances
-  end
-
+  # fixme
   def <=>(other)
     if @origin == other.origin
       if self.respond_to?(:origin_offset)
@@ -77,6 +57,11 @@ class CodeObject
 
 protected
 
+  @ORIGIN_CLASS = CodeObject
+  class << self
+    attr_reader :ORIGIN_CLASS
+  end
+
   def type_error(object)
     if object
       TypeError.new("`#{object}' is of wrong type `#{object.class}'")
@@ -86,68 +71,52 @@ protected
   end
 
 private
-
+ 
   def validate_origin(origin)
-    raise type_error origin unless origin.is_a? CodeObject
+    raise type_error(origin) unless origin.is_a?(self.class.ORIGIN_CLASS)
     origin
   end
-
-=begin
- or
-      ( @origin.is_a? Array and @origin.all? { |o| o.is_a? CodeObject } ) or
-      @origin == nil
-    }
-
-    ok = true    
-    ok &= yield if block_given?
-    if o_class != nil
-      ok &= @origin.is_a?(o_class) ||
-        ( @origin.is_a?(Array) && @origin.all? { |o| o.is_a? o_class } )
-    end
-  end
-
-  def raise_origin_assertion
-    raise "Assertion failed for `#{@origin||"*nil*"}'"
-  end
-=end
-
+  
 end # class CodeObject
 
 
-class CodeObjectContainer < CodeObject
+class CoContainer < CodeObject
 
-  attr_reader :contained_class
-
-  def initialize(origin, contained_class = CodeObject)
-    @contained_class = contained_class
-    super origin
+  def initialize(elements)
+    elements = [elements] unless elements.is_a? Enumerable
+    @origin = elements
   end
 
-  def text
-    origin.map{ |o| o.text }
-  end
+  alias content origin
 
   def to_s
-    if origin.is_a? Range
-      if origin.first != origin.last
-        "[" + origin.first.to_s + ".." + origin.last.to_s + "]"
-      else
-        origin.first.to_s
-      end
+    case
+    when origin.is_a?(Range)
+      "[" + origin.first.to_s + ".." + origin.last.to_s + "]"
     else
       "[" + origin.map{ |o| o.to_s }.join(",") + "]"
     end
   end
-  
-private
 
-  def validate_origin(origin)
-    if origin.respond_to? :each
-      origin.each { |o| raise type_error o unless o.is_a? @contained_class }
+  def register(obj)
+    @origin.first.register obj
+  end
+
+  def append(obj)
+    # todo: validate obj.class
+    case @origin
+    when Array
+      @origin << obj
+    when Range
+      raise "todo"
     else
-      raise TypeError "`#{object}' is no Enumerable. (Is of class `#{object.class}'.)"
+      raise "Unexpected centainer class: `#{@origin.class}'"
     end
-    origin
+  end
+
+  def validate_origin(valid_class)
+    #fixme -- origin.each { |o| raise type_error(o) unless o.is_a?(valid_class) }
+    self # fixme
   end
 
 end # class CodeObjectContainer

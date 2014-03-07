@@ -2,37 +2,52 @@
 
 require_relative 'CodeObject'
 
+# forward declarations
+class CoProgram < CodeObject; end
+
 require_relative 'Lines'
 
+
 class CoFile < CodeObject
-#  attr_reader :text, :lines
+  attr_reader :abs_path
 
-  def initialize(origin, rel_path, lines = nil)
-    @rel_path = rel_path
-    if File.exists?(rel_path)
-      @valid = true
-    end
-    @abs_path = @rel_path # fixme
-
+  def initialize(origin, path, lines = nil)
+    @origin = origin
+    @abs_path = File.expand_path(path)
     @lines = lines
-  end
-
-  def get_location
-    @abs_path
+    @content = nil
   end
 
   def valid?
-    @valid
+    File.exists?(@abs_path)
   end
   alias exists? valid?
 
+  def path
+    p = @abs_path.dup
+    p.sub!(/^#{Dir.getwd}/, ".")
+    p.sub!(/^#{$env.base_dir}/, "/") if $env.base_dir
+    p
+  end
+
   def to_s
-    self.class.to_s + "[" + @rel_path + "]"
+    self.class.to_s + ":" + path
+  end
+
+  def list(format = :short)
+    case format
+    when :short
+      File.basename(@abs_path)
+    when :explicit
+      to_s
+    else
+      path
+    end
   end
 
   def lines
     unless @lines
-      raise "Cannot read #{to_s}'." unless @valid
+      raise "Cannot read `#{to_s}'." unless valid?
       File.open(@abs_path, "r") do |file|
         @lines = file.readlines.map(&:chomp!)
       end
@@ -44,20 +59,19 @@ class CoFile < CodeObject
     unless @content
       @content = []
       lines.each_with_index do |ln, idx|
-        @content.push CoPhysicLine.new(self, ln, idx)
+        @content << CoPhysicLine.new(self, ln, idx)
       end
     end
     @content
   end
 
-private
-
-  def validate_origin(origin)
-    # origin == nil is allowed  # fixme: in future, origin shall be commandline or another file
-    if origin
-      raise type_error origin unless origin.is_a? CoFile
-    end
-    origin
+  def expand(env)
+    super
+    env.end_of_file
   end
+
+protected
+
+  @ORIGIN_CLASS = CoProgram
 
 end # class CoFile
