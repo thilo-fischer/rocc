@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+
+require 'optparse'
+
+require_relative '../lib/ooccor.rb'
+
+options = {}
+option_parser = OptionParser.new do |opts|
+
+  opts.banner = "Usage: #{File.basename $0} [options] [-c compiler [compiler-arguments]] [sourcefiles]"
+
+
+  opts.on("-e 'command'",
+          "--expression",
+          "Run expression instead of starting an interactive sessios.") do |arg|
+    options[:expression] = arg
+  end
+
+  opts.on("-c compiler",
+          "--compiler",
+          $supported_compilers.keys,
+          "Parse compiler arguments according to the given compiler.",
+          " (Currently supported: #{$supported_compilers.keys.map{|s| s.to_s}.join(', ')})",
+          " Has to be the last ooccor argument, all following arguments are regarded as arguments to the compiler.") do |arg|
+    throw :compiler, $supported_compilers[arg].new
+  end
+
+end
+
+compiler = catch :compiler do
+  option_parser.order!
+  # return nil from catch block if not catched
+  nil
+end
+
+if compiler
+  compiler.parse_argv
+end
+
+$env = Environment.new(options, compiler)
+
+if ARGV.empty?  
+  # fixme: which is better, 'chomp' or 'chomp!' ?
+  files = [ CoFile.new($env.program, "<stdin>", STDIN.readlines.map(&:chomp!)) ]
+else
+  files = ARGV.map { |f| CoFile.new($env.program, f) }
+end
+
+files.map { |f| f.expand(ProcessingEnvironment.new($env.program)) }
+
+if options[:expression] then
+  Command.invoke($env, options[:expression])
+end

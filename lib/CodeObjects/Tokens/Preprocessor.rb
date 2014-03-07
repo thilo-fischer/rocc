@@ -1,0 +1,201 @@
+# -*- coding: utf-8 -*-
+
+dbg __FILE__
+
+# forward declarations
+class TknPpDirective   < CoToken;          end
+class TknPpInclude     < TknPpDirective;   end
+class TknPpDefine      < TknPpDirective;   end
+class TknPpUndef       < TknPpDirective;   end
+class TknPpError       < TknPpDirective;   end
+class TknPpPragma      < TknPpDirective;   end
+class TknPpLine        < TknPpDirective;   end
+class TknPpConditional < TknPpDirective;   end
+class TknPpCondIf      < TknPpConditional; end
+class TknPpCondElif    < TknPpConditional; end
+class TknPpCondElse    < TknPpConditional; end
+class TknPpCondEndif   < TknPpConditional; end
+
+
+class TknPpDirective < CoToken
+  @PICKING_REGEXP = /^#\s*\w+/
+  SUBCLASSES = [ TknPpInclude, TknPpConditional, TknPpDefine, TknPpUndef, TknPpError, TknPpPragma, TknPpLine ] # fixme(?): use `inherited' hook ?
+
+  def self.pick!(env)
+    if str = self.pick_string(env) then
+      str = nil
+      if tknclass = SUBCLASSES.find {|c| str = c.pick_string!(env)} then
+        tknclass.pick(env, str)
+      else
+        raise "Unknown preprocessor directive @#{env.expansion_stack.last.to_s}: `#{env.tokenization[:remainder]}'"
+      end
+    end
+  end # pick!
+
+end # class TknPpDirective
+
+
+class TknPpInclude < TknPpDirective
+
+  @PICKING_REGEXP = /^#\s*include\s*(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*(?<file>(<|").*?(>|"))/ # fixme: not capable of handling `#include "foo\"bar"' or `#include <foo\>bar>'
+
+  def expand(env)
+    @text =~ self.class.picking_regexp
+    
+    @file = $~[:file]
+
+    comments = $~[:comments]
+    unless comments.strip!.empty?
+      # TODO
+    end
+    
+    # todo !
+  end # expand
+
+end # class TknPpInclude
+
+
+class TknPpDefine < TknPpDirective
+
+  @PICKING_REGEXP = /^#\s*define\s*(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*(?<name>[A-Za-z_]\w*)(?<args>\(.*?\))?/
+
+  def expand(env)
+    @text =~ self.class.picking_regexp
+    
+    @name = $~[:name]
+
+    comments = $~[:comments]
+    unless comments.strip!.empty?
+      # TODO
+    end
+    
+    args = $~[:args]
+    args[ 0] = ""
+    args[-1] = ""
+    @args = args.split(/\s*,\s*/)
+    
+    if env.macros.key? @name then
+      env.macros[@name] << self
+    else
+      env.macros[@name] = [self]
+    end
+  end # expand
+
+end # class TknPpDefine
+
+class TknPpUndef < TknPpDirective
+  @PICKING_REGEXP = /^#\s*undef\s+/
+  def expand(env)
+    raise "invalid syntax" unless successor.is_a? TknWord # fixme: provide appropriate exception
+    if env.macros.key? successor.text then
+      env.macros[successor.text] << self
+    else
+      env.macros[successor.text] = [self]
+    end
+  end
+end # class TknPpUndef
+
+class TknPpError < TknPpDirective
+  @PICKING_REGEXP = /^#\s*error\s+.*/  
+  def expand(env)
+    # remove `#error' from @text
+    @text.slice!(/#\s*error\s+/)
+    # raise "pp#error: `#{@text}'" if FALSE # todo ??
+  end
+end # class TknPpError
+
+class TknPpPragma < TknPpDirective
+  @PICKING_REGEXP = /^#\s*pragma\s+.*/
+  def expand(env)
+    warn "ignoring #{origin.list}: `#{@text}' "
+  end
+end # class TknPpPragma
+
+class TknPpLine < TknPpDirective
+
+  @PICKING_REGEXP = /^#\s*line\s+/
+
+  def expand(env)
+
+    env.preprocessing[:line_directive] = self
+
+    raise "invalid syntax" unless successor.is_a? TknNumber # fixme: provide appropriate exception
+    @number = Integer(successor.text)
+
+    if successor.successor
+      raise "invalid syntax" unless successor.is_a? TknStringLitral # fixme: provide appropriate exception
+      @filename = successor.successor.text.dup
+      @filename[ 0] = ""
+      @filename[-1] = ""
+    end
+
+  end # expand
+
+end # class TknPpLine
+
+class TknPpConditional < TknPpDirective
+  @PICKING_REGEXP = /^#\s*(if(n?def)?|elif|else|endif)\s+/
+
+  SUBCLASSES = [ TknPpCondIf, TknPpCondElif, TknPpCondElse, TknPpCondEndif ] # fixme(?): use `inherited' hook ?
+
+  def self.pick!(env)
+    if str = self.pick_string(env) then
+      tkn = nil
+      if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
+        tkn
+      else
+        raise StandardError, "Error processing preprocessor directive, not accepted by subclasses @#{origin.list}: `#{str}'"
+      end
+    end
+  end # pick!
+
+end # class TknPpConditional
+
+class TknPpCondIf < TknPpConditional
+  @PICKING_REGEXP = /^#\s*if(n?def)?\s+/
+  attr_reader :dependants
+
+  def expand(env)
+    @dependants = { TknPpCondIf => self }
+    env.preprocessing[:conditional_stack] << self
+  end
+
+end # class
+
+class TknPpCondElif < TknPpConditional
+  @PICKING_REGEXP = /^#\s*elif\s+/
+
+  def expand(env)
+    @dependants = env.preprocessing[:conditional_stack].last.dependants
+    if @dependants.key? TknPpCondElif then
+      @dependants[TknPpCondElif] << self
+    else
+      @dependants[TknPpCondElif] = [self]
+    end
+  end
+
+end # class
+
+class TknPpCondElse < TknPpConditional
+  @PICKING_REGEXP = /^#\s*else\s+/
+
+  def expand(env)
+    raise "invalid syntax: multiple #else" if @dependants.key? TknPpCondElse # fixme: provide appropriate exception
+    
+    @dependants = env.preprocessing[:conditional_stack].last.dependants
+    @dependants[TknPpCondElse] = self
+  end
+
+end # class
+
+class TknPpCondEndif < TknPpConditional
+  @PICKING_REGEXP = /^#\s*endif\s+/
+
+  def expand(env)
+    tkn_if = env.preprocessing[:conditional_stack].pop
+    @dependants = tkn_if.dependants
+    @dependants[TknPpCondEndif] = self
+  end
+
+end # class
+

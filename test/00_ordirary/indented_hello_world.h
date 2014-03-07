@@ -1,0 +1,6 @@
+#ifndef SBC_H_INCLUDE_GUARD
+#define SBC_H_INCLUDE_GUARD
+
+#define MAX_INDENTATION 40
+
+#endif // SBC_H_INCLUDE_GUARD
