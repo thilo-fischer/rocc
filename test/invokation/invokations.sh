@@ -2,11 +2,14 @@
 
 set -ex
 
-./ooccor --help 2>&1 | grep -iE 'usage:[[:space:]]*ooccor.rb'
+ooccor --help
+ooccor --help 2>&1 | grep -iE 'usage:[[:space:]]*ooccor'
 
-./ooccor -c foobar 2>&1 | grep -iE 'invalid'
+! ooccor -c foobar
+ooccor -c foobar 2>&1 | grep -iE 'invalid'
 
-./ooccor -c gcc -j -k -q -z 2>&1 | grep -iE 'unsupported compiler argument'
+echo | ooccor -c gcc -j -k -q -z
+echo | ooccor -c gcc -j -k -q -z 2>&1 | grep -iE 'unsupported compiler argument'
 
 
-echo -e '\n\n*** GREEN :) ***\n'
+echo -e "\n*** $0 GREEN :) ***\n"

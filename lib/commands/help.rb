@@ -5,7 +5,7 @@ class CommandHelp < Command
   @name = 'help'
   @description = 'List available commands, print help of specific commands.'
 
-  def self.option_parser
+  def self.option_parser(options)
     
     OptionParser.new do |opts|      
 
@@ -16,7 +16,7 @@ class CommandHelp < Command
   end # option_parser
 
 
-  def self.run(args, options)
+  def self.run(env, args, options)
     
     if args.empty? then
       Command.command_classes.each do |name, cmd_class|
@@ -25,7 +25,7 @@ class CommandHelp < Command
     else
       args.each do |cmd|
         if Command.command_classes.key?(cmd)
-          puts Command.command_classes[cmd].option_parser.help
+          puts Command.command_classes[cmd].option_parser(options).help
         else
           puts "Unknown command: `#{cmd}'"
         end

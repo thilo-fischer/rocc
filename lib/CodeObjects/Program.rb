@@ -49,10 +49,12 @@ class CoProgram < CodeObject
   alias content get_all
 
   def get_all_of_class(c)
+    raise unless c < CodeObject
     @objects[c]
   end
 
   def get_all_of_kind(baseclass)
+    raise unless baseclass < CodeObject
     result = []
     @objects.each do |cls, objs| 
       result += objs if cls < baseclass

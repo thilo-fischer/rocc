@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # TODOS:
+# * licence information
 # * test suite
 # ** more tests
 # ** use cucumber
