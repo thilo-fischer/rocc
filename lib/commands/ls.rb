@@ -71,7 +71,13 @@ class CommandLs < Command
 
   def self.run(env, args, options)
     
-    puts `ls #{args.join(" ")}`
+    if env.cursor == Dir then
+      puts `ls #{args.join(" ")}`
+    elsif args.empty?
+      env.obj_cursor.content.each { |o| puts o.list }
+    else
+      args.each { |o| puts o.list }
+    end
 
   end # run
 

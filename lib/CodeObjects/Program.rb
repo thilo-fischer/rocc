@@ -41,14 +41,21 @@ class CoProgram < CodeObject
     '*'
   end
 
+  def get_all
+#    dbg @objects.inspect
+    @objects.values.flatten(1)
+  end
+
+  alias content get_all
+
   def get_all_of_class(c)
     @objects[c]
   end
 
   def get_all_of_kind(baseclass)
     result = []
-    @objects.keys.each do |c|
-      result += c if c < baseclass
+    @objects.each do |cls, objs| 
+      result += objs if cls < baseclass
     end
     result
   end

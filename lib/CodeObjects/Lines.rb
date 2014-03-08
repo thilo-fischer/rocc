@@ -22,6 +22,7 @@ class CoPhysicLine < CodeObject
     super origin
     @origin_offset = origin_offset
     @text = text
+    @line_directive = nil
   end
 
   def physical_line_number
@@ -48,7 +49,7 @@ class CoPhysicLine < CodeObject
       when :explicit
         to_s
       else
-        @origin.list(format) + ":" + line_number
+        @origin.list(format) + ":" + line_number.to_s
       end
     end
   end
@@ -115,6 +116,7 @@ end # class CoPhysicLine
 
 
 class CoLogicLine < CodeObject
+  attr_reader :preprocessing
 
   def initialize(origin, text)
     super CoContainer.new(origin)
@@ -124,6 +126,7 @@ class CoLogicLine < CodeObject
 
   def expand(env)
     env.expansion_stack.push self
+    @preprocessing = env.preprocessing
     tokenize(env).map {|t| t.expand(env)}
     env.expansion_stack.pop
   end # expand
@@ -132,9 +135,16 @@ class CoLogicLine < CodeObject
     raise "#{to_s} has not yet been tokenized." unless @tokens
     @tokens
   end
-  
+
   alias content tokens
 
+  def conditions
+    result = []
+    @preprocessing[:conditional_stack].each do |cond|
+      result << cond.summarize
+    end
+  end
+  
 private
 
   def validate_origin(origin)

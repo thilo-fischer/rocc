@@ -43,7 +43,7 @@ end
 
 class TknKwQualifier < TknKeyword
 
-  SUBCLASSES = [ TknKwTypeQualifier, TknKwStorageQualifier ]
+  SUBCLASSES = [ TknKwTypeQualifier, TknKwStorageQualifier ] # fixme(?): use `inherited' hook ?
   @PICKING_REGEXP = Regexp.union(SUBCLASSES.map{|c| c.picking_regexp})
 
   def self.pick!(env)

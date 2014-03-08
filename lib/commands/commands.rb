@@ -7,11 +7,11 @@ require_relative 'Command'
 commands = %w[
 help
 ls
+cd
+pwd
 ]
 
 # todo:
-# cd
-# pwd
 # tree
 # pp
 # mv

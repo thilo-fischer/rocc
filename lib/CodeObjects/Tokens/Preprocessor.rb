@@ -55,6 +55,11 @@ class TknPpInclude < TknPpDirective
     end
     
     # todo !
+    # ...
+
+    env.preprocessing.freeze
+    env.preprocessing = env.preprocessing.dup
+
   end # expand
 
 end # class TknPpInclude
@@ -80,26 +85,40 @@ class TknPpDefine < TknPpDirective
               args[-1] = ""
               args.split(/\s*,\s*/)
             end
-    
-    if env.macros.key? @name then
-      env.macros[@name] << self
+
+    macros = env.preprocessing[:macros]
+    if macros.key? @name then
+      macros[@name] << self
     else
-      env.macros[@name] = [self]
+      macros[@name] = [self]
     end
+
+    env.preprocessing.freeze
+    env.preprocessing = env.preprocessing.dup
+
   end # expand
 
 end # class TknPpDefine
 
 class TknPpUndef < TknPpDirective
   @PICKING_REGEXP = /^#\s*undef\s+/
+
   def expand(env)
+
     raise "invalid syntax" unless successor.is_a? TknWord # fixme: provide appropriate exception
-    if env.macros.key? successor.text then
-      env.macros[successor.text] << self
+
+    macros = env.preprocessing[:macros]
+    if macros.key? successor.text then
+      macros[successor.text] << self
     else
-      env.macros[successor.text] = [self]
+      macros[successor.text] = [self]
     end
-  end
+
+    env.preprocessing.freeze
+    env.preprocessing = env.preprocessing.dup
+
+  end # expand
+
 end # class TknPpUndef
 
 class TknPpError < TknPpDirective
@@ -124,8 +143,6 @@ class TknPpLine < TknPpDirective
 
   def expand(env)
 
-    env.preprocessing[:line_directive] = self
-
     raise "invalid syntax" unless successor.is_a? TknNumber # fixme: provide appropriate exception
     @number = Integer(successor.text)
 
@@ -135,6 +152,11 @@ class TknPpLine < TknPpDirective
       @filename[ 0] = ""
       @filename[-1] = ""
     end
+
+    env.preprocessing[:line_directive] = self
+
+    env.preprocessing.freeze
+    env.preprocessing = env.preprocessing.dup
 
   end # expand
 
@@ -160,6 +182,11 @@ class TknPpConditional < TknPpDirective
       end
     end
   end # pick!
+  
+  def expand(env)
+    env.preprocessing.freeze
+    env.preprocessing = env.preprocessing.dup
+  end
 
 end # class TknPpConditional
 
@@ -170,6 +197,13 @@ class TknPpCondIf < TknPpConditional
   def expand(env)
     @dependants = { TknPpCondIf => self }
     env.preprocessing[:conditional_stack] << self
+    super
+  end
+
+  def summarize(given = [])
+    result = []
+    result << self if not given.include? self
+    result
   end
 
 end # class
@@ -178,11 +212,25 @@ class TknPpCondElif < TknPpConditional
   @PICKING_REGEXP = /^#\s*elif\s+/
 
   def expand(env)
+
     @dependants = env.preprocessing[:conditional_stack].last.dependants
     if @dependants.key? TknPpCondElif then
       @dependants[TknPpCondElif] << self
     else
       @dependants[TknPpCondElif] = [self]
+    end
+
+    env.preprocessing[:conditional_stack].pop
+    env.preprocessing[:conditional_stack] << self
+    super
+
+  end # expand
+
+  def summarize(given = [])
+    result = @dependants[TknPpCondIf].summarize(given)
+    @dependants[TknPpCondElif].each do |elif|
+      result << elif if not given.include? elif
+      break if elif.equal? self
     end
   end
 
@@ -196,6 +244,16 @@ class TknPpCondElse < TknPpConditional
     
     @dependants = env.preprocessing[:conditional_stack].last.dependants
     @dependants[TknPpCondElse] = self
+
+    env.preprocessing[:conditional_stack].pop
+    env.preprocessing[:conditional_stack] << self
+    super
+
+  end # expand
+
+  def summarize(given = [])
+    result = @dependants[TknPpCondElif].last.summarize
+    result << self if not given.include? self
   end
 
 end # class
@@ -204,10 +262,15 @@ class TknPpCondEndif < TknPpConditional
   @PICKING_REGEXP = /^#\s*endif\s+/
 
   def expand(env)
+
     tkn_if = env.preprocessing[:conditional_stack].pop
+
     @dependants = tkn_if.dependants
     @dependants[TknPpCondEndif] = self
-  end
+
+    super
+
+  end # expand
 
 end # class
 

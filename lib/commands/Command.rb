@@ -9,7 +9,7 @@ class Command
   @name = 'AbstractCommand'
   @description = 'undocumented'
 
-  @@command_classes = {}
+  @@command_classes = {} # fixme(?): use `inherited' hook ?
 
   def self.command_classes
     @@command_classes

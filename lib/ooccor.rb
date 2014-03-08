@@ -25,21 +25,19 @@ dbg "#{__FILE__} ..."
 class ProcessingEnvironment
 
   # fixme: @remainders -> used to track phyisical lines to be merged into one logical line => refactor to more speaking naming
-  attr_accessor :expansion_stack, :remainders, :bracket_stack, :macros, :tokenization, :preprocessing
+  attr_accessor :expansion_stack, :remainders, :bracket_stack, :tokenization, :preprocessing
 
   def initialize(program)
     @expansion_stack = [ program ]
     @remainders = {}
     @bracket_stack = []
-    @macros = {}
     @tokenization = { :recent_token => nil, :ongoing_comment => nil, :remainder => nil, :line_offset => 0 }
-    @preprocessing = { :conditional_stack => [], :line_directive => nil }
+    @preprocessing = { :macros => {}, :conditional_stack => [], :line_directive => nil }
   end
 
   def initialize_copy(orig)
     @remainders = @remainders.dup
     @bracket_stack = @bracket_stack.dup
-    @macros = @macros.dup
     @tokenization = @tokenization.dup
     @preprocessing = @preprocessing.dup
   end
@@ -49,7 +47,7 @@ class ProcessingEnvironment
 
     @tokenization[:recent_token] = nil 
     @preprocessing[:line_directive] = nil
-    @macros.clear
+    @preprocessing[:macros].clear
 
     unless @remainders.empty? and
         @bracket_stack.empty? and
