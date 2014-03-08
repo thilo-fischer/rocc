@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+dbg "#{__FILE__}"
+
 class Environment
 
   attr_reader :program

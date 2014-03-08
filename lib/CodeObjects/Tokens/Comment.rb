@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+dbg "#{__FILE__}"
 
 class TknComment               < CoToken;         end
 class TknLineComment           < TknComment;      end

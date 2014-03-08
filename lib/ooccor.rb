@@ -10,12 +10,16 @@ def dbg(str, stack = nil)
 end
 
 
+dbg "#{__FILE__} requires ..."
+
 require_relative 'Environment'
 
 require_relative 'CodeObjects/Program'
 
 require_relative 'commands/commands'
 require_relative 'compilers/compilers'
+
+dbg "#{__FILE__} ..."
 
 # fixme: refactor
 class ProcessingEnvironment
@@ -44,11 +48,11 @@ class ProcessingEnvironment
   def end_of_file
 
     @tokenization[:recent_token] = nil 
-    @preprocessing[:line_directive] = nil 
+    @preprocessing[:line_directive] = nil
+    @macros.clear
 
     unless @remainders.empty? and
         @bracket_stack.empty? and
-        @macros.empty? and
         (not @tokenization[:ongoing_comment]) and
         @preprocessing[:conditional_stack].empty? and
         TRUE

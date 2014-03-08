@@ -47,9 +47,14 @@ class TknKwQualifier < TknKeyword
   @PICKING_REGEXP = Regexp.union(SUBCLASSES.map{|c| c.picking_regexp})
 
   def self.pick!(env)
-    tkn = nil
-    SUBCLASSES.find {|c| tkn = c.pick!(env)}
-    tkn
+    if self != TknKwQualifier
+      # allow subclasses to call superclasses method implementation
+      super
+    else
+      tkn = nil
+      SUBCLASSES.find {|c| tkn = c.pick!(env)}
+      tkn
+    end
   end   
 
 end
@@ -73,9 +78,14 @@ class TknKeyword < TknWord
 # (adapt TknKwQualifier.pick! accordingly)
 
   def self.pick!(env)
-    tkn = nil
-    SUBCLASSES.find {|c| tkn = c.pick!(env)}
-    tkn
+    if self != TknKeyword
+      # allow subclasses to call superclasses method implementation
+      super
+    else
+      tkn = nil
+      SUBCLASSES.find {|c| tkn = c.pick!(env)}
+      tkn
+    end
   end   
 
 #  def self.pick!(env)

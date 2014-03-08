@@ -5,7 +5,7 @@ class CommandLs < Command
   @name = 'ls'
   @description = 'List objects.'
   
-  def self.option_parser
+  def self.option_parser(options)
     
     OptionParser.new do |opts|      
 
@@ -69,7 +69,7 @@ class CommandLs < Command
   end # option_parser
 
 
-  def self.run(args, options)
+  def self.run(env, args, options)
     
     puts `ls #{args.join(" ")}`
 

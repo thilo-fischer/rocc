@@ -33,7 +33,7 @@ class Command
 
   def self.call(env, argv)
     options = {}
-    option_parser.order!(argv)
+    option_parser(options).order!(argv)
     run(env, argv, options)
   end
 

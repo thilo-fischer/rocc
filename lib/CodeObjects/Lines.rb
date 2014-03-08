@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
-dbg __FILE__
+dbg "#{__FILE__} requires ..."
 
 require_relative 'CodeObject'
+
+dbg "#{__FILE__} ..."
 
 # forward declarations
 class CoFile < CodeObject; end

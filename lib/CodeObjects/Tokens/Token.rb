@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
-dbg __FILE__
+dbg "#{__FILE__} requires ..."
 
 require_relative '../CodeObject'
+
+dbg "#{__FILE__} ..."
 
 # forward declarations
 class CoLogicLine      < CodeObject; end
@@ -54,10 +56,10 @@ class CoToken < CodeObject
 
 
   def self.pick_string!(env)
+    #dbg "#{self.instance_variables}, #{self.class_variables}, #{self.constants}", 3
     # find regexp in string
     # remove part of string matching regexp
     # return part of string matching regexp 
-dbg "#{self.instance_variables}, #{self.class_variables}, #{self.constants}", 3
     str = env.tokenization[:remainder].slice!(@PICKING_REGEXP)
     dbg "found #{self.to_s}, removed `#{str}', left `#{env.tokenization[:remainder]}'" if str
     str

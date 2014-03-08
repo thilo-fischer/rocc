@@ -16,15 +16,20 @@ class TknWord < CoToken
   @PICKING_REGEXP = /^[A-Za-z_]\w*\b/
 
   def self.pick!(env)
-    if self.pick_string(env) then
-      tkn = TknKeyword.pick!(env)
-      tkn ||= super
+    if self != TknWord
+      # allow subclasses to call superclasses method implementation
+      super
+    else
+      if self.pick_string(env) then
+        tkn = TknKeyword.pick!(env)
+        tkn ||= super
+      end
     end
   end # pick!
  
 end # TknWord
 
-class TknStringLitral < CoToken
+class TknStringLiteral < CoToken
   # a double quote
   # optionally followed by
   # an arbitrary number of arbitrary characters (non-greedy)
@@ -39,7 +44,7 @@ end
 
 class Tkn3Char < CoToken
   # <<=, >>=, ...
-  @PICKING_REGEXP = /^((<<|>>)=|...)/
+  @PICKING_REGEXP = /^((<<|>>)=|\.\.\.)/
 end
 
 class Tkn2Char < CoToken

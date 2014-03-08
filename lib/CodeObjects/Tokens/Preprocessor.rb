@@ -22,12 +22,17 @@ class TknPpDirective < CoToken
   SUBCLASSES = [ TknPpInclude, TknPpConditional, TknPpDefine, TknPpUndef, TknPpError, TknPpPragma, TknPpLine ] # fixme(?): use `inherited' hook ?
 
   def self.pick!(env)
-    if str = self.pick_string(env) then
-      str = nil
-      if tknclass = SUBCLASSES.find {|c| str = c.pick_string!(env)} then
-        tknclass.pick(env, str)
-      else
-        raise "Unknown preprocessor directive @#{env.expansion_stack.last.to_s}: `#{env.tokenization[:remainder]}'"
+    if self != TknPpDirective
+      # allow subclasses to call superclasses method implementation
+      super
+    else
+      if self.pick_string(env) then
+        tkn = nil
+        if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
+          tkn
+        else
+          raise "Unknown preprocessor directive @#{env.expansion_stack.last.to_s}: `#{env.tokenization[:remainder]}'"
+        end
       end
     end
   end # pick!
@@ -70,9 +75,11 @@ class TknPpDefine < TknPpDirective
     end
     
     args = $~[:args]
-    args[ 0] = ""
-    args[-1] = ""
-    @args = args.split(/\s*,\s*/)
+    @args = if args
+              args[ 0] = ""
+              args[-1] = ""
+              args.split(/\s*,\s*/)
+            end
     
     if env.macros.key? @name then
       env.macros[@name] << self
@@ -139,12 +146,17 @@ class TknPpConditional < TknPpDirective
   SUBCLASSES = [ TknPpCondIf, TknPpCondElif, TknPpCondElse, TknPpCondEndif ] # fixme(?): use `inherited' hook ?
 
   def self.pick!(env)
-    if str = self.pick_string(env) then
-      tkn = nil
-      if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
-        tkn
-      else
-        raise StandardError, "Error processing preprocessor directive, not accepted by subclasses @#{origin.list}: `#{str}'"
+    if self != TknPpDirective
+      # allow subclasses to call superclasses method implementation
+      super
+    else
+      if str = self.pick_string(env) then
+        tkn = nil
+        if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
+          tkn
+        else
+          raise StandardError, "Error processing preprocessor directive, not accepted by subclasses @#{origin.list}: `#{str}'"
+        end
       end
     end
   end # pick!
