@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-dbg "#{__FILE__} requires ..."
+#dbg "#{__FILE__} requires ..."
 
 require_relative 'CodeObject'
 
-dbg "#{__FILE__} ..."
+#dbg "#{__FILE__} ..."
 
 # forward declarations
 class CoFile < CodeObject; end
@@ -100,7 +100,10 @@ class CoPhysicLine < CodeObject
         env.remainders.delete self.class
       end
 
-      CoLogicLine.new(origin, text).expand(env)
+      logic_line = CoLogicLine.new(origin, text).expand(env)
+
+      @line_directive = logic_line.preprocessing[:line_directive]
+
     end
 
     env.expansion_stack.pop
@@ -122,6 +125,7 @@ class CoLogicLine < CodeObject
     super CoContainer.new(origin)
     @text = text
     @tokens = nil
+    @preprocessing = nil
   end # initialize
 
   def expand(env)

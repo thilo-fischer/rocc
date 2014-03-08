@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-dbg __FILE__
+#dbg __FILE__
 
 class CodeObject
   attr_reader :origin
