@@ -1,5 +1,23 @@
 # -*- coding: utf-8 -*-
 
+# TODOS:
+# * test suite
+# ** more tests
+# ** use cucumber
+# ** add unit tests
+# * refactor code
+# ** introduce modules
+# ** adapt file structure
+# *** `require' instead of `require_relative'
+# *** split Lines.rb, ...
+# ** "forward declarations" needed?
+# *** "implemented"-hook ?
+# * code documentation
+# * exceptions
+# ** provide appropriate exception classes
+# ** review all `raise' expressions and provide appropriate messages and exception classes
+# ** top-level exception handling to prevent program crashes
+
 def dbg(str, stack = nil)
   if $DEBUG
     warn ">> #{str} (#{self.to_s}.#{caller[0] =~ /`(.*)'/; $1})"

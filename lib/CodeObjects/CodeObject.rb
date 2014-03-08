@@ -3,13 +3,36 @@
 #dbg __FILE__
 
 class CodeObject
-  attr_reader :origin
 
   def initialize(origin = nil)
 #    @origin = validate_origin origin
     @origin = origin
     @origin.register(self) if @origin
   end
+
+
+  def origin(depth = 1)
+    case depth
+    when Number
+      if depth == 0
+        self
+      elsif depth > 0
+        @origin.origin(depth - 1)
+      else
+        raise
+      end
+    when Class
+      raise unless depth < CodeObject
+      if self.is_a? depth then
+        self
+      elsif self.is_a? CoProgram
+        nil
+      else
+        @origin.origin(depth)
+      end
+    end
+  end # origin
+
 
   def to_s
     if @origin
