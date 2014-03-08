@@ -13,7 +13,7 @@ class CodeObject
 
   def origin(depth = 1)
     case depth
-    when Number
+    when Integer
       if depth == 0
         self
       elsif depth > 0
@@ -30,6 +30,8 @@ class CodeObject
       else
         @origin.origin(depth)
       end
+    else
+      raise
     end
   end # origin
 
@@ -114,10 +116,10 @@ class CoContainer < CodeObject
 
   def to_s
     case
-    when origin.is_a?(Range)
-      "[" + origin.first.to_s + ".." + origin.last.to_s + "]"
+    when @origin.is_a?(Range)
+      "[" + @origin.first.to_s + ".." + @origin.last.to_s + "]"
     else
-      "[" + origin.map{ |o| o.to_s }.join(",") + "]"
+      "[" + @origin.map{ |o| o.to_s }.join(",") + "]"
     end
   end
 
