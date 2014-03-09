@@ -44,16 +44,30 @@ class TknPpInclude < TknPpDirective
 
   @PICKING_REGEXP = /^#\s*include\s*(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*(?<file>(<|").*?(>|"))/ # fixme: not capable of handling `#include "foo\"bar"' or `#include <foo\>bar>'
 
-  def expand(env)
-    @text =~ self.class.picking_regexp
-    
-    @file = $~[:file]
+  def self.pick_string!(env, source = nil)
 
-    comments = $~[:comments]
-    unless comments.strip!.empty?
-      # TODO
+    if str = super
+      # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
+      str =~ @PICKING_REGEXP
+
+      @file    = $~[:file]
+      comments = $~[:comments]
+
+      # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `include' and file name
+      if not comments.strip.empty? then
+        @text.sub!(comments, " ")
+      end
+      while not comments.strip!.empty? do
+        TknComment.pick!(env, comments)
+      end
+      
+      str
     end
-    
+
+  end # pick_string!
+
+  def expand(env)
+
     # todo !
     # ...
 
@@ -67,24 +81,39 @@ end # class TknPpInclude
 
 class TknPpDefine < TknPpDirective
 
-  @PICKING_REGEXP = /^#\s*define\s*(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*(?<name>[A-Za-z_]\w*)(?<args>\(.*?\))?/
+  @PICKING_REGEXP = /^#\s*define\s*?(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*?(?<name>[A-Za-z_]\w*)(?<args>\(.*?\))?/
+
+  def self.pick_string!(env, source = nil)
+
+    if str = super
+      # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
+      str =~ @PICKING_REGEXP
+
+      @name    = $~[:name]
+      comments = $~[:comments]
+      args     = $~[:args]
+
+      # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `define' and macro name
+      if not comments.strip.empty? then
+        @text.sub!(comments, " ")
+      end
+      while not comments.strip!.empty? do
+        TknComment.pick!(env, comments)
+      end
+      
+      @args = if args
+                args[ 0] = ""
+                args[-1] = ""
+                args.split(/\s*,\s*/)
+              end
+
+      str
+    end
+
+  end # pick_string!
+
 
   def expand(env)
-    @text =~ self.class.picking_regexp
-    
-    @name = $~[:name]
-
-    comments = $~[:comments]
-    unless comments.strip!.empty?
-      # TODO
-    end
-    
-    args = $~[:args]
-    @args = if args
-              args[ 0] = ""
-              args[-1] = ""
-              args.split(/\s*,\s*/)
-            end
 
     macros = env.preprocessing[:macros]
     if macros.key? @name then
@@ -97,6 +126,12 @@ class TknPpDefine < TknPpDirective
     env.preprocessing = env.preprocessing.dup
 
   end # expand
+
+  def tokens
+    line_tokens = origin(LogicLine).tokens
+    own_index = line_tokens.index(self)
+    line_tokens[own_index+1..-1]
+  end
 
 end # class TknPpDefine
 

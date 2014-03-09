@@ -55,13 +55,14 @@ class CoToken < CodeObject
   end # pick_string
 
 
-  def self.pick_string!(env)
+  def self.pick_string!(env, source = nil)
     #dbg "#{self.instance_variables}, #{self.class_variables}, #{self.constants}", 3
+    source ||= env.tokenization[:remainder]
     # find regexp in string
     # remove part of string matching regexp
-    # return part of string matching regexp 
+    # return part of string matching regexp
     str = env.tokenization[:remainder].slice!(@PICKING_REGEXP)
-    dbg "found #{self.to_s}, removed `#{str}', left `#{env.tokenization[:remainder]}'" if str
+    dbg "found #{self.to_s}, removed `#{str}', left `#{source}'" if str
     str
   end # pick_string!
 
@@ -80,8 +81,8 @@ class CoToken < CodeObject
   end # pick
 
 
-  def self.pick!(env)
-    str = self.pick_string!(env)
+  def self.pick!(env, source = nil)
+    str = self.pick_string!(env, source)
     pick(env, str) if str
   end # pick!
 
@@ -91,7 +92,7 @@ class CoToken < CodeObject
   end
 
 
-  # skips TknComment's
+  # skips TknComments
   def predecessor
     if direct_predecessor.class.is_a? TknComment
       direct_predecessor.predecessor
@@ -101,7 +102,7 @@ class CoToken < CodeObject
   end
 
 
-  # skips TknComment's
+  # skips TknComments
   def successor
     if direct_successor.class.is_a? TknComment
       direct_successor.successor

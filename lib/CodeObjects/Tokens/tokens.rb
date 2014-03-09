@@ -20,13 +20,27 @@ class TknWord < CoToken
       # allow subclasses to call superclasses method implementation
       super
     else
-      if self.pick_string(env) then
+      if pick_string(env) then
         tkn = TknKeyword.pick!(env)
         tkn ||= super
       end
     end
   end # pick!
  
+  def expand(env)
+    if env.preprocessing[:macros].key?(@name) then
+      macros = env.preprocessing[:macros][@name]
+      macros.each do |m|
+        if m.origin(LogicLine).conditions.empty?
+          m.tokens
+          # TODO
+        end
+        # TODO
+      end
+    end
+    # TODO
+  end # expand
+
 end # TknWord
 
 class TknStringLiteral < CoToken
