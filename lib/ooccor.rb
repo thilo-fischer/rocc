@@ -13,6 +13,7 @@
 # *** split Lines.rb, ...
 # ** "forward declarations" needed?
 # *** "implemented"-hook ?
+# ** make some protected methods private ?
 # * code documentation
 # * exceptions
 # ** provide appropriate exception classes

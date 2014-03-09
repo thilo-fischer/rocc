@@ -44,27 +44,32 @@ class TknPpInclude < TknPpDirective
 
   @PICKING_REGEXP = /^#\s*include\s*(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*(?<file>(<|").*?(>|"))/ # fixme: not capable of handling `#include "foo\"bar"' or `#include <foo\>bar>'
 
-  def self.pick_string!(env, source = nil)
+  attr_reader :file
 
-    if str = super
+  def self.pick(env, str = nil, tknclass = nil)
+
+    tkn = super
+
+    if tkn
       # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
-      str =~ @PICKING_REGEXP
+      tkn.text =~ @PICKING_REGEXP
 
-      @file    = $~[:file]
+      tkn.file = $~[:file]
       comments = $~[:comments]
 
       # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `include' and file name
       if not comments.strip.empty? then
-        @text.sub!(comments, " ")
+        tkn.text.sub!(comments, " ")
       end
       while not comments.strip!.empty? do
         TknComment.pick!(env, comments)
       end
       
-      str
     end
 
-  end # pick_string!
+    tkn
+
+  end # pick
 
   def expand(env)
 
@@ -76,6 +81,9 @@ class TknPpInclude < TknPpDirective
 
   end # expand
 
+# fixme: make protected
+  attr_writer :file
+
 end # class TknPpInclude
 
 
@@ -83,34 +91,39 @@ class TknPpDefine < TknPpDirective
 
   @PICKING_REGEXP = /^#\s*define\s*?(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*?(?<name>[A-Za-z_]\w*)(?<args>\(.*?\))?/
 
-  def self.pick_string!(env, source = nil)
+  attr_reader :name, :args
 
-    if str = super
+  def self.pick(env, str = nil, tknclass = nil)
+
+    tkn = super
+
+    if tkn
       # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
-      str =~ @PICKING_REGEXP
+      tkn.text =~ @PICKING_REGEXP
 
-      @name    = $~[:name]
+      tkn.name = $~[:name]
       comments = $~[:comments]
       args     = $~[:args]
 
       # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `define' and macro name
       if not comments.strip.empty? then
-        @text.sub!(comments, " ")
+        tkn.text.sub!(comments, " ")
       end
       while not comments.strip!.empty? do
         TknComment.pick!(env, comments)
       end
       
-      @args = if args
-                args[ 0] = ""
-                args[-1] = ""
-                args.split(/\s*,\s*/)
-              end
+      tkn.args = if args
+                   args[ 0] = ""
+                   args[-1] = ""
+                   args.split(/\s*,\s*/)
+                 end
 
-      str
     end
 
-  end # pick_string!
+    tkn
+
+  end # pick
 
 
   def expand(env)
@@ -132,6 +145,9 @@ class TknPpDefine < TknPpDirective
     own_index = line_tokens.index(self)
     line_tokens[own_index+1..-1]
   end
+
+# fixme: make protected
+  attr_writer :name, :args
 
 end # class TknPpDefine
 
