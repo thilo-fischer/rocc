@@ -5,9 +5,6 @@
 
 module Ooccor::CodeObjects
 
-  require_relative '../code_object' # fixme: remove
-  class CoLogicLine      < CodeObject; end # fixme: remove
-
   module Tokens
 
     # forward declarations
@@ -116,7 +113,7 @@ module Ooccor::CodeObjects
 
       protected
 
-      @ORIGIN_CLASS = CoLogicLine
+#      @ORIGIN_CLASS = CoLogicLine
 
       def direct_successor=(s)
         @direct_successor = s

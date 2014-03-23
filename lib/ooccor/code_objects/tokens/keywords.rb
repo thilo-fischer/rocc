@@ -5,8 +5,6 @@
 
 module Ooccor::CodeObjects
 
-  require_relative '../code_object' # fixme: remove
-
   module Tokens
 
     # forward declarations

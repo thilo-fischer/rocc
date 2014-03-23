@@ -4,17 +4,11 @@
 # Free software licensed under GPL v3. See LICENSE.txt for details.
 
 # TODOS:
-# * licence information
 # * test suite
 # ** more tests
 # ** use cucumber
 # ** add unit tests
 # * refactor code
-# ** introduce modules
-# ** adapt file structure
-# *** `require' instead of `require_relative'
-# *** split Lines.rb, ...
-# *** split tokens.rb, ...
 # ** "forward declarations" needed?
 # *** "implemented"-hook ?
 # ** make some protected methods private ?
@@ -23,6 +17,7 @@
 # ** provide appropriate exception classes
 # ** review all `raise' expressions and provide appropriate messages and exception classes
 # ** top-level exception handling to prevent program crashes
+# * review module hierarchy and file structure
 
 
 def dbg(str, stack = nil)
