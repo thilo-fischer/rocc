@@ -27,7 +27,7 @@ module Ooccor
       @options  = options
       @compiler = compiler
 
-      @program = CoProgram.new
+      @program = CodeObjects::CoProgram.new
       @obj_cursor = @program
       if options[:basedir] then
         @base_dir = File.expand_path(options[:basedir])
