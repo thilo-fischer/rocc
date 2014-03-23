@@ -1,5 +1,8 @@
 @startuml
 
+' Copyright (C) 2014  Thilo Fischer.
+' Free software licensed under GPL v3. See LICENSE.txt for details.
+
 ' fixme: replace "static" for class members and "const" by according uml notation
 
 class CodeObject {
