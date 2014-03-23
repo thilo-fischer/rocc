@@ -1,48 +1,51 @@
 # -*- coding: utf-8 -*-
 
-module Commands
+# Copyright (C) 2014  Thilo Fischer.
+# Free software licensed under GPL v3. See LICENSE.txt for details.
 
-class Command
+module Ooccor::Commands
 
-  class << self
-    attr_reader :description
-  end
+  class Command
 
-  @name = 'AbstractCommand'
-  @description = 'undocumented'
+    class << self
+      attr_reader :description
+    end
 
-  @@command_classes = {} # fixme(?): use `inherited' hook ?
+    @name = 'AbstractCommand'
+    @description = 'undocumented'
 
-  def self.command_classes
-    @@command_classes
-  end
+    @@command_classes = {} # fixme(?): use `inherited' hook ?
 
-  def self.register
-    @@command_classes[@name] = self
-  end
-  
-  def self.invoke(env, commandline)
+    def self.command_classes
+      @@command_classes
+    end
 
-    # ignore comments
-    return if commandline =~ /\s*#/
+    def self.register
+      @@command_classes[@name] = self
+    end
+    
+    def self.invoke(env, commandline)
 
-    argv = commandline.split(/\s+/) # fixme: quotes, escapes
+      # ignore comments
+      return if commandline =~ /\s*#/
 
-    cmd = argv.shift
-    @@command_classes[cmd].call(env, argv)
+      argv = commandline.split(/\s+/) # fixme: quotes, escapes
 
-  end # invoke
+      cmd = argv.shift
+      @@command_classes[cmd].call(env, argv)
 
-  def self.call(env, argv)
-    options = {}
-    option_parser(options).order!(argv)
-    run(env, argv, options)
-  end
+    end # invoke
 
-  def self.run(env, argv, options)
-    warn "Command `#{@name}' not yet implemented :("
-  end
+    def self.call(env, argv)
+      options = {}
+      option_parser(options).order!(argv)
+      run(env, argv, options)
+    end
 
-end # class Command
+    def self.run(env, argv, options)
+      warn "Command `#{@name}' not yet implemented :("
+    end
 
-end # module Commands
+  end # class Command
+
+end # module Ooccor::Commands

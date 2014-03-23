@@ -24,17 +24,18 @@
 # ** review all `raise' expressions and provide appropriate messages and exception classes
 # ** top-level exception handling to prevent program crashes
 
-module Ooccor
 
-  def dbg(str, stack = nil)
-    if $DEBUG
-      warn ">> #{str} (#{self.to_s}.#{caller[0] =~ /`(.*)'/; $1})"
-      if stack
-        caller[0..stack].each { |s| warn "^^ #{s}" }
-      end
+def dbg(str, stack = nil)
+  if $DEBUG
+    warn ">> #{str} (#{self.to_s}.#{caller[0] =~ /`(.*)'/; $1})"
+    if stack
+      caller[0..stack].each { |s| warn "^^ #{s}" }
     end
   end
+end
 
+
+module Ooccor
 
   require 'ooccor/version'
 

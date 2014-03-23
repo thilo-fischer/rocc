@@ -5,9 +5,9 @@
 
 module Ooccor::Compilers
 
-require 'ooccor/compilers/compiler'
-require 'ooccor/compilers/gcc'
+  require 'ooccor/compilers/compiler'
+  require 'ooccor/compilers/gcc'
 
-$supported_compilers = { :gcc => CompilerGcc }
+  $supported_compilers = { :gcc => Gcc }
 
 end # module Ooccor::Compilers

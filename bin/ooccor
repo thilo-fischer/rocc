@@ -47,9 +47,9 @@ module Ooccor
 
   if ARGV.empty?  
     # fixme: which is better, 'chomp' or 'chomp!' ?
-    files = [ CoFile.new($env.program, "<stdin>", STDIN.readlines.map(&:chomp!)) ]
+    files = [ CodeObjects::CoFile.new($env.program, "<stdin>", STDIN.readlines.map(&:chomp!)) ]
   else
-    files = ARGV.map { |f| CoFile.new($env.program, f) }
+    files = ARGV.map { |f| CodeObjects::CoFile.new($env.program, f) }
   end
 
   files.map { |f| f.expand(ProcessingEnvironment.new($env.program)) }

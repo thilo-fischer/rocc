@@ -64,151 +64,149 @@ module Ooccor::CodeObjects
       @origin.content[@origin_offset + 1]
     end
 
-    =begin
-       def <=>(other)
-         return @origin <=> other.origin unless other.is_a? CoPhysicLine
-         return nil unless @origin == other.origin
-         @line_number <=> other.line_number
-       end
-       =end
+    #   def <=>(other)
+    #     return @origin <=> other.origin unless other.is_a? CoPhysicLine
+    #     return nil unless @origin == other.origin
+    #     @line_number <=> other.line_number
+    #   end
 
-     def expand(env)
+    def expand(env)
 
-       env.expansion_stack.push self
+      env.expansion_stack.push self
 
-       if env.preprocessing[:line_directive]
-         @line_directive = env.preprocessing[:line_directive]
-       end
+      if env.preprocessing[:line_directive]
+        @line_directive = env.preprocessing[:line_directive]
+      end
 
-       if @text =~ /\\(\w*)$/
+      if @text =~ /\\(\w*)$/
 
-         warn "Whitespace after backslash -- FIXME: give more info" if $1.length > 0
-         if env.remainders.include? self.class
-           env.remainders[self.class] << self
-         else
-           env.remainders[self.class] = [ self ]
-         end
+        warn "Whitespace after backslash -- FIXME: give more info" if $1.length > 0
+        if env.remainders.include? self.class
+          env.remainders[self.class] << self
+        else
+          env.remainders[self.class] = [ self ]
+        end
 
-       else
+      else
 
-         text = @text
-         origin = self
+        text = @text
+        origin = self
 
-         # merge physical lines
-         if env.remainders.include? self.class
-           text = env.remainders[self.class].map {|ln| ln.text.sub(/\\$/,"")}.join + text
-           origin = env.remainders[self.class][0] .. self
-           env.remainders.delete self.class
-         end
+        # merge physical lines
+        if env.remainders.include? self.class
+          text = env.remainders[self.class].map {|ln| ln.text.sub(/\\$/,"")}.join + text
+          origin = env.remainders[self.class][0] .. self
+          env.remainders.delete self.class
+        end
 
-         logic_line = CoLogicLine.new(origin, text).expand(env)
+        logic_line = CoLogicLine.new(origin, text).expand(env)
 
-         @line_directive = logic_line.preprocessing[:line_directive]
+        @line_directive = logic_line.preprocessing[:line_directive]
 
-       end
+      end
 
-       env.expansion_stack.pop
+      env.expansion_stack.pop
 
-     end # expand
+    end # expand
 
-     protected
+    protected
 
-     @ORIGIN_CLASS = CoFile
+    @ORIGIN_CLASS = CoFile
 
-   end # class CoPhysicLine
+  end # class CoPhysicLine
 
 
 
-   class CoLogicLine < CodeObject
-     attr_reader :preprocessing
+  class CoLogicLine < CodeObject
+    attr_reader :preprocessing
 
-     def initialize(origin, text)
-       super CoContainer.new(origin)
-       @text = text
-       @tokens = nil
-       @preprocessing = nil
-     end # initialize
+    def initialize(origin, text)
+      super CoContainer.new(origin)
+      @text = text
+      @tokens = nil
+      @preprocessing = nil
+    end # initialize
 
-     def expand(env)
-       env.expansion_stack.push self
-       @preprocessing = env.preprocessing
-       tokenize(env).map {|t| t.expand(env)}
-       env.expansion_stack.pop
-     end # expand
+    def expand(env)
+      env.expansion_stack.push self
+      @preprocessing = env.preprocessing
+      tokenize(env).map {|t| t.expand(env)}
+      env.expansion_stack.pop
+    end # expand
 
-     def tokens
-       raise "#{to_s} has not yet been tokenized." unless @tokens
-       @tokens
-     end
+    def tokens
+      raise "#{to_s} has not yet been tokenized." unless @tokens
+      @tokens
+    end
 
-     alias content tokens
+    alias content tokens
 
-     def conditions
-       result = []
-       @preprocessing[:conditional_stack].each do |cond|
-         result << cond.summarize
-       end
-     end
-     
-     private
+    def conditions
+      result = []
+      @preprocessing[:conditional_stack].each do |cond|
+        result << cond.summarize
+      end
+    end
+    
+    private
 
-     def validate_origin(origin)
-       raise type_error origin unless origin.is_a? CoContainer
-       origin.validate_origin CoPhysicLine
-     end
+    def validate_origin(origin)
+      raise type_error origin unless origin.is_a? CoContainer
+      origin.validate_origin CoPhysicLine
+    end
 
 
-     def tokenize(env)
+    def tokenize(env)
 
-       dbg "Tokenizing line -> "
+      dbg "Tokenizing line -> "
 
-       # create copy of `text'
-       env.tokenization[:remainder] = remainder = @text.dup
-       env.tokenization[:line_offset] = 0
-       
-       @tokens = []
-       tkn = nil
+      # create copy of `text'
+      env.tokenization[:remainder] = remainder = @text.dup
+      env.tokenization[:line_offset] = 0
+      
+      @tokens = []
+      tkn = nil
 
-       if env.tokenization[:ongoing_comment]
-         # handle ongoing multi line comment
-         tkn = TknMultiLineBlockComment.pick!(env)
-         @tokens << tkn if tkn
-       end
+      if env.tokenization[:ongoing_comment]
+        # handle ongoing multi line comment
+        tkn = Tokens::TknMultiLineBlockComment.pick!(env)
+        @tokens << tkn if tkn
+      end
 
-       # remove leading and trailing whitespace
-       remainder.rstrip!
-       env.tokenization[:line_offset] += remainder.slice!(/^\s*/).length
+      # remove leading and trailing whitespace
+      remainder.rstrip!
+      env.tokenization[:line_offset] += remainder.slice!(/^\s*/).length
 
-       # handle comments interfering with preprocessor directives
-       while tkn = TknComment.pick!(env)
-         @tokens << tkn if tkn
-       end
-       return @tokens if remainder.empty?
-       if remainder[0] == "#" then
-         remainder[0] = ""
-         env.tokenization[:line_offset] += remainder.slice!(/^\s*/).length
-         while tkn = TknComment.pick!(env)
-           @tokens << tkn if tkn
-         end    
-         remainder.prepend "#"
-       end
+      # handle comments interfering with preprocessor directives
+      while tkn = Tokens::TknComment.pick!(env)
+        @tokens << tkn if tkn
+      end
+      return @tokens if remainder.empty?
+      if remainder[0] == "#" then
+        remainder[0] = ""
+        env.tokenization[:line_offset] += remainder.slice!(/^\s*/).length
+        while tkn = Tokens::TknComment.pick!(env)
+          @tokens << tkn if tkn
+        end    
+        remainder.prepend "#"
+      end
 
-       # handle preprocessor directives
-       tkn = TknPpDirective.pick!(env)
-       @tokens << tkn if tkn
+      # handle preprocessor directives
+      tkn = Tokens::TknPpDirective.pick!(env)
+      @tokens << tkn if tkn
 
-       until remainder.empty? do
-         if CoToken::PICKING_ORDER.find {|c| tkn = c.pick!(env)}
-           @tokens << tkn
-         else
-           raise "Could not dertermine next token in `#{remainder}'"
-         end
-       end
-       
-       @tokens
+      until remainder.empty? do
+        if Tokens::CoToken::PICKING_ORDER.find {|c| tkn = c.pick!(env)}
+          @tokens << tkn
+        else
+          raise "Could not dertermine next token in `#{remainder}'"
+        end
+      end
+      
+      @tokens
 
-     end # tokenize
+    end # tokenize
 
-   end # class CoLogicLine
+  end # class CoLogicLine
 
- end # module Ooccor::CodeObjects
+end # module Ooccor::CodeObjects
