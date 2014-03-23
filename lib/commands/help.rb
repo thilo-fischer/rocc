@@ -1,44 +1,47 @@
 # -*- coding: utf-8 -*-
 
-module Commands
+# Copyright (C) 2014  Thilo Fischer.
+# Free software licensed under GPL v3. See LICENSE.txt for details.
 
-class CommandHelp < Command
+module Ooccor::Commands
 
-  @name = 'help'
-  @description = 'List available commands, print help of specific commands.'
+  class Help < Command
 
-  def self.option_parser(options)
-    
-    OptionParser.new do |opts|      
+    @name = 'help'
+    @description = 'List available commands, print help of specific commands.'
 
-      opts.banner = "Usage: #{@name} [command]"
+    def self.option_parser(options)
       
-    end
-    
-  end # option_parser
+      OptionParser.new do |opts|      
 
-
-  def self.run(env, args, options)
-    
-    if args.empty? then
-      Command.command_classes.each do |name, cmd_class|
-        puts "#{name}\t- #{cmd_class.description}"
+        opts.banner = "Usage: #{@name} [command]"
+        
       end
-    else
-      args.each do |cmd|
-        if Command.command_classes.key?(cmd)
-          puts Command.command_classes[cmd].option_parser(options).help
-        else
-          puts "Unknown command: `#{cmd}'"
+      
+    end # option_parser
+
+
+    def self.run(env, args, options)
+      
+      if args.empty? then
+        Command.command_classes.each do |name, cmd_class|
+          puts "#{name}\t- #{cmd_class.description}"
+        end
+      else
+        args.each do |cmd|
+          if Command.command_classes.key?(cmd)
+            puts Command.command_classes[cmd].option_parser(options).help
+          else
+            puts "Unknown command: `#{cmd}'"
+          end
         end
       end
-    end
 
-  end # run
+    end # run
 
-end # class Command
+  end # class Help
 
 
-CommandHelp.register
+  Help.register
 
-end # module Commands
+end # module Ooccor::Commands

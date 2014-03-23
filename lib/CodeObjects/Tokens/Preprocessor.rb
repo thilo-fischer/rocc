@@ -1,325 +1,331 @@
 # -*- coding: utf-8 -*-
 
-# forward declarations
-class TknPpDirective   < CoToken;          end
-class TknPpInclude     < TknPpDirective;   end
-class TknPpDefine      < TknPpDirective;   end
-class TknPpUndef       < TknPpDirective;   end
-class TknPpError       < TknPpDirective;   end
-class TknPpPragma      < TknPpDirective;   end
-class TknPpLine        < TknPpDirective;   end
-class TknPpConditional < TknPpDirective;   end
-class TknPpCondIf      < TknPpConditional; end
-class TknPpCondElif    < TknPpConditional; end
-class TknPpCondElse    < TknPpConditional; end
-class TknPpCondEndif   < TknPpConditional; end
+# Copyright (C) 2014  Thilo Fischer.
+# Free software licensed under GPL v3. See LICENSE.txt for details.
+
+module Ooccor::CodeObjects::Tokens
+
+  # forward declarations
+  class TknPpDirective   < CoToken;          end
+  class TknPpInclude     < TknPpDirective;   end
+  class TknPpDefine      < TknPpDirective;   end
+  class TknPpUndef       < TknPpDirective;   end
+  class TknPpError       < TknPpDirective;   end
+  class TknPpPragma      < TknPpDirective;   end
+  class TknPpLine        < TknPpDirective;   end
+  class TknPpConditional < TknPpDirective;   end
+  class TknPpCondIf      < TknPpConditional; end
+  class TknPpCondElif    < TknPpConditional; end
+  class TknPpCondElse    < TknPpConditional; end
+  class TknPpCondEndif   < TknPpConditional; end
 
 
-class TknPpDirective < CoToken
-  @PICKING_REGEXP = /^#\s*\w+/
-  SUBCLASSES = [ TknPpInclude, TknPpConditional, TknPpDefine, TknPpUndef, TknPpError, TknPpPragma, TknPpLine ] # fixme(?): use `inherited' hook ?
+  class TknPpDirective < CoToken
+    @PICKING_REGEXP = /^#\s*\w+/
+    SUBCLASSES = [ TknPpInclude, TknPpConditional, TknPpDefine, TknPpUndef, TknPpError, TknPpPragma, TknPpLine ] # fixme(?): use `inherited' hook ?
 
-  def self.pick!(env)
-    if self != TknPpDirective
-      # allow subclasses to call superclasses method implementation
-      super
-    else
-      if self.pick_string(env) then
-        tkn = nil
-        if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
-          tkn
-        else
-          raise "Unknown preprocessor directive @#{env.expansion_stack.last.to_s}: `#{env.tokenization[:remainder]}'"
+    def self.pick!(env)
+      if self != TknPpDirective
+        # allow subclasses to call superclasses method implementation
+        super
+      else
+        if self.pick_string(env) then
+          tkn = nil
+          if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
+            tkn
+          else
+            raise "Unknown preprocessor directive @#{env.expansion_stack.last.to_s}: `#{env.tokenization[:remainder]}'"
+          end
         end
       end
-    end
-  end # pick!
+    end # pick!
 
-end # class TknPpDirective
+  end # class TknPpDirective
 
 
-class TknPpInclude < TknPpDirective
+  class TknPpInclude < TknPpDirective
 
-  @PICKING_REGEXP = /^#\s*include\s*(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*(?<file>(<|").*?(>|"))/ # fixme: not capable of handling `#include "foo\"bar"' or `#include <foo\>bar>'
+    @PICKING_REGEXP = /^#\s*include\s*(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*(?<file>(<|").*?(>|"))/ # fixme: not capable of handling `#include "foo\"bar"' or `#include <foo\>bar>'
 
-  attr_reader :file
+    attr_reader :file
 
-  def self.pick(env, str = nil, tknclass = nil)
+    def self.pick(env, str = nil, tknclass = nil)
 
-    tkn = super
+      tkn = super
 
-    if tkn
-      # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
-      tkn.text =~ @PICKING_REGEXP
+      if tkn
+        # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
+        tkn.text =~ @PICKING_REGEXP
 
-      tkn.file = $~[:file]
-      comments = $~[:comments]
+        tkn.file = $~[:file]
+        comments = $~[:comments]
 
-      # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `include' and file name
-      if not comments.strip.empty? then
-        tkn.text.sub!(comments, " ")
+        # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `include' and file name
+        if not comments.strip.empty? then
+          tkn.text.sub!(comments, " ")
+        end
+        while not comments.strip!.empty? do
+          TknComment.pick!(env, comments)
+        end
+        
       end
-      while not comments.strip!.empty? do
-        TknComment.pick!(env, comments)
+
+      tkn
+
+    end # pick
+
+    def expand(env)
+
+      # todo !
+      # ...
+
+      env.preprocessing.freeze
+      env.preprocessing = env.preprocessing.dup
+
+    end # expand
+
+    # fixme: make protected
+    attr_writer :file
+
+  end # class TknPpInclude
+
+
+  class TknPpDefine < TknPpDirective
+
+    @PICKING_REGEXP = /^#\s*define\s*?(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*?(?<name>[A-Za-z_]\w*)(?<args>\(.*?\))?/
+
+    attr_reader :name, :args
+
+    def self.pick(env, str = nil, tknclass = nil)
+
+      tkn = super
+
+      if tkn
+        # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
+        tkn.text =~ @PICKING_REGEXP
+
+        tkn.name = $~[:name]
+        comments = $~[:comments]
+        args     = $~[:args]
+
+        # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `define' and macro name
+        if not comments.strip.empty? then
+          tkn.text.sub!(comments, " ")
+        end
+        while not comments.strip!.empty? do
+          TknComment.pick!(env, comments)
+        end
+        
+        tkn.args = if args
+                     args[ 0] = ""
+                     args[-1] = ""
+                     args.split(/\s*,\s*/)
+                   end
+
       end
-      
-    end
 
-    tkn
+      tkn
 
-  end # pick
-
-  def expand(env)
-
-    # todo !
-    # ...
-
-    env.preprocessing.freeze
-    env.preprocessing = env.preprocessing.dup
-
-  end # expand
-
-# fixme: make protected
-  attr_writer :file
-
-end # class TknPpInclude
+    end # pick
 
 
-class TknPpDefine < TknPpDirective
+    def expand(env)
 
-  @PICKING_REGEXP = /^#\s*define\s*?(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*?(?<name>[A-Za-z_]\w*)(?<args>\(.*?\))?/
-
-  attr_reader :name, :args
-
-  def self.pick(env, str = nil, tknclass = nil)
-
-    tkn = super
-
-    if tkn
-      # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
-      tkn.text =~ @PICKING_REGEXP
-
-      tkn.name = $~[:name]
-      comments = $~[:comments]
-      args     = $~[:args]
-
-      # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `define' and macro name
-      if not comments.strip.empty? then
-        tkn.text.sub!(comments, " ")
+      macros = env.preprocessing[:macros]
+      if macros.key? @name then
+        macros[@name] << self
+      else
+        macros[@name] = [self]
       end
-      while not comments.strip!.empty? do
-        TknComment.pick!(env, comments)
+
+      env.preprocessing.freeze
+      env.preprocessing = env.preprocessing.dup
+
+    end # expand
+
+    def tokens
+      line_tokens = origin(LogicLine).tokens
+      own_index = line_tokens.index(self)
+      line_tokens[own_index+1..-1]
+    end
+
+    # fixme: make protected
+    attr_writer :name, :args
+
+  end # class TknPpDefine
+
+  class TknPpUndef < TknPpDirective
+    @PICKING_REGEXP = /^#\s*undef\s+/
+
+    def expand(env)
+
+      raise "invalid syntax" unless successor.is_a? TknWord # fixme: provide appropriate exception
+
+      macros = env.preprocessing[:macros]
+      if macros.key? successor.text then
+        macros[successor.text] << self
+      else
+        macros[successor.text] = [self]
       end
-      
-      tkn.args = if args
-                   args[ 0] = ""
-                   args[-1] = ""
-                   args.split(/\s*,\s*/)
-                 end
 
+      env.preprocessing.freeze
+      env.preprocessing = env.preprocessing.dup
+
+    end # expand
+
+  end # class TknPpUndef
+
+  class TknPpError < TknPpDirective
+    @PICKING_REGEXP = /^#\s*error\s+.*/  
+    def expand(env)
+      # remove `#error' from @text
+      @text.slice!(/#\s*error\s+/)
+      # raise "pp#error: `#{@text}'" if FALSE # todo ??
     end
+  end # class TknPpError
 
-    tkn
-
-  end # pick
-
-
-  def expand(env)
-
-    macros = env.preprocessing[:macros]
-    if macros.key? @name then
-      macros[@name] << self
-    else
-      macros[@name] = [self]
+  class TknPpPragma < TknPpDirective
+    @PICKING_REGEXP = /^#\s*pragma\s+.*/
+    def expand(env)
+      warn "ignoring #{origin.list}: `#{@text}' "
     end
+  end # class TknPpPragma
 
-    env.preprocessing.freeze
-    env.preprocessing = env.preprocessing.dup
+  class TknPpLine < TknPpDirective
 
-  end # expand
+    @PICKING_REGEXP = /^#\s*line\s+/
 
-  def tokens
-    line_tokens = origin(LogicLine).tokens
-    own_index = line_tokens.index(self)
-    line_tokens[own_index+1..-1]
-  end
+    def expand(env)
 
-# fixme: make protected
-  attr_writer :name, :args
+      raise "invalid syntax" unless successor.is_a? TknNumber # fixme: provide appropriate exception
+      @number = Integer(successor.text)
 
-end # class TknPpDefine
+      if successor.successor
+        raise "invalid syntax" unless successor.is_a? TknStringLitral # fixme: provide appropriate exception
+        @filename = successor.successor.text.dup
+        @filename[ 0] = ""
+        @filename[-1] = ""
+      end
 
-class TknPpUndef < TknPpDirective
-  @PICKING_REGEXP = /^#\s*undef\s+/
+      env.preprocessing[:line_directive] = self
 
-  def expand(env)
+      env.preprocessing.freeze
+      env.preprocessing = env.preprocessing.dup
 
-    raise "invalid syntax" unless successor.is_a? TknWord # fixme: provide appropriate exception
+    end # expand
 
-    macros = env.preprocessing[:macros]
-    if macros.key? successor.text then
-      macros[successor.text] << self
-    else
-      macros[successor.text] = [self]
-    end
+  end # class TknPpLine
 
-    env.preprocessing.freeze
-    env.preprocessing = env.preprocessing.dup
+  class TknPpConditional < TknPpDirective
+    @PICKING_REGEXP = /^#\s*(if(n?def)?|elif|else|endif)\s+/
 
-  end # expand
+    SUBCLASSES = [ TknPpCondIf, TknPpCondElif, TknPpCondElse, TknPpCondEndif ] # fixme(?): use `inherited' hook ?
 
-end # class TknPpUndef
-
-class TknPpError < TknPpDirective
-  @PICKING_REGEXP = /^#\s*error\s+.*/  
-  def expand(env)
-    # remove `#error' from @text
-    @text.slice!(/#\s*error\s+/)
-    # raise "pp#error: `#{@text}'" if FALSE # todo ??
-  end
-end # class TknPpError
-
-class TknPpPragma < TknPpDirective
-  @PICKING_REGEXP = /^#\s*pragma\s+.*/
-  def expand(env)
-    warn "ignoring #{origin.list}: `#{@text}' "
-  end
-end # class TknPpPragma
-
-class TknPpLine < TknPpDirective
-
-  @PICKING_REGEXP = /^#\s*line\s+/
-
-  def expand(env)
-
-    raise "invalid syntax" unless successor.is_a? TknNumber # fixme: provide appropriate exception
-    @number = Integer(successor.text)
-
-    if successor.successor
-      raise "invalid syntax" unless successor.is_a? TknStringLitral # fixme: provide appropriate exception
-      @filename = successor.successor.text.dup
-      @filename[ 0] = ""
-      @filename[-1] = ""
-    end
-
-    env.preprocessing[:line_directive] = self
-
-    env.preprocessing.freeze
-    env.preprocessing = env.preprocessing.dup
-
-  end # expand
-
-end # class TknPpLine
-
-class TknPpConditional < TknPpDirective
-  @PICKING_REGEXP = /^#\s*(if(n?def)?|elif|else|endif)\s+/
-
-  SUBCLASSES = [ TknPpCondIf, TknPpCondElif, TknPpCondElse, TknPpCondEndif ] # fixme(?): use `inherited' hook ?
-
-  def self.pick!(env)
-    if self != TknPpDirective
-      # allow subclasses to call superclasses method implementation
-      super
-    else
-      if str = self.pick_string(env) then
-        tkn = nil
-        if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
-          tkn
-        else
-          raise StandardError, "Error processing preprocessor directive, not accepted by subclasses @#{origin.list}: `#{str}'"
+    def self.pick!(env)
+      if self != TknPpDirective
+        # allow subclasses to call superclasses method implementation
+        super
+      else
+        if str = self.pick_string(env) then
+          tkn = nil
+          if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
+            tkn
+          else
+            raise StandardError, "Error processing preprocessor directive, not accepted by subclasses @#{origin.list}: `#{str}'"
+          end
         end
       end
-    end
-  end # pick!
-  
-  def expand(env)
-    env.preprocessing.freeze
-    env.preprocessing = env.preprocessing.dup
-  end
-
-end # class TknPpConditional
-
-class TknPpCondIf < TknPpConditional
-  @PICKING_REGEXP = /^#\s*if(n?def)?\s+/
-  attr_reader :dependants
-
-  def expand(env)
-    @dependants = { TknPpCondIf => self }
-    env.preprocessing[:conditional_stack] << self
-    super
-  end
-
-  def summarize(given = [])
-    result = []
-    result << self if not given.include? self
-    result
-  end
-
-end # class
-
-class TknPpCondElif < TknPpConditional
-  @PICKING_REGEXP = /^#\s*elif\s+/
-
-  def expand(env)
-
-    @dependants = env.preprocessing[:conditional_stack].last.dependants
-    if @dependants.key? TknPpCondElif then
-      @dependants[TknPpCondElif] << self
-    else
-      @dependants[TknPpCondElif] = [self]
-    end
-
-    env.preprocessing[:conditional_stack].pop
-    env.preprocessing[:conditional_stack] << self
-    super
-
-  end # expand
-
-  def summarize(given = [])
-    result = @dependants[TknPpCondIf].summarize(given)
-    @dependants[TknPpCondElif].each do |elif|
-      result << elif if not given.include? elif
-      break if elif.equal? self
-    end
-  end
-
-end # class
-
-class TknPpCondElse < TknPpConditional
-  @PICKING_REGEXP = /^#\s*else\s+/
-
-  def expand(env)
-    raise "invalid syntax: multiple #else" if @dependants.key? TknPpCondElse # fixme: provide appropriate exception
+    end # pick!
     
-    @dependants = env.preprocessing[:conditional_stack].last.dependants
-    @dependants[TknPpCondElse] = self
+    def expand(env)
+      env.preprocessing.freeze
+      env.preprocessing = env.preprocessing.dup
+    end
 
-    env.preprocessing[:conditional_stack].pop
-    env.preprocessing[:conditional_stack] << self
-    super
+  end # class TknPpConditional
 
-  end # expand
+  class TknPpCondIf < TknPpConditional
+    @PICKING_REGEXP = /^#\s*if(n?def)?\s+/
+    attr_reader :dependants
 
-  def summarize(given = [])
-    result = @dependants[TknPpCondElif].last.summarize
-    result << self if not given.include? self
-  end
+    def expand(env)
+      @dependants = { TknPpCondIf => self }
+      env.preprocessing[:conditional_stack] << self
+      super
+    end
 
-end # class
+    def summarize(given = [])
+      result = []
+      result << self if not given.include? self
+      result
+    end
 
-class TknPpCondEndif < TknPpConditional
-  @PICKING_REGEXP = /^#\s*endif\s+/
+  end # class
 
-  def expand(env)
+  class TknPpCondElif < TknPpConditional
+    @PICKING_REGEXP = /^#\s*elif\s+/
 
-    tkn_if = env.preprocessing[:conditional_stack].pop
+    def expand(env)
 
-    @dependants = tkn_if.dependants
-    @dependants[TknPpCondEndif] = self
+      @dependants = env.preprocessing[:conditional_stack].last.dependants
+      if @dependants.key? TknPpCondElif then
+        @dependants[TknPpCondElif] << self
+      else
+        @dependants[TknPpCondElif] = [self]
+      end
 
-    super
+      env.preprocessing[:conditional_stack].pop
+      env.preprocessing[:conditional_stack] << self
+      super
 
-  end # expand
+    end # expand
 
-end # class
+    def summarize(given = [])
+      result = @dependants[TknPpCondIf].summarize(given)
+      @dependants[TknPpCondElif].each do |elif|
+        result << elif if not given.include? elif
+        break if elif.equal? self
+      end
+    end
 
+  end # class
+
+  class TknPpCondElse < TknPpConditional
+    @PICKING_REGEXP = /^#\s*else\s+/
+
+    def expand(env)
+      raise "invalid syntax: multiple #else" if @dependants.key? TknPpCondElse # fixme: provide appropriate exception
+      
+      @dependants = env.preprocessing[:conditional_stack].last.dependants
+      @dependants[TknPpCondElse] = self
+
+      env.preprocessing[:conditional_stack].pop
+      env.preprocessing[:conditional_stack] << self
+      super
+
+    end # expand
+
+    def summarize(given = [])
+      result = @dependants[TknPpCondElif].last.summarize
+      result << self if not given.include? self
+    end
+
+  end # class
+
+  class TknPpCondEndif < TknPpConditional
+    @PICKING_REGEXP = /^#\s*endif\s+/
+
+    def expand(env)
+
+      tkn_if = env.preprocessing[:conditional_stack].pop
+
+      @dependants = tkn_if.dependants
+      @dependants[TknPpCondEndif] = self
+
+      super
+
+    end # expand
+
+  end # class
+
+end # module Ooccor::CodeObjects::Tokens

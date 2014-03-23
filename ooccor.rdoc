@@ -1,0 +1,5 @@
+= ooccor
+
+Generate this with
+    ooccor rdoc
+After you have described your command line interface

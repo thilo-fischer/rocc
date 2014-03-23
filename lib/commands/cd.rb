@@ -1,62 +1,64 @@
 # -*- coding: utf-8 -*-
 
-module Commands
+# Copyright (C) 2014  Thilo Fischer.
+# Free software licensed under GPL v3. See LICENSE.txt for details.
 
-class CommandCd < Command
+module Ooccor::Commands
 
-  @name = 'cd'
-  @description = 'Change current directory or object.'
-  
-  def self.option_parser(options)
+  class Cd < Command
+
+    @name = 'cd'
+    @description = 'Change current directory or object.'
     
-    OptionParser.new do |opts|
-
-      opts.banner = "Usage: #{@name} [options] [target]"
+    def self.option_parser(options)
       
-    end
-    
-  end # option_parser
+      OptionParser.new do |opts|
+
+        opts.banner = "Usage: #{@name} [options] [target]"
+        
+      end
+      
+    end # option_parser
 
 
-  def self.run(env, args, options)
-    
-    if args.length == 0
-      arg = "//"
-    elsif args.length == 1
-      arg = args[0]
-    else
-      # providing several arguments cds into all these sequentially (putting them into the oldpwd history)
-      args.each { |a| run(env, [a], options) }
-    end
-
-    target = env.eval_path(arg)
-    
-    if target
-
-      env.oldpwd << env.cursor
-
-      case target
-      when CodeObject
-        env.obj_cursor = target
-        env.cursor = env.obj_cursor
-      when String
-        Dir.chdir(target)
-        env.cursor = Dir
+    def self.run(env, args, options)
+      
+      if args.length == 0
+        arg = "//"
+      elsif args.length == 1
+        arg = args[0]
       else
-        raise
+        # providing several arguments cds into all these sequentially (putting them into the oldpwd history)
+        args.each { |a| run(env, [a], options) }
       end
 
-    else
+      target = env.eval_path(arg)
+      
+      if target
 
-      warn "Cannot #{name} to `#{arg}': No such directory or object."
+        env.oldpwd << env.cursor
 
-    end
+        case target
+        when CodeObject
+          env.obj_cursor = target
+          env.cursor = env.obj_cursor
+        when String
+          Dir.chdir(target)
+          env.cursor = Dir
+        else
+          raise
+        end
 
-  end # run
+      else
 
-end # class Command
+        warn "Cannot #{name} to `#{arg}': No such directory or object."
 
+      end
 
-CommandCd.register
+    end # run
 
-end # module Commands
+  end # class Cd
+
+  Cd.register
+
+end # module Ooccor::Commands

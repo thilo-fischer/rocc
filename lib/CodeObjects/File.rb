@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 
-dbg "#{__FILE__} requires ..."
+# Copyright (C) 2014  Thilo Fischer.
+# Free software licensed under GPL v3. See LICENSE.txt for details.
 
-require_relative 'CodeObject'
+module Ooccor::CodeObjects
 
-dbg "#{__FILE__} ..."
+  require 'ooccor/code_objects/code_object'
+  require 'ooccor/code_objects/lines'
 
 # forward declarations
 class CoProgram < CodeObject; end
-
-require_relative 'Lines'
-
 
 class CoFile < CodeObject
   attr_reader :abs_path
@@ -79,3 +78,5 @@ protected
   @ORIGIN_CLASS = CoProgram
 
 end # class CoFile
+
+end # module Ooccor::CodeObjects

@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 
-require_relative 'Compiler'
+# Copyright (C) 2014  Thilo Fischer.
+# Free software licensed under GPL v3. See LICENSE.txt for details.
 
-require_relative 'gcc'
+module Ooccor::Compilers
+
+require 'ooccor/compilers/compiler'
+require 'ooccor/compilers/gcc'
 
 $supported_compilers = { :gcc => CompilerGcc }
+
+end # module Ooccor::Compilers

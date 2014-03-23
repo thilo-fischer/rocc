@@ -1,58 +1,67 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
 
-require 'optparse'
+# Copyright (C) 2014  Thilo Fischer.
+# Free software licensed under GPL v3. See LICENSE.txt for details.
 
 module Ooccor
 
-require_relative '../lib/ooccor.rb'
+  require 'optparse'
 
-options = {}
-option_parser = OptionParser.new do |opts|
+  require 'ooccor'
 
-  opts.banner = "Usage: #{File.basename $0} [options] [-c compiler [compiler-arguments]] [sourcefiles]"
+  options = {}
+  option_parser = OptionParser.new do |opts|
+
+    opts.banner = "Usage: #{File.basename $0} [options] [-c compiler [compiler-arguments]] [sourcefiles]"
 
 
-  opts.on("-e 'command'",
-          "--expression",
-          "Run expression instead of starting an interactive sessios.") do |arg|
-    options[:expression] = arg
+    opts.on("-e 'command'",
+            "--expression",
+            "Run expression instead of starting an interactive sessios.") do |arg|
+      options[:expression] = arg
+    end
+
+    opts.on("-c compiler",
+            "--compiler",
+            $supported_compilers.keys,
+            "Parse compiler arguments according to the given compiler.",
+            " (Currently supported: #{$supported_compilers.keys.map{|s| s.to_s}.join(', ')})",
+            " Has to be the last ooccor argument, all following arguments are regarded as arguments to the compiler.") do |arg|
+      throw :compiler, $supported_compilers[arg].new
+    end
+
   end
 
-  opts.on("-c compiler",
-          "--compiler",
-          $supported_compilers.keys,
-          "Parse compiler arguments according to the given compiler.",
-          " (Currently supported: #{$supported_compilers.keys.map{|s| s.to_s}.join(', ')})",
-          " Has to be the last ooccor argument, all following arguments are regarded as arguments to the compiler.") do |arg|
-    throw :compiler, $supported_compilers[arg].new
+  compiler = catch :compiler do
+    option_parser.order!
+    # return nil from catch block if not catched
+    nil
   end
 
-end
+  if compiler
+    compiler.parse_argv
+  end
 
-compiler = catch :compiler do
-  option_parser.order!
-  # return nil from catch block if not catched
-  nil
-end
+  $env = Environment.new(options, compiler)
 
-if compiler
-  compiler.parse_argv
-end
+  if ARGV.empty?  
+    # fixme: which is better, 'chomp' or 'chomp!' ?
+    files = [ CoFile.new($env.program, "<stdin>", STDIN.readlines.map(&:chomp!)) ]
+  else
+    files = ARGV.map { |f| CoFile.new($env.program, f) }
+  end
 
-$env = Environment.new(options, compiler)
+  files.map { |f| f.expand(ProcessingEnvironment.new($env.program)) }
 
-if ARGV.empty?  
-  # fixme: which is better, 'chomp' or 'chomp!' ?
-  files = [ CoFile.new($env.program, "<stdin>", STDIN.readlines.map(&:chomp!)) ]
-else
-  files = ARGV.map { |f| CoFile.new($env.program, f) }
-end
+  if options[:expression] then
+    Commands::Command.invoke($env, options[:expression])
+  end
 
-files.map { |f| f.expand(ProcessingEnvironment.new($env.program)) }
+  # Todo: When starting interactive session:
+  #  <program>  Copyright (C) <year>  <name of author>
+  #  This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+  #  This is free software, and you are welcome to redistribute it
+  #  under certain conditions; type `show c' for details.
 
-if options[:expression] then
-  Commands::Command.invoke($env, options[:expression])
-end
-
-end # module ooccor
+end # module Ooccor

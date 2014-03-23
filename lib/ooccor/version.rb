@@ -3,10 +3,8 @@
 # Copyright (C) 2014  Thilo Fischer.
 # Free software licensed under GPL v3. See LICENSE.txt for details.
 
-module Ooccor::Compilers
+module Ooccor
 
-  class Compiler
+  VERSION = '0.0.1'
 
-  end # class Compiler
-
-end # module Ooccor::Compilers
+end # module Ooccor

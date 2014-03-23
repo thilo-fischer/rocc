@@ -1,4 +1,10 @@
 ooccor - Object Oriented C Code Operations in Ruby
 
-Collection of Ruby scripts to operate on C-ish source code.
-(Currently only C is supported, support for C++ planned. Support for Objective-C, C#, Java, etc. not yet planned, but might be considered in future.)
+Swiss army knive commend line tool (and a collection of Ruby scripts) to operate on C-ish source code.
+
+Currently only C is supported, support for C++ planned.
+
+Support for Java, Objective-C, C# might also be added one day ...
+
+Copyright (C) 2014  Thilo Fischer.
+Free software licensed under GPL v3. See LICENSE.txt for details.
