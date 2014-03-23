@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-dbg __FILE__
-
 # forward declarations
 class TknPpDirective   < CoToken;          end
 class TknPpInclude     < TknPpDirective;   end

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+module Commands
+
 class CommandPwd < Command
 
   @name = 'pwd'
@@ -36,3 +38,5 @@ end # class Command
 
 
 CommandPwd.register
+
+end # module Commands

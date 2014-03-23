@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+module Commands
+
 class CommandLs < Command
 
   @name = 'ls'
@@ -85,3 +87,5 @@ end # class Command
 
 
 CommandLs.register
+
+end # module Commands

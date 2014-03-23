@@ -2,6 +2,8 @@
 
 require 'set'
 
+module Commands
+
 require_relative 'Command'
 
 commands = %w[
@@ -26,3 +28,5 @@ erroneous = commands.to_set ^ Command.command_classes.keys.to_set
 unless erroneous.empty?
   raise ScriptError.new("Erroneous command implementations: #{erroneous.to_a.join(", ")}.")
 end
+
+end # module Commands

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+module Commands
+
 class CommandHelp < Command
 
   @name = 'help'
@@ -38,3 +40,5 @@ end # class Command
 
 
 CommandHelp.register
+
+end # module Commands

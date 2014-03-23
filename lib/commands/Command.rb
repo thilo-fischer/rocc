@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+module Commands
+
 class Command
 
   class << self
@@ -42,3 +44,5 @@ class Command
   end
 
 end # class Command
+
+end # module Commands

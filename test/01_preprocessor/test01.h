@@ -87,4 +87,36 @@ char c04 = '\032';
 
 char *C01 = "foo\"bar";
 
+
+// Can we forward declare types?
+type my_type;
+type int my_type;
+
+enum my_enum;
+typedef enum my_enum my_enum_type;
+enum my_enum
+    {
+        foo,
+        bar,
+        baz
+    };
+
+struct my_struct;
+typedef struct my_struct my_struct_type;
+struct my_struct
+    {
+        int foo,
+        unsigned int bar,
+        const int baz
+    };
+
+union my_union;
+typedef union my_union my_union_type;
+union my_union
+    {
+        int foo,
+        unsigned int bar,
+        const int baz
+    };
+
 #endif // TEST01_H

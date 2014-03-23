@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+module Commands
+
 class CommandCd < Command
 
   @name = 'cd'
@@ -56,3 +58,5 @@ end # class Command
 
 
 CommandCd.register
+
+end # module Commands

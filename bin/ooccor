@@ -3,6 +3,8 @@
 
 require 'optparse'
 
+module Ooccor
+
 require_relative '../lib/ooccor.rb'
 
 options = {}
@@ -50,5 +52,7 @@ end
 files.map { |f| f.expand(ProcessingEnvironment.new($env.program)) }
 
 if options[:expression] then
-  Command.invoke($env, options[:expression])
+  Commands::Command.invoke($env, options[:expression])
 end
+
+end # module ooccor
