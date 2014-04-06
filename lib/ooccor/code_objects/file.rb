@@ -6,7 +6,8 @@
 module Ooccor::CodeObjects
 
   require 'ooccor/code_objects/code_object'
-  require 'ooccor/code_objects/lines'
+  require 'ooccor/code_objects/physic_line'
+  require 'ooccor/code_objects/logic_line'
 
 # forward declarations
 class CoProgram < CodeObject; end
