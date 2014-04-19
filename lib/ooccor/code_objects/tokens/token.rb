@@ -88,8 +88,12 @@ module Ooccor::CodeObjects
 
 
       def expand(env)
-        nil
+        env.context_branches.each {|ctx| expand_with_context(env, ctx)}
       end
+      
+      def expand_with_context(env, ctxt)
+        ctxt[:unassociated_tokens] << self
+      end # expand_with_context
 
 
       # skips TknComments
@@ -109,6 +113,10 @@ module Ooccor::CodeObjects
         else
           direct_successor
         end
+      end
+
+      def conditions
+        origin(LogicLine).conditions
       end
 
       protected

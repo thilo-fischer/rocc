@@ -54,6 +54,11 @@ module Ooccor::CodeObjects
       #  end # pick!
 
       def expand(env)
+        nil
+      end
+
+      def expand_with_context(env, ctxt)
+        nil
       end
 
     end

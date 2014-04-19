@@ -58,6 +58,7 @@ module Ooccor::CodeObjects
       end
     end
 
+    # todo: rename/refactor to `parse' (?)
     def expand(env)
       env.expansion_stack.push self
       dbg "expansion stack: #{env.expansion_stack.inspect}"

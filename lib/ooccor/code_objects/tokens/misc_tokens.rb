@@ -23,17 +23,35 @@ module Ooccor::CodeObjects::Tokens
     end # pick!
     
     def expand(env)
+
       if env.preprocessing[:macros].key?(@name) then
+
         macros = env.preprocessing[:macros][@name]
-        macros.each do |m|
-          if m.origin(LogicLine).conditions.empty?
-            m.tokens
-            # TODO
+
+        if macros.length == 1 && macros.first.conditions.empty?
+          env.parsing[:macro_expansion_stack] << macros.first
+          macros.first.tokens.expand(env)
+        else
+          env_fork_master = env.fork
+          macros.each do |m|
+            env_fork = env_fork_master.fork
+            env_fork.parsing[:macro_expansion_stack] << m
+            # todo: optimize by collapsing overlapping conditions and skipping excluding conditions
+            env_fork.preprocessing[:conditional_stack] << m.conditions
+            env_fork_master.preprocessing[:conditional_stack] << m.conditions.negate
+            m.tokens.expand(env_fork)
+            env.merge(env_fork)
           end
-          # TODO
+          if env_fork_master.preprocessing[:conditional_stack].compliable
+            super(env_fork_master)
+            env.merge(env_fork_master)
+          end
         end
+
+      else # no macro
+        super(env)
       end
-      # TODO
+
     end # expand
 
   end # TknWord
@@ -63,19 +81,78 @@ module Ooccor::CodeObjects::Tokens
   class Tkn1Char < CoToken
     
     @PICKING_REGEXP = /^[+\-*\/%=!&|<>\^,:;?()\[\]{}~#]/
-    
-    #  def expand(env)
-    #    case @text
-    #    when /{(\[/
-    #      env.bracket_stack.push self
-    #    when /})\]/
-    #      @open = env.bracket_stack.pop
-    #      @open.close = self
-    #    else
-    #      nil
-    #    end
-    #  end # expand
 
+    def expand_with_context(env, ctxt)
+
+      open = ctxt[:unassociated_tokens]
+      scope = ctxt[:scope_stack]
+
+      case @text
+
+      when ";"
+        if open.length == 0
+          ctxt
+          
+        elsif scope.empty?
+
+          ...
+          
+        elsif [ CoCompoundStatement, CoControlStructure ].includes? scope.last.class
+          ...
+
+        elsif open.length >= 2 and open[-2].is_a? ... and open[-1].is_a? CoParentheses
+
+        else
+          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
+          env.context.delete(ctx)
+          nil
+         
+        end
+
+      when "{"
+        if FALSE # to align all the elsif conditions ...
+          
+        elsif open.length >= 1 and open[-1].is_a? TknKwTagged
+          scope << open[-1].define(env, self)
+
+        elsif open.length >= 2 and open[-2].is_a? TknKwTagged and open[-1].is_a? TknWord
+          scope << open[-2].define(env, self, open[-1])
+
+        elsif open.length >= 2 and open[-2].is_a? TknWord and open[-1].is_a? CoParentheses then
+          scope << CoFunctionDefinition.new(env, open)
+
+        elsif [ CoFunctionDefinition, CoControlStructure, CoCompoundStatement ].includes? scope.last.class
+          scope << CoCompoundStatement.new(env, self)
+
+        else
+          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
+          env.context.delete(ctx)
+          nil
+         
+        end
+
+      when "("
+        scope << CoParentheses.new(env, self)
+
+      when "["
+        scope << CoBrackets.new(env, self)
+
+      when ")", "}", "]"
+        if [ CoParentheses, CoCompoundStatement, CoBrackets ].includes? scope.last.class or scope.last.is_a? CoTaggedDefinition
+          scope.last.close(env, self)
+
+        else
+          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
+          env.context.delete(ctx)
+          nil
+         
+        end
+
+      else
+        super
+      end
+    end # expand_with_context   
+    
   end # Tkn1Char
 
 end # module Ooccor::CodeObjects::Tokens
