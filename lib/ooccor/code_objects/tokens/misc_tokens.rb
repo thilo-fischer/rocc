@@ -84,23 +84,34 @@ module Ooccor::CodeObjects::Tokens
 
     def expand_with_context(env, ctxt)
 
-      open = ctxt[:unassociated_tokens]
+      free = ctxt[:unassociated_tokens]
       scope = ctxt[:scope_stack]
+      separators = ctxt[:separators]
+
 
       case @text
 
+      when ","
+        if separators.key?(",")
+          separators[","] << self
+        else
+          separators[","] = [ self ]
+        end
+
       when ";"
-        if open.length == 0
-          ctxt
+        if free.length == 0
+          TRUE
           
-        elsif scope.empty?
+        elsif separators.key?(",")
+
+          scope.empty?
 
           ...
           
         elsif [ CoCompoundStatement, CoControlStructure ].includes? scope.last.class
           ...
 
-        elsif open.length >= 2 and open[-2].is_a? ... and open[-1].is_a? CoParentheses
+        elsif free.length >= 2 and free[-2].is_a? ... and free[-1].is_a? CoParentheses
 
         else
           warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
@@ -112,14 +123,14 @@ module Ooccor::CodeObjects::Tokens
       when "{"
         if FALSE # to align all the elsif conditions ...
           
-        elsif open.length >= 1 and open[-1].is_a? TknKwTagged
-          scope << open[-1].define(env, self)
+        elsif free.length >= 1 and free[-1].is_a? TknKwTagged
+          scope << free[-1].define(env, self)
 
-        elsif open.length >= 2 and open[-2].is_a? TknKwTagged and open[-1].is_a? TknWord
-          scope << open[-2].define(env, self, open[-1])
+        elsif free.length >= 2 and free[-2].is_a? TknKwTagged and free[-1].is_a? TknWord
+          scope << free[-2].define(env, self, free[-1])
 
-        elsif open.length >= 2 and open[-2].is_a? TknWord and open[-1].is_a? CoParentheses then
-          scope << CoFunctionDefinition.new(env, open)
+        elsif free.length >= 2 and free[-2].is_a? TknWord and free[-1].is_a? CoParentheses then
+          scope << CoFunctionDefinition.new(env, free)
 
         elsif [ CoFunctionDefinition, CoControlStructure, CoCompoundStatement ].includes? scope.last.class
           scope << CoCompoundStatement.new(env, self)
@@ -151,6 +162,9 @@ module Ooccor::CodeObjects::Tokens
       else
         super
       end
+
+      ctxt
+
     end # expand_with_context   
     
   end # Tkn1Char
