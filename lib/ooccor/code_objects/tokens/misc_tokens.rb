@@ -86,16 +86,14 @@ module Ooccor::CodeObjects::Tokens
 
       free = ctxt[:unassociated_tokens]
       scope = ctxt[:scope_stack]
-      separators = ctxt[:separators]
-
 
       case @text
 
       when ","
-        if separators.key?(",")
-          separators[","] << self
+        if scope.empty? or [ CoCompoundStatement ].includes? scope.last.class
+          free << CoDeclaratorListItem.new(env)
         else
-          separators[","] = [ self ]
+          separators[","] = [ free.last ]
         end
 
       when ";"
