@@ -84,51 +84,114 @@ module Ooccor::CodeObjects::Tokens
 
     def expand_with_context(env, ctxt)
 
-      free = ctxt[:unassociated_tokens]
-      scope = ctxt[:scope_stack]
+      unbound = ctxt[:unbound_objects]
+      grast = ctxt[:grammar_stack]
 
       case @text
 
       when ","
-        if scope.empty? or [ CoCompoundStatement ].includes? scope.last.class
-          free << CoDeclaratorListItem.new(env)
+        case grast.last
+        when GroTranslationUnit, GroCompoundStatement
+          GroDeclaration.wrap_up(env, ctxt)
+        when GroDeclaration
+          grast.last.add_declarator(env, ctxt)
+        when GroEnumeratorList
+          raise "todo"
         else
-          separators[","] = [ free.last ]
+          super
         end
 
       when ";"
-        if free.length == 0
-          TRUE
-          
-        elsif separators.key?(",")
-
-          scope.empty?
-
-          ...
-          
-        elsif [ CoCompoundStatement, CoControlStructure ].includes? scope.last.class
-          ...
-
-        elsif free.length >= 2 and free[-2].is_a? ... and free[-1].is_a? CoParentheses
-
+        case grast.last
+        when GroTranslationUnit
+          GroDeclaration.wrap_up(env, ctxt)
+          grast.last.finalize(env, ctxt)
+        when GroDeclaration
+          grast.last.add_declarator(env, ctxt)
+          grast.last.finalize(env, ctxt)
+        when GroCompoundStatement
+          # declaration or statement
+          raise "todo"
+        when GroControlStructure
+          # statement
+          raise "todo"
+        when GroParenthesized
+          # expression-list in for-loop
+          if grast[-2].is_a? GroControlStructure and grast[-2].origin[0].text == "for" # fixme
+            super # fixme
+          else
+            raise
+          end
+        when GroStructDeclarationList
+          raise "todo"
         else
+          raise
           warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
           env.context.delete(ctx)
           nil
-         
         end
 
       when "{"
+        case grast.last
+        when GroTranslationUnit, GroCompoundStatement
+
+          if FALSE # to align all the elsif conditions ...
+          
+          elsif unbound.length >= 1 and unbound[-1].is_a? TknKwTagged
+            keyword = unbound[-1]
+            unbound[-1,1] = []
+            grast << GroTaggedSpecifier.new(env, ctxt, keyword, nil)
+            raise "todo"
+            grast << GroStructDeclarationList / GroEnumeratorList
+
+          elsif unbound.length >= 2 and unbound[-2].is_a? TknKwTagged and unbound[-1].is_a? TknWord
+            keyword = unbound[-2]
+            identifier = unbound[-1]
+            unbound[-2,2] = []
+            grast << GroTaggedSpecifier.new(env, ctxt, keyword, identifier)
+            raise "todo"
+            grast << GroStructDeclarationList / GroEnumeratorList
+
+          elsif grast.last.is_a? GroTranslationUnit
+            # function definition
+
+          elsif grast.last.is_a? GroCompoundStatement and unbound.empty? then
+            # GroCompoundStatement
+
+          else
+            raise
+
+          end
+            
+          # declaration or statement
+          raise "todo"
+        when GroControlStructure
+          # statement
+          raise "todo"
+        when GroParenthesized
+          # expression-list in for-loop
+          if grast[-2].is_a? GroControlStructure and grast[-2].origin[0].text == "for" # fixme
+            super # fixme
+          else
+            raise
+          end
+        else
+          raise
+          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
+          env.context.delete(ctx)
+          nil
+        end
+
         if FALSE # to align all the elsif conditions ...
           
-        elsif free.length >= 1 and free[-1].is_a? TknKwTagged
-          scope << free[-1].define(env, self)
+        elsif unbound.length >= 1 and unbound[-1].is_a? TknKwTagged
+          scope << unbound[-1].define(env, self)
 
-        elsif free.length >= 2 and free[-2].is_a? TknKwTagged and free[-1].is_a? TknWord
-          scope << free[-2].define(env, self, free[-1])
+        elsif unbound.length >= 2 and unbound[-2].is_a? TknKwTagged and unbound[-1].is_a? TknWord
+          scope << unbound[-2].define(env, self, unbound[-1])
 
-        elsif free.length >= 2 and free[-2].is_a? TknWord and free[-1].is_a? CoParentheses then
-          scope << CoFunctionDefinition.new(env, free)
+        elsif unbound.length >= 2 and unbound[-2].is_a? TknWord and unbound[-1].is_a? CoParentheses then
+          scope << CoFunctionDefinition.new(env, unbound)
 
         elsif [ CoFunctionDefinition, CoControlStructure, CoCompoundStatement ].includes? scope.last.class
           scope << CoCompoundStatement.new(env, self)

@@ -66,10 +66,6 @@ module Ooccor::CodeObjects
       env.expansion_stack.pop
     end
 
-    def leaf?
-      false
-    end
-
     def register(obj)
       @origin.register obj
     end
