@@ -46,7 +46,7 @@ module Ooccor::CodeObjects
     end
 
     def get_all
-      #    dbg @objects.inspect
+      # dbg @objects.inspect
       @objects.values.flatten(1)
     end
 
