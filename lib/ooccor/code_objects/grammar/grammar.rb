@@ -83,7 +83,23 @@ module Ooccor::CodeObjects
     end # wrap_up
 
     def verify_declaraiton_is_function_definition
-      dbg declarators.inspect
+
+      # uncommenting one of the following line causes Segmentation Fault of ruby binary
+      # when running test/run_all.sh
+      # using
+      #   ruby 1.9.3p484 (2013-11-22 revision 43786) [x86_64-linux]
+      #   ruby 2.0.0p353 (2013-11-22 revision 43784) [x86_64-linux]
+      # with ooccor version from
+      #   commit 7d8f8a16b09a14d75c1b883cadc6f661dc86a2d7
+      #   Author: Thilo Fischer <thilo-fischer@gmx.de>
+      #   Date:   Sun Apr 27 10:25:12 2014 +0200
+
+      #dbg declarators.inspect
+      dbg "foo"
+
+      # using `warn' instead of `dbg' does not cause Segfault ...
+      warn "*** " + declarators.inspect
+      
       raise "assertion" unless declarators.length == 1
       raise "assertion" unless declarators.first.length == 2
 
