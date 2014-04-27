@@ -15,7 +15,7 @@ module Ooccor::CodeObjects
     class TknKwTagged           < TknKeyword;     end
     class TknKwTypeSpecifier    < TknKeyword;     end
     class TknKwTypeQualifier    < TknKeyword;     end
-    class TknKwStorageClassSpecifier < TknKwSpecifier; end
+    class TknKwStorageClassSpecifier < TknKeyword; end
     class TknKwMisc             < TknKeyword;     end
 
 
@@ -91,7 +91,7 @@ module Ooccor::CodeObjects
 
 
     class TknKeyword < TknWord
-      SUBCLASSES = [ TknKwCtrlflow, TknKwStdType, TknKwTypedef, TknKwSpecifier, TknKwTypeVariant, TknKwMisc ]
+      SUBCLASSES = [ TknKwCtrlflow, TknKwTagged, TknKwTypeSpecifier, TknKwTypeQualifier, TknKwStorageClassSpecifier, TknKwMisc ]
       @PICKING_REGEXP = Regexp.union(SUBCLASSES.map{|c| c.picking_regexp})
 
       # todo: test which version of pick! works faster

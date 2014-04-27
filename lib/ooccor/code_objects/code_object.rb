@@ -11,7 +11,7 @@ module Ooccor::CodeObjects
   class CodeObject
 
     def initialize(origin = nil)
-      #    @origin = validate_origin origin
+      # @origin = validate_origin origin
       @origin = origin
       @origin.register(self) if @origin
     end

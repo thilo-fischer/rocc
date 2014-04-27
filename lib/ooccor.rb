@@ -44,7 +44,7 @@ module Ooccor
   class ProcessingEnvironment
 
     # fixme: @remainders -> used to track phyisical lines to be merged into one logical line => refactor to more speaking naming
-    attr_accessor :expansion_stack, :remainders, :tokenization, :preprocessing
+    attr_accessor :expansion_stack, :remainders, :tokenization, :preprocessing, :parsing, :context_branches
 
     def initialize(program)
       @expansion_stack = [ program ]
@@ -53,8 +53,8 @@ module Ooccor
       @preprocessing = { :macros => {}, :conditional_stack => [], :line_directive => nil } # todo: move conditional_stack out of preprocessing hash
 
       # TODO: following attributes are not yet taken into account properly in the other functions.
-      @parsing = { typedefs: {}, macro_expansion_stack: [] } # check: use expansion_stack for macro_expansion_stack ?
-      @context_branches = [ { conditions: [], unassociated_tokens: [], scope_stack: [] } ]
+      @parsing = { typedefs: {} }
+      @context_branches = [ { conditions: [], unbound_objects: [], grammar_stack: [ Ooccor::CodeObjects::GroTranslationUnit.new(nil) ] } ] # fixme: origin of translation unit
     end
 
     def initialize_copy(orig)

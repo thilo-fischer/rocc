@@ -3,7 +3,9 @@
 # Copyright (C) 2014  Thilo Fischer.
 # Free software licensed under GPL v3. See LICENSE.txt for details.
 
-module Ooccor::CodeObjects::Tokens
+module Ooccor::CodeObjects
+
+module Tokens
 
   class TknWord < CoToken
     # one word-charcter that is no digit
@@ -29,17 +31,13 @@ module Ooccor::CodeObjects::Tokens
         macros = env.preprocessing[:macros][@name]
 
         if macros.length == 1 && macros.first.conditions.empty?
-          env.parsing[:macro_expansion_stack] << macros.first
-          macros.first.tokens.expand(env)
+          CoMacroExpansion.new(self, macros.first).expand(env)
         else
           env_fork_master = env.fork
           macros.each do |m|
             env_fork = env_fork_master.fork
-            env_fork.parsing[:macro_expansion_stack] << m
-            # todo: optimize by collapsing overlapping conditions and skipping excluding conditions
-            env_fork.preprocessing[:conditional_stack] << m.conditions
-            env_fork_master.preprocessing[:conditional_stack] << m.conditions.negate
-            m.tokens.expand(env_fork)
+            env_fork_master.preprocessing[:conditional_stack] << CoPpConditions.negate(m.conditions)
+            CoMacroExpansion.new(self, m).expand(env_fork)
             env.merge(env_fork)
           end
           if env_fork_master.preprocessing[:conditional_stack].compliable
@@ -83,6 +81,8 @@ module Ooccor::CodeObjects::Tokens
     @PICKING_REGEXP = /^[+\-*\/%=!&|<>\^,:;?()\[\]{}~#]/
 
     def expand_with_context(env, ctxt)
+
+      dbg "#{self}.expand_with_context  at `#{ctxt.inspect}'"
 
       unbound = ctxt[:unbound_objects]
       grast = ctxt[:grammar_stack]
@@ -135,46 +135,30 @@ module Ooccor::CodeObjects::Tokens
         case grast.last
         when GroTranslationUnit, GroCompoundStatement
 
-          if FALSE # to align all the elsif conditions ...
-          
-          elsif unbound.length >= 1 and unbound[-1].is_a? TknKwTagged
-            keyword = unbound[-1]
-            unbound[-1,1] = []
-            grast << GroTaggedSpecifier.new(env, ctxt, keyword, nil)
-            raise "todo"
-            grast << GroStructDeclarationList / GroEnumeratorList
-
-          elsif unbound.length >= 2 and unbound[-2].is_a? TknKwTagged and unbound[-1].is_a? TknWord
-            keyword = unbound[-2]
-            identifier = unbound[-1]
-            unbound[-2,2] = []
-            grast << GroTaggedSpecifier.new(env, ctxt, keyword, identifier)
-            raise "todo"
-            grast << GroStructDeclarationList / GroEnumeratorList
+          if tagged_declaration_list = GroTaggedDeclarationList.pick!(env, ctxt)
+            grast << tagged_declaration_list
 
           elsif grast.last.is_a? GroTranslationUnit
             # function definition
+            function_definition = GroFunctionDefinition.wrap_up(env, ctxt)
+            raise "assertion" unless function_definition
+            grast << function_definition
+            grast << GroCompoundStatement.new(self, function_definition)
 
-          elsif grast.last.is_a? GroCompoundStatement and unbound.empty? then
+          elsif grast.last.is_a? GroCompoundStatement and unbound.empty?
             # GroCompoundStatement
+            grast << GroCompoundStatement.new(self, grast.last)
 
           else
             raise
 
           end
             
-          # declaration or statement
-          raise "todo"
         when GroControlStructure
-          # statement
-          raise "todo"
-        when GroParenthesized
-          # expression-list in for-loop
-          if grast[-2].is_a? GroControlStructure and grast[-2].origin[0].text == "for" # fixme
-            super # fixme
-          else
-            raise
-          end
+          statement = GroCompoundStatement.new(self, grast.last)
+          grast.last.add_statement(statement)
+          grast << statement
+
         else
           raise
           warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
@@ -182,36 +166,16 @@ module Ooccor::CodeObjects::Tokens
           nil
         end
 
-        if FALSE # to align all the elsif conditions ...
-          
-        elsif unbound.length >= 1 and unbound[-1].is_a? TknKwTagged
-          scope << unbound[-1].define(env, self)
-
-        elsif unbound.length >= 2 and unbound[-2].is_a? TknKwTagged and unbound[-1].is_a? TknWord
-          scope << unbound[-2].define(env, self, unbound[-1])
-
-        elsif unbound.length >= 2 and unbound[-2].is_a? TknWord and unbound[-1].is_a? CoParentheses then
-          scope << CoFunctionDefinition.new(env, unbound)
-
-        elsif [ CoFunctionDefinition, CoControlStructure, CoCompoundStatement ].includes? scope.last.class
-          scope << CoCompoundStatement.new(env, self)
-
-        else
-          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
-          env.context.delete(ctx)
-          nil
-         
-        end
-
       when "("
-        scope << CoParentheses.new(env, self)
+        grast << GroParenthesized.new(self, grast.last)
 
       when "["
-        scope << CoBrackets.new(env, self)
+        grast << GroBracketed.new(self, grast.last)
 
       when ")", "}", "]"
-        if [ CoParentheses, CoCompoundStatement, CoBrackets ].includes? scope.last.class or scope.last.is_a? CoTaggedDefinition
-          scope.last.close(env, self)
+        case grast.last
+        when GroParenthesized, GroCompoundStatement, GroBracketed, GroTaggedDeclarationList
+          grast.last.finalize(env, ctxt, self)
 
         else
           warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
@@ -230,4 +194,5 @@ module Ooccor::CodeObjects::Tokens
     
   end # Tkn1Char
 
-end # module Ooccor::CodeObjects::Tokens
+end # module Tokens
+end # module Ooccor::CodeObjects

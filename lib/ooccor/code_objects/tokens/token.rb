@@ -5,6 +5,8 @@
 
 module Ooccor::CodeObjects
 
+  require 'ooccor/code_objects/grammar/grammar'
+
   module Tokens
 
     # forward declarations
@@ -92,7 +94,7 @@ module Ooccor::CodeObjects
       end
       
       def expand_with_context(env, ctxt)
-        ctxt[:unassociated_tokens] << self
+        ctxt[:unbound_objects] << self
       end # expand_with_context
 
 
