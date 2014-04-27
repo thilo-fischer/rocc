@@ -51,7 +51,8 @@ module Ooccor::CodeObjects
     end
     
     def list(format = :short)
-      if format == :short
+      case format
+      when :short
         self.class.to_s
       else
         to_s
@@ -111,13 +112,19 @@ module Ooccor::CodeObjects
   class CoContainer < CodeObject
 
     def initialize(elements)
-      elements = [elements] unless elements.is_a? Enumerable
-      @origin = elements
+      if elements.is_a? Enumerable
+        @origin = elements.dup
+      else
+        @origin = [elements]
+      end
     end
 
     alias content origin
 
     def to_s
+      # warn "*** #{caller.length} #{self.object_id} #{self.class}"
+      # return "XX" if caller.length > 35
+      # raise if caller.length > 50
       case
       when @origin.is_a?(Range)
         "[" + @origin.first.to_s + ".." + @origin.last.to_s + "]"

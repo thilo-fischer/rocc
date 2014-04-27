@@ -26,9 +26,9 @@ module Tokens
     
     def expand(env)
 
-      if env.preprocessing[:macros].key?(@name) then
+      if env.preprocessing[:macros].key?(@text) then
 
-        macros = env.preprocessing[:macros][@name]
+        macros = env.preprocessing[:macros][@text]
 
         if macros.length == 1 && macros.first.conditions.empty?
           CoMacroExpansion.new(self, macros.first).expand(env)
@@ -111,7 +111,7 @@ module Tokens
           grast.last.finalize(env, ctxt)
         when GroCompoundStatement
           # declaration or statement
-          raise "todo"
+          GroStatement.pick!(env, ctxt) # fixme: handle declarations properly
         when GroControlStructure
           # statement
           raise "todo"
@@ -174,8 +174,18 @@ module Tokens
 
       when ")", "}", "]"
         case grast.last
-        when GroParenthesized, GroCompoundStatement, GroBracketed, GroTaggedDeclarationList
+        when GroParenthesized, GroBracketed, GroTaggedDeclarationList
           grast.last.finalize(env, ctxt, self)
+        when GroCompoundStatement
+          grast.last.finalize(env, ctxt, self)
+          case grast.last
+          when GroFunctionDefinition
+            grast.last.finalize(env, ctxt)  
+          when GroCompoundStatement
+            # do nothing
+          else
+            raise
+          end
 
         else
           warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling

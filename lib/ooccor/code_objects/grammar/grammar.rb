@@ -5,7 +5,7 @@
 
 module Ooccor::CodeObjects
 
-#  module Grammar
+  #  module Grammar
 
   # fixme: refactor -- split to separate files
 
@@ -34,11 +34,12 @@ module Ooccor::CodeObjects
   class GroParenthesized < GrammarObject
 
     def finalize(env, ctxt, terminator)
-# fixme: redundant to GroDeclaration.finalize
+      # fixme: similar to GroDeclaration.finalize
 
-      # todo: set @origin accordingly (or update continuously with add_item)
+      # todo: set @origin accordingly
 
       obj = ctxt[:grammar_stack].pop
+      ctxt[:unbound_objects] << obj
       raise "assertion" unless obj == self
 
     end # finalize
@@ -48,12 +49,12 @@ module Ooccor::CodeObjects
   class GroBracketed < GrammarObject
 
     def finalize(env, ctxt, terminator)
-# fixme: redundant to GroParenthesized.finalize
-# fixme: redundant to GroDeclaration.finalize
+      # fixme: redundant to GroParenthesized.finalize
 
-      # todo: set @origin accordingly (or update continuously with add_item)
+      # todo: set @origin accordingly
 
       obj = ctxt[:grammar_stack].pop
+      ctxt[:unbound_objects] << obj
       raise "assertion" unless obj == self
 
     end # finalize
@@ -70,7 +71,7 @@ module Ooccor::CodeObjects
 
   class GroFunctionDefinition < GroDeclaration # fixme: this inheritage has a smell
 
-    attr_reader :identifier
+    attr_reader :identifier, :compound_statement
 
     def self.wrap_up(env, ctxt)
 
@@ -84,28 +85,12 @@ module Ooccor::CodeObjects
 
     def verify_declaraiton_is_function_definition
 
-      # uncommenting one of the following line causes Segmentation Fault of ruby binary
-      # when running test/run_all.sh
-      # using
-      #   ruby 1.9.3p484 (2013-11-22 revision 43786) [x86_64-linux]
-      #   ruby 2.0.0p353 (2013-11-22 revision 43784) [x86_64-linux]
-      # with ooccor version from
-      #   commit 7d8f8a16b09a14d75c1b883cadc6f661dc86a2d7
-      #   Author: Thilo Fischer <thilo-fischer@gmx.de>
-      #   Date:   Sun Apr 27 10:25:12 2014 +0200
-
-      #dbg declarators.inspect
-      dbg "foo"
-
-      # using `warn' instead of `dbg' does not cause Segfault ...
-      warn "*** " + declarators.inspect
-      
       raise "assertion" unless declarators.length == 1
       raise "assertion" unless declarators.first.length == 2
 
       case declarators.first[0]
       when Tokens::TknWord
-        @identifier = declarators.first[0]
+        @identifier = declarators.first[0].text
       when GroParenthesized
         # function pointer
         raise "todo"
@@ -116,6 +101,31 @@ module Ooccor::CodeObjects
       raise "assertion" unless declarators.first[1].is_a? GroParenthesized
 
     end # verify_declaraiton_is_function_definition
+
+    def finalize(env, ctxt)
+      # todo?: set @origin accordingly
+
+      @compound_statement = ctxt[:unbound_objects].pop
+      raise "assertion" unless @compound_statement.is_a? GroCompoundStatement
+      raise "assertion" unless ctxt[:unbound_objects].empty?
+
+      obj = ctxt[:grammar_stack].pop
+      
+      raise "assertion" unless obj == self
+
+      obj
+
+    end # finalize
+
+    def list(format = :short)
+      case format
+      when :short
+        "#{@identifier}()"
+      else
+        to_s
+      end
+    end
+  
 
   end # class GroFunctionDefinition
 
@@ -166,8 +176,6 @@ module Ooccor::CodeObjects
 
 
     def finalize(env, ctxt)
-
-      # todo: set @origin accordingly (or update continuously with add_item)
 
       obj = ctxt[:grammar_stack].pop
       raise "assertion" unless obj == self
@@ -249,7 +257,40 @@ module Ooccor::CodeObjects
   end # class GroEnumeratorList
 
 
+  class GroStatement < GrammarObject
+
+    def self.pick!(env, ctxt)
+
+      # fixme: implemented properly ..? define `expand'?
+
+      origin = CoContainer.new(ctxt[:unbound_objects])
+      parent = ctxt[:grammar_stack].last
+      
+      obj = new(origin, parent)
+
+      ctxt[:unbound_objects] = [] # fixme: smells
+
+      obj
+
+    end # pick
+
+  end # class GroStatement
+
   class GroCompoundStatement < GrammarObject
+
+    def finalize(env, ctxt, terminator)
+      # fixme: similar to GroDeclaration.finalize
+
+      # todo: set @origin accordingly
+
+      obj = ctxt[:grammar_stack].pop
+      
+      ctxt[:unbound_objects] << obj
+
+      raise "assertion" unless obj == self
+
+    end # finalize
+
   end # class GroCompoundStatement
 
 
@@ -327,6 +368,6 @@ module Ooccor::CodeObjects
   end # class GroTaggedDeclarationList
 
 
-# end # module Grammar
+  # end # module Grammar
 
 end # module Ooccor::CodeObjects::Grammar

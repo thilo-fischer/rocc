@@ -23,8 +23,8 @@ module Ooccor::CodeObjects
       @PICKING_REGEXP = Regexp.union %w(return if else for while do continue break switch case default goto)
 
       def expand_with_context(env, ctxt)
-        if ctxt[:unassociated_tokens].empty?
-          ctxt[:unassociated_tokens] << self
+        if ctxt[:unbound_objects].empty?
+          ctxt[:unbound_objects] << self
         else
           warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
           env.context.delete(ctxt)
