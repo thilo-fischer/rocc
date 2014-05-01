@@ -3,11 +3,11 @@ require File.join([File.dirname(__FILE__),'lib','ooccor','version.rb'])
 spec = Gem::Specification.new do |s| 
   s.name = 'ooccor'
   s.version = Ooccor::VERSION
-  s.author = 'Your Name Here'
-  s.email = 'your@email.address.com'
-  s.homepage = 'http://your.website.com'
+  s.author = 'Thilo Fischer'
+  s.email = 'thilo-fischer@gmx.de'
+#  s.homepage = 'http://your.website.com'
   s.platform = Gem::Platform::RUBY
-  s.summary = 'A description of your project'
+  s.summary = 'Swiss army knive commend line tool to operate on C-ish source code.'
   s.files = `git ls-files`.split("
 ")
   s.require_paths << 'lib'
@@ -18,6 +18,7 @@ spec = Gem::Specification.new do |s|
   s.executables << 'ooccor'
   s.add_development_dependency('rake')
   s.add_development_dependency('rdoc')
+  s.add_development_dependency('cucumber')
   s.add_development_dependency('aruba')
-  s.add_runtime_dependency('gli','2.9.0')
+#  s.add_runtime_dependency('gli','2.9.0')
 end
