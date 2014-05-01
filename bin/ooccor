@@ -45,8 +45,9 @@ module Ooccor
 
   $env = Environment.new(options, compiler)
 
-  if ARGV.empty?  
+  if options[:read_stdin]
     # fixme: which is better, 'chomp' or 'chomp!' ?
+    # fixme: enable reading stdin _in addition_ to ordinary files
     files = [ CodeObjects::CoFile.new($env.program, "<stdin>", STDIN.readlines.map(&:chomp!)) ]
   else
     files = ARGV.map { |f| CodeObjects::CoFile.new($env.program, f) }
