@@ -1,8 +1,7 @@
-// semantically equivallent to main_00.c
+/* equivallent to main_00.c */
 
 int
-main(void)
-{
-  int i = 42;
-  return i;
+main( void ){
+  int i =42;
+  return (i);
 }

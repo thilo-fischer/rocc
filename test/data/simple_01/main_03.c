@@ -1,7 +1,8 @@
-// basically the same as main_00.c, but slightly different ...
+// equivallent to main_00.c
 
-main()
-{
-  int i = 42;
-  return i;
-}
+int
+main ( void )
+ {
+    int i = 42 ;
+    return ( i ) ;
+ }
