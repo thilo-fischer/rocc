@@ -4,6 +4,7 @@ Feature: Command `ls'
   I want a list of the symbols declared or defined in the code under investigation
   So it will help me to analyse and further process that code
 
+@announce-cmd
 @announce-stdout
 @announce-stderr
 
