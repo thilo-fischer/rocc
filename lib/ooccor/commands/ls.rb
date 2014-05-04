@@ -11,6 +11,8 @@ module Ooccor::Commands
     @description = 'List objects.'
     
     def self.option_parser(options)
+
+      options[:format] = :short
       
       OptionParser.new do |opts|      
 
@@ -60,7 +62,13 @@ module Ooccor::Commands
         opts.on("-l",
                 "--long",
                 "long listing format") do |arg|
-          options[:long] = true
+          options[:format] = :long
+        end
+
+        opts.on("-F",
+                "--classify",
+                "append indicator representing it's type to objects") do |arg|
+          options[:one_per_line] = true
         end
 
         opts.on("-1",
@@ -79,9 +87,10 @@ module Ooccor::Commands
       if env.cursor == Dir then
         puts `ls #{args.join(" ")}`
       elsif args.empty?
-        env.obj_cursor.content.each { |o| puts o.list }
+        dbg " *** #{env.obj_cursor.objects.inspect}"
+        env.obj_cursor.list(STDOUT, options)
       else
-        args.each { |o| puts o.list }
+        args.each { |o| o.list(STDOUT, options) }
       end
 
     end # run

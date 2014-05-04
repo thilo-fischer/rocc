@@ -23,7 +23,7 @@
 
 def dbg(str, stack = nil)
   if $DEBUG
-    warn ">> #{str} (#{self.to_s}.#{caller[0] =~ /`(.*)'/; $1})"
+    warn ">> #{str} (#{self.class.to_s}.#{caller[0] =~ /`(.*)'/; $1})"
     if stack
       caller[0..stack].each { |s| warn "^^ #{s}" }
     end

@@ -13,9 +13,12 @@ module Ooccor::CodeObjects
     def initialize(origin = nil)
       # @origin = validate_origin origin
       @origin = origin
-      @origin.register(self) if @origin
+      announce
     end
 
+    def announce
+      @origin.register(self) if @origin
+    end
 
     def origin(depth = 1)
       case depth
@@ -49,16 +52,29 @@ module Ooccor::CodeObjects
         self.class.to_s
       end
     end
-    
-    def list(format = :short)
-      case format
-      when :short
-        self.class.to_s
+
+    def string_representation(options = {})
+      if options.key?(:format)
+        case options[:format]
+        when :short
+          "<#{self.class.to_s}>"
+        when :long
+          to_s
+        when :code
+          text
+        else
+          raise
+        end
       else
         to_s
       end
     end
 
+    def list(io, options = {})
+      io.puts string_representation(options)
+    end
+
+    
     # todo: rename/refactor to `parse' (?)
     def expand(env)
       env.expansion_stack.push self
@@ -67,8 +83,9 @@ module Ooccor::CodeObjects
       env.expansion_stack.pop
     end
 
-    def register(obj)
-      @origin.register obj
+    def register(obj, key = obj.class)
+      dbg self.to_s
+      @origin.register(obj, key)
     end
 
     # fixme
@@ -129,12 +146,17 @@ module Ooccor::CodeObjects
       when @origin.is_a?(Range)
         "[" + @origin.first.to_s + ".." + @origin.last.to_s + "]"
       else
-        "[" + @origin.map{ |o| o.to_s }.join(",") + "]"
+        "[" + @origin.map{|o| o.to_s}.join(",") + "]"
       end
     end
 
-    def register(obj)
-      @origin.first.register obj
+    def text
+      @origin.map{|o| o.text}.join(" ")
+    end
+
+    def register(obj, key = obj.class)
+      dbg self.to_s
+      @origin.first.register(obj, key)
     end
 
     def append(obj)

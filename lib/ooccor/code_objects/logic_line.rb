@@ -23,6 +23,11 @@ module Ooccor::CodeObjects
       @preprocessing = nil
     end # initialize
 
+    def announce
+      # Don't want to register lines, they can be referenced from the content of ... are they? (fixme)
+      nil
+    end
+
     def expand(env)
       env.expansion_stack.push self
       @preprocessing = env.preprocessing

@@ -10,16 +10,18 @@ module Ooccor::CodeObjects
 
   class CoProgram < CodeObject
 
+    attr_reader :objects
+
     def initialize
       @objects = {}
     end
 
-    def register(o)
-      if @objects.key?(o.class) then
-        @objects[o.class] << o
-      else
-        @objects[o.class] = [ o ]
-      end
+    def register(obj, key = obj.class)
+      objects_array(key) << obj
+    end
+
+    def objects_array(key)
+      @objects[key] ||= []
     end
 
     def base_dir
@@ -42,29 +44,44 @@ module Ooccor::CodeObjects
     end # base_dir
 
     def to_s
-      '*'
+      '^'
     end
 
-    def get_all
-      # dbg @objects.inspect
-      @objects.values.flatten(1)
-    end
+#    def get_all
+#      #@objects.keys.each do |k|
+#      #end
+#      @objects.values.flatten(1)
+#    end
+#
+#    alias content get_all
+#
+#    def get_all_of_class(c)
+#      raise unless c < CodeObject
+#      @objects[c]
+#    end
+#
+#    def get_all_of_kind(baseclass)
+#      raise unless baseclass < CodeObject
+#      result = []
+#      @objects.each do |cls, objs| 
+#        result += objs if cls < baseclass
+#      end
+#      result
+#    end
 
-    alias content get_all
-
-    def get_all_of_class(c)
-      raise unless c < CodeObject
-      @objects[c]
-    end
-
-    def get_all_of_kind(baseclass)
-      raise unless baseclass < CodeObject
-      result = []
-      @objects.each do |cls, objs| 
-        result += objs if cls < baseclass
+    def list(io, options = {})
+      if @objects.key?(:directory)
+        io.puts string_representation(options)
+      else
+        dbg @objects.keys.inspect
+        @objects.keys.each do |key|
+          io.puts "#{key}:"
+          @objects[key].each do |obj|
+            io.puts "  #{obj.string_representation(options)}"
+          end
+        end
       end
-      result
-    end
+    end # list
 
     private
 

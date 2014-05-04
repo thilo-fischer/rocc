@@ -25,6 +25,11 @@ module Ooccor::CodeObjects
       @line_directive = nil
     end
 
+    def announce
+      # Don't want to register lines, they can be referenced from the content of CoFile.
+      nil
+    end
+
     def physical_line_number
       index + 1
     end

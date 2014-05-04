@@ -82,7 +82,7 @@ module Tokens
 
     def expand_with_context(env, ctxt)
 
-      dbg "#{self}.expand_with_context  at `#{ctxt.inspect}'"
+      dbg "#{self}.expand_with_context" # at `#{ctxt.inspect}'"
 
       unbound = ctxt[:unbound_objects]
       grast = ctxt[:grammar_stack]
@@ -140,7 +140,7 @@ module Tokens
 
           elsif grast.last.is_a? GroTranslationUnit
             # function definition
-            function_definition = GroFunctionDefinition.wrap_up(env, ctxt)
+            function_definition = GroFunctionDefinition.pick!(env, ctxt)
             raise "assertion" unless function_definition
             grast << function_definition
             grast << GroCompoundStatement.new(self, function_definition)

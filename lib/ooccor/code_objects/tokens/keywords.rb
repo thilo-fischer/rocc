@@ -27,8 +27,9 @@ module Ooccor::CodeObjects
           ctxt[:unbound_objects] << self
         else
           warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
-          env.context.delete(ctxt)
-          nil
+          warn "Found `#{ctxt[:unbound_objects].inspect}' in front of `#{to_s}'"
+          env.context_branches.delete(ctxt)
+          raise
         end
       end # expand_with_context
       
@@ -57,7 +58,7 @@ module Ooccor::CodeObjects
         if ctx[:unassociated_tokens].find {|t| t.is_a? TknKwStorageClassSpecifier}
           warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
           env.context.delete(ctx)
-          nil
+          raise
         else
           super
         end

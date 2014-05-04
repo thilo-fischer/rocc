@@ -21,12 +21,21 @@ module Ooccor::CodeObjects
     attr_reader :parent
 
     def initialize(origin, parent = nil)
-      super(origin)
       @parent = parent
+      super(origin)
+    end
+
+    def announce
+      dbg self.to_s
+      @parent.register(self) if @parent
     end
 
     def expand(env)
       nil
+    end
+
+    def text
+      origin.text
     end
 
   end # class GrammarObject
@@ -66,6 +75,22 @@ module Ooccor::CodeObjects
   #########
 
   class GroTranslationUnit < GrammarObject
+
+    def initialize(origin, parent = nil)
+      super(origin)
+      @objects = {} # fixme: redundant to Program.objects
+    end
+
+    # fixme: redundant to Program.register
+    def register(obj, key = obj.class)
+      objects_array(key) << obj
+    end
+    
+    # fixme: redundant to Program. ...
+    def objects_array(key)
+      @objects[key] ||= []
+    end
+    
   end # class GroTranslationUnit
 
 
@@ -73,15 +98,42 @@ module Ooccor::CodeObjects
 
     attr_reader :identifier, :compound_statement
 
+    def initialize(origin, parent = nil)
+      super(origin)
+      @objects = {} # fixme: redundant to Program.objects
+    end
+
+    # fixme: redundant to Program.register
+    def register(obj, key = obj.class)
+      objects_array(key) << obj
+    end
+    
+    # fixme: redundant to Program. ...
+    def objects_array(key)
+      @objects[key] ||= []
+    end
+    
     def self.wrap_up(env, ctxt)
-
+ 
       obj = super # fixme: cannot handle `declaration-list'
-
+ 
       obj.verify_declaraiton_is_function_definition # fixme
-
+ 
       obj
 
     end # wrap_up
+
+
+    def self.pick!(env, ctxt)
+
+      obj = wrap_up(env, ctxt) # fixme: smells
+
+      raise "assertion" unless ctxt[:unbound_objects].pop == obj
+      raise "assertion" unless ctxt[:unbound_objects].empty?
+
+      obj
+
+    end # pick!
 
     def verify_declaraiton_is_function_definition
 
@@ -117,15 +169,22 @@ module Ooccor::CodeObjects
 
     end # finalize
 
-    def list(format = :short)
-      case format
-      when :short
-        "#{@identifier}()"
+    def string_representation(options = {})
+      if options.key?(:format)
+        case options[:format]
+        when :short, :long
+          str = @identifier
+        else
+          return super
+        end
       else
-        to_s
+        return super       
       end
-    end
-  
+
+      str += "(...)" if options.key?(:classify)
+
+      str
+    end # string_representation
 
   end # class GroFunctionDefinition
 
@@ -134,10 +193,9 @@ module Ooccor::CodeObjects
 
     attr_reader :declarators
 
-
     def initialize(origin)
 
-      super(origin) # fixme: what if unbound_objects come from a macro expansion? derive origin from env instead!
+      super
       @declarators = []
 
     end # initialize
@@ -150,7 +208,7 @@ module Ooccor::CodeObjects
       origin = CoContainer.new(ctxt[:unbound_objects])
 
       obj = new(origin)
-      ctxt[:unbound_objects][0,1] = obj
+      ctxt[:unbound_objects][0] = obj
       ctxt[:grammar_stack] << obj
 
       obj.add_declarator(env, ctxt)
@@ -193,7 +251,7 @@ module Ooccor::CodeObjects
       origin = CoContainer.new(ctxt[:unbound_objects][0...declarator_start])
       obj = new(origin)
       ctxt[:unbound_objects][0...declarator_start] = obj
-      ctxt[:grammar_stack] << obj
+      #ctxt[:grammar_stack] << obj
     end # wrap_up
 
 
@@ -272,7 +330,7 @@ module Ooccor::CodeObjects
 
       obj
 
-    end # pick
+    end # pick!
 
   end # class GroStatement
 

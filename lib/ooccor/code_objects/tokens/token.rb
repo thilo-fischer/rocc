@@ -42,6 +42,10 @@ module Ooccor::CodeObjects
 
       end # initialize
 
+      def announce
+        # Don't want to register tokens, they can be referenced from the content of CoLogicLine.
+        nil
+      end
 
       def to_s
         self.class.to_s + ":`" + @text + "'"
