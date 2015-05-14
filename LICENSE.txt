@@ -1,11 +1,34 @@
 ooccor - Object Oriented C Code Operations in Ruby
 
-Copyright (C) 2014  Thilo Fischer
+Copyright (C) 2015  Thilo Fischer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
+
+Any software accessing this program's libraries or its command line
+interface is regarded as work based on this program and must as such
+be published under a compatible open source license when being
+distributed. This applies specifically to any (graphical) user
+interfaces integrating the program into source code editors and
+integrated development environments (IDEs).
+
+The copyright holder reserves the right to multi-license the program
+to allow work based on it (but not the program itself) to be
+licensed under non-GPLv3-compatible open source licenses and
+also commercial closed-source licenses. If licensed to allow
+commercial work based on it, possible earnings from this licensing
+will be used to fund this program's further development or other
+open source projects and possibly to reward developers that did
+great contributions to this program in the past.
+
+Any developer contibuting to this program agrees to the right of the
+copyright holder to multi-license the program including the developer's
+contributions according to the conditions given in the previous paragraph.
+The copyright of the contribution stays with the contribution developer,
+the copyright of the overall program stays with the original
+copyright holder.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
