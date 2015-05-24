@@ -10,11 +10,12 @@ module Ooccor
 
   require 'ooccor'
 
+  # * parse command line arguments
+
   options = {}
   option_parser = OptionParser.new do |opts|
 
     opts.banner = "Usage: #{File.basename $0} [options] [-c compiler [compiler-arguments]] [sourcefiles]"
-
 
     opts.on("-e 'command'",
             "--expression",
@@ -31,7 +32,27 @@ module Ooccor
       throw :compiler, $supported_compilers[arg].new
     end
 
+    opts.on("--init",
+            "Set up and fill the code analysis cache. Clear and rebuild if cache already exists.") do
+      options[:init] = true
+    end
+
+    
+    opts.on("-F",
+            "--on-the-fly",
+            "Parse the code directly when processing it, do not use code analysis cache.") do
+      options[:on_the_fly] = true
+    end
+
+    opts.on("-v 'verbosity'",
+            "--verbosity",
+            "Set log level of ooccor session.") do |arg|
+      options[:verbosity] = arg
+    end
+
   end
+
+  # ** parse all arguments until a --compiler argument
 
   compiler = catch :compiler do
     option_parser.order!
@@ -39,11 +60,17 @@ module Ooccor
     nil
   end
 
+  # ** handle Compiler arguments (after --compiler argument)
+
   if compiler
     compiler.parse_argv
   end
 
+  # * set up session's environment
+
   $env = Environment.new(options, compiler)
+
+  # * assemble input data
 
   if options[:read_stdin]
     # fixme: which is better, 'chomp' or 'chomp!' ?
@@ -53,8 +80,17 @@ module Ooccor
     files = ARGV.map { |f| CodeObjects::CoFile.new($env.program, f) }
   end
 
+
+  # * set up logging
+
+  log = Logger.new(STDOUT)
+
+  # * parse input
+  
   files.map { |f| f.expand(ProcessingEnvironment.new($env.program)) }
 
+  # * run commands
+  
   if options[:expression] then
     Commands::Command.invoke($env, options[:expression])
   end
