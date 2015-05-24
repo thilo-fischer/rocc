@@ -17,6 +17,7 @@ module Ooccor::CodeObjects
     end
 
     def register(obj, key = obj.class)
+      $env.logger.debug{ "new object in program: #{obj}" }
       objects_array(key) << obj
     end
 

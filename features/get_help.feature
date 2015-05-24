@@ -16,8 +16,3 @@ Feature: Get help
   Scenario: Get help on a specific command
     When I run `ooccor -e 'help help'`
     Then the output should match /^Usage:\s+help/
-
-  Scenario: Get help on more than one specific command
-    When I run `ooccor -e 'help help ls'`
-    Then the output should match /^Usage:\s+help\s/
-    And  the output should match /^Usage:\s+ls\s/

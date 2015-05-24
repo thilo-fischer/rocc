@@ -103,7 +103,8 @@ module Ooccor::CodeObjects
           env.remainders.delete self.class
         end
 
-        logic_line = CoLogicLine.new(origin, text).expand(env)
+        logic_line = CoLogicLine.new(origin, text)
+        logic_line.expand(env)
 
         @line_directive = logic_line.preprocessing[:line_directive]
 

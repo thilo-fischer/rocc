@@ -88,6 +88,7 @@ module Ooccor::Commands
         puts `ls #{args.join(" ")}`
       elsif args.empty?
         dbg " *** #{env.obj_cursor.objects.inspect}"
+        env.logger.debug { "Listing of `#{env.obj_cursor}'" }
         env.obj_cursor.list(STDOUT, options)
       else
         args.each { |o| o.list(STDOUT, options) }

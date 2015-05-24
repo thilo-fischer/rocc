@@ -4,6 +4,13 @@ Feature: Command line argument validation
   I want the program to check the command line arguments given to it at invocation and provide helpfull error messages or warnings in case of invalid, inconsistent or unknown command line arguments
   So I will get help invoking the program in the correct manner
 
+  Scenario: Invalid command line argument
+    When I run `ooccor --this-is-an-invalid-command-line-argument`
+    Then the exit status should not be 0
+    And  the output should contain "invalid"
+    And  the output should contain "argument"
+    And  the output should contain "this-is-an-invalid-command-line-argument"
+
   Scenario: Select an invalid compiler
     When I run `ooccor --compiler foobar`
     Then the exit status should not be 0

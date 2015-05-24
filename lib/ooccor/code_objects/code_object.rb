@@ -16,6 +16,7 @@ module Ooccor::CodeObjects
       announce
     end
 
+    # register the object at its origin
     def announce
       @origin.register(self) if @origin
     end
@@ -83,6 +84,7 @@ module Ooccor::CodeObjects
       env.expansion_stack.pop
     end
 
+    # take in objects that originate from this object
     def register(obj, key = obj.class)
       dbg self.to_s
       @origin.register(obj, key)
