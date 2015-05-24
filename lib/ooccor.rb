@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014  Thilo Fischer.
-# Free software licensed under GPL v3. See LICENSE.txt for details.
+# Copyright (C) 2014-2015  Thilo Fischer.
+# Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
 # TODOS:
 # * test suite
