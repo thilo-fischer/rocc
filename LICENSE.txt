@@ -1,6 +1,6 @@
 ooccor - Object Oriented C Code Operations in Ruby
 
-Copyright (C) 2015  Thilo Fischer
+Copyright (C) 2014-2015  Thilo Fischer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,12 +23,16 @@ will be used to fund this program's further development or other
 open source projects and possibly to reward developers that did
 great contributions to this program in the past.
 
-Any developer contibuting to this program agrees to the right of the
-copyright holder to multi-license the program including the developer's
-contributions according to the conditions given in the previous paragraph.
-The copyright of the contribution stays with the contribution developer,
-the copyright of the overall program stays with the original
-copyright holder.
+Any developer contibuting to this program by publishing modifications
+and/or additions made to the programs source code agrees to the
+right of this program's copyright holder to multi-license the program
+including the contirbuting developer's contributions according
+to the conditions given in the previous paragraph.
+The copyright of the contribution stays with the contribution's
+developer, the copyright of the overall program and the right to
+multi-license it stays with the original copyright holder.
+
+A contribution to this program is a modification 
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
