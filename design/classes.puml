@@ -1,224 +1,441 @@
 @startuml
 
-' Copyright (C) 2014  Thilo Fischer.
-' Free software licensed under GPL v3. See LICENSE.txt for details.
+' Copyright (C) 2014-2015  Thilo Fischer.
+' Free for non-commercial and most commercial use. See LICENSE.txt for details.
 
-' fixme: replace "static" for class members and "const" by according uml notation
+note as N1
+  This diagram does not depict the current
+  implemention, but the planned rework of it.
+end note
 
-class CodeObject {
-  String where/get_location()
-  String what/get_text()
-  static leaf?()
-  static REG_EXP
-  PpConditional[] when()
-  static void register()
-  static CodeObject[] get_all()           ' get all "is_a?"
-  static CodeObject[] get_all_instances() ' get all "instance_of?"
-  CodeObject parent
+class Element {
+  + initialize(origin :Element)
+  - announce()
+  + origin()
+  + to_s()
+  + content?()
+  + get_contained(what)
+  + register(obj :Element, key)
+  # type_error(object)
+}
+note top: Base class of all classes in this diagram.
+
+class AtomicElement {
+  
+}
+note right: formally known as CodeObject
+AtomicElement --|>  Element
+
+class CollectionElement {
+  
+}
+CollectionElement --|>  Element
+
+class ElementRange {
+  first() : Element
+  last()  : Element
+  contains?(e :Element)
+}
+ElementRange --|> CollectionElement
+
+class ElementList {
+}
+ElementList --|> CollectionElement
+
+
+
+class Module {
+  type : Executable, DynamicLib, StaticLib
 }
 
-note as NoteCodeObject
-  All classes in this diagram
-  shall be (direct or indirect)
-  subclasses of CodeObject.
-end note
-NoteCodeObject .. CodeObject
+class TranslationUnit {
+}
+Module "0..n" -- "1..n" TranslationUnit : origin >
 
-File <|-- Sourcefile
-File <|-- Headerfile
-File "1" *-- "*" PhysicLine
+class FilesystemElement {
+  ' Relative path of this FilesystemElement wrt its base_directory
+  + rel_path()  : String
+
+  + abs_path()  : String
+  + real_path() : String
+}
 
 class File {
-  String rel_path
-  String abs_path
-  int lines
-  bool valid?/exists?
-  void update()
+  + type() : Source, Header, Other
+  ' Filename without directory prefix and without filename extension
+  + basename : String
+  ' filename extension (excluding the introducing '.' character)
+  + fileext : String
+  ' Modification time stamp, will be used for quick file modification check
+  + mod_date : Date
+  ' Checksum on the file content, will be used for sound file modification check
+  + checksum : String
+  ' From where did the analysis lead ooccur to this file? Can be multiple sources.
+  + adducer alias origin : File(s), Command Line Args, ...
 }
+FilesystemElement <|-- File
+TranslationUnit   "0..n"  -- "1" File : origin alias main_file >
+TranslationUnit "0..n" -- "0..n" File : include_files >
 
-PhysicLine "1" *-- "*" LogicLine
-
-class PhysicLine {
-  int char_length
-  int real_line_number       # 'ordinary' line number
-  int specified_line_number  # line number wrt #line preprocessor directive
+class Directory {
+  + name : String
 }
+FilesystemElement <|-- Directory
+FilesystemElement "0..n" <--> "1" Directory : content <
 
-'note as NoteLogicLine
-'  Comments have already
-'  been removed from what
-'  we call LogicLines here.
-'end note
-'NoteLogicLine .. LogicLine
-'=> deprecated: comments are still part of logical lines
+class BaseDirectory {
+  + path : String
+}
+Directory <|-- BaseDirectory
+' A BaseDirectory's base_directory is the object itself.
+FilesystemElement "0..n" --> "1" BaseDirectory : base_directory
 
-LogicLine "1" *-- "1" PpDirective
-PpDirective <|-- PpDefine
-PpDirective <|-- PpUndef
-PpDirective <|-- PpPragma
-PpDirective <|-- PpLine
-PpDirective <|-- PpError
-PpDirective <|-- PpInclude
-PpInclude "1" o-- "1" File
-PpDirective <|-- PpConditional
-PpConditional "1" o-- "*" PhysicLine
-PpConditional <|-- PpCondIf
-PpConditional <|-- PpCondElif
-PpConditional <|-- PpCondElse
-PpConditional <|-- PpCondEndif
-PpCondIf "1" *-- "1" PpCondElse
-PpCondIf "1" *-- "*" PpCondElif
-PpCondIf "1" *-- "1" PpCondEndif
+class PhysicalLine {
+  line_number
+}
+File "1" -- "0..n" PhysicalLine : origin, content alias lines
+PpDirLine "0..1" <-- "0..n" PhysicalLine : line_directive <
 
-LogicLine "*" -- "*" Statement
+class LogicalLine {
+}
+PhysicalLine "1..n"  -- "1" LogicalLine : origin <
+PpDirConditional "0..n" -- "0..n" LogicalLine : conditions <
 
-Statement <|-- CompoundStatement
-CompoundStatement "1" o-- "*" Statement
+class Token {
+  + line_offset : Integer
+}
+LogicalLine "1..n" -- "0..n" Token : content alias tokens >
 
-Statement <|-- StmntMDefinition
-Statement <|-- StmntMDeclaration
+Token  <|-- TknComment
+note on link : Comments are handled as Tokens in ooccor.
 
-Statement <|-- StmntMControl
-StmntMControl <|-- IfStatement
-IfStatement "1" o-- "1" KwIf
-IfStatement "1" o-- "0..1" KwElse
-IfStatement "1" -- "1..2" Statement
-IfStatement "1" -- "1" BoolExpression
-StmntMControl <|-- SwitchStatement
-SwitchStatement "1" o-- "1" KwSwitch
-SwitchStatement "1" o-- "*" SwitchStatementCase
-SwitchStatement "1" o-- "1" SwitchStatementDefault
-StmntMControl <|-- SwitchStatementCase
-SwitchStatementCase "1" o-- "*" KwMCrtlSwitch
-SwitchStatementCase "1" -- "*" Statement
-SwitchStatementCase <|-- SwitchStatementDefault
-StmntMControl <|-- DoWhileStatement
-DoWhileStatement "1" -- "1" Statement
-DoWhileStatement "1" -- "1" BoolExpression
-StmntMControl <|-- WhileStatement
-WhileStatement "1" -- "1" Statement
-WhileStatement "1" -- "1" BoolExpression
-StmntMControl <|-- ForStatement
-ForStatement "1" -- "1" Statement
-ForStatement "1" -- "1" BoolExpression
+Token  <|-- TknPreprocessor
+note on link : Preprocessor directives are handled as Tokens in ooccor.
 
-Identifier <|-- Function
-Identifier <|-- Variable
+Token  <|-- TknWord
+TknWord <|-- TknKeyword
+TknWord <|-- TknIdentifier
 
-Identifier "1" -- "*" IdentifierDeclaration
-
-'Identifier "1" -- "1" IdentifierDefinition
-
-IdentifierDefinition  "1" -- "1" IdentifierSignature
-IdentifierDeclaration "1" -- "1" IdentifierSignature
-
-IdentifierDefinition <|-- FunctionDefinition
-IdentifierDefinition <|-- VariableDefinition
-
-IdentifierDeclaration <|-- VariableDeclaration
-
-Function -- FunctionDefinition
-FunctionDefinition "1" -- "1" CompoundStatement
-
-Variable -- VariableDefinition
-VariableDefinition "1" -- "1" Expression : init_value
-
-StmntMDefinition <|-- StmntTypedef
-StmntMDefinition <|-- IdentifierDefinition
-StmntMDefinition <|-- TagDefinition
-StmntMDefinition <|-- LabelDefinition
-
-TagDefinition "1" -- "*" VariableDeclaration
-
-StmntMDeclaration <|-- IdentifierDeclaration
-StmntMDeclaration <|-- TagDeclaration
+Token <|-- TknStringliteral
+Token <|-- TknNumber
+Token <|-- Tkn3Char
+Token <|-- Tkn2Char
+Token <|-- Tkn1Char
 
 
-Token <|-- TkWord
-TkWord <|-- Keyword
-TkWord <|-- Identifier
-Identifier <|-- IdOrdinary
-Identifier <|-- IdTag
-Identifier <|-- IdLabel
-Identifier <|-- IdMember
+class Specification {
+}
+Token "1..n" -- "0..1" Specification : origin <
 
-Token <|-- Stringliteral
-Token <|-- TkNumber
-TkNumber <|-- IntLiteral
-TkNumber <|-- FloatLiteral
+class Declaration {
+}
+Specification <|-- Declaration
 
-Token <|-- Symbol
+class Definition {
+}
+Specification <|-- Definition
+
 
 class Symbol {
-  String text
-  static leaf?() = true
+  + name : String
+  # add_origin(spec : Specification)
 }
+note top
+  Anything in the source code which can be
+  ssociated with something like a name:
+  Anything called a symbol by the linker
+  (varibles, functions), classes/structs/unions/enums,
+  also types and macros.
+end note
+PpDirConditional "0..n" -- "0..n" Symbol : conditions <
 
-Token <|-- Expression
+Specification "1..n" -- "1..n" Symbol : origin <
 
-Expression <|-- BoolExpression
-
-
-Whitespace <|-- Comment
-Comment "*" -- "*" PhysicLine
-
-class Keyword {
-  static const String TEXT
-  static leaf?() = true
+class TypedSymbol {
+  + type : String
 }
+Symbol <|-- TypedSymbol
 
-Keyword <|-- KwMStdType
-KwMStdType <|-- Kw_Bool
-KwMStdType <|-- KwChar
-KwMStdType <|-- KwDouble
-KwMStdType <|-- KwFloat
-KwMStdType <|-- KwInt
-KwMStdType <|-- KwVoid
+TypedSymbol <|-- Typedef
+TypedSymbol <|-- Variable
 
-Keyword <|-- KwMTypeVariant
-KwMTypeVariant <|-- KwLong
-KwMTypeVariant <|-- KwShort
-KwMTypeVariant <|-- KwSigned
-KwMTypeVariant <|-- KwUnsigned
+class Function {
+  + arguments?()
+  + arg_count()
+  + arguments() : Map<String name, String type>
+  + arg_types() : String[]
+  + arg_names() : String[]
+  + implementation?()
+}
+TypedSymbol <|-- Function
+Function "0..1" -- "1..n" BlockStatement : implementation >
 
-Keyword <|-- KwMTypedef
-KwMTypedef <|-- KwEnum
-KwMTypedef <|-- KwStruct
-KwMTypedef <|-- KwTypedef
-KwMTypedef <|-- KwUnion
+class FunctionSignature {
+  + arguments : Map<String name, String type>
+}
+' Only if it is a function's specification.
+Specification "1" -- "0..1" FunctionSignature
+Function "1" -- "1..n" FunctionSignature
+' FIXME How to handle multiple different but consistent signatures?
 
-Keyword <|-- KwMTypeQualifier
-KwMTypeQualifier <|-- KwMonst
-KwMTypeQualifier <|-- KwRestrict
-KwMTypeQualifier <|-- KwVolatile
+class SymbolCompound {
+  + elements?()
+  + elem_count
+  + elements : Map<String name, String type>
+}
+Symbol <|-- SymbolCompound
+Struct --|> SymbolCompound
+Union  --|> SymbolCompound
 
-Keyword <|-- KwMStorageQualifier
-KwMStorageQualifier <|-- KwAuto
-KwMStorageQualifier <|-- KwExtern
-KwMStorageQualifier <|-- KwRegister
-KwMStorageQualifier <|-- KwStatic
+class Enum {
+  + elements?()
+  + elem_count
+  + elements : Map<String name, Integer value>
+}
+Symbol <|-- Enum
 
-Keyword <|-- KwMControl
-KwMControl <|-- KwBreak
-KwMControl <|-- KwContinue
-KwMControl <|-- KwDo
-KwMControl <|-- KwElse
-KwMControl <|-- KwFor
-KwMControl <|-- KwGoto
-KwMControl <|-- KwIf
-KwMControl <|-- KwReturn
-KwMControl <|-- KwSwitch
-KwMControl <|-- KwWhile 
-KwMControl <|-- KwMCrtlSwitch
-KwMCrtlSwitch <|-- KwCase
-KwMCrtlSwitch <|-- KwDefault
+class Macro {
+}
+Symbol <|-- Macro
 
-Keyword <|-- KwMMisc
-KwMMisc <|-- Kw_Complex
-KwMMisc <|-- Kw_Imaginary
+class MacroDefinition {
+}
+Definition <|-- MacroDefinition
+Macro "1" -- "1" MacroDefinition
 
-Keyword <|-- KwInline
-Keyword <|-- KwSizeof
+class Statement {
+}
+' A Token can be associated with more than one Statement due to PP conditionals. (XXX Necessary?)
+Statement "0..n" -- "1..n" Token : origin >
+AtomicStatement --|> Statement
+BlockStatement  --|> Statement
+' The BlockStatement being a Function's implementation is the only Statement not associated with a parent BlockStatement.
+BlockStatement "0..1" -- "0..n" Statement : content >
 
+class Expression {
+}
+' A Token can be associated with more than one Expression due to PP conditionals. (XXX Necessary?)
+Expression "0..n" -- "1..n" Token : origin >
+AtomicExpression --|> Expression
+CompoundExpression --|> Expression
+CompoundExpression "0..1" -- "0..n" Expression : content >
 
 @enduml
+
+'' fixme: replace "static" for class members and "const" by according uml notation
+'
+'class CodeObject {
+'  String where/get_location()
+'  String what/get_text()
+'  static leaf?()
+'  static REG_EXP
+'  PpConditional[] when()
+'  static void register()
+'  static CodeObject[] get_all()           ' get all "is_a?"
+'  static CodeObject[] get_all_instances() ' get all "instance_of?"
+'  CodeObject parent
+'}
+'
+'note as NoteCodeObject
+'  All classes in this diagram
+'  shall be (direct or indirect)
+'  subclasses of CodeObject.
+'end note
+'NoteCodeObject .. CodeObject
+'
+'File <|-- Sourcefile
+'File <|-- Headerfile
+'File "*" *-- "1" PhysicLine
+'
+'class File {
+'  String rel_path
+'  String abs_path
+'  int lines
+'  bool valid?/exists?
+'  void update()
+'}
+'
+'PhysicLine "*" *-- "1" LogicLine
+'
+'class PhysicLine {
+'  int char_length
+'  int real_line_number       # 'ordinary' line number
+'  int specified_line_number  # line number wrt #line preprocessor directive
+'}
+'
+''note as NoteLogicLine
+''  Comments have already
+''  been removed from what
+''  we call LogicLines here.
+''end note
+''NoteLogicLine .. LogicLine
+''=> deprecated: comments are still part of logical lines
+'
+'LogicLine "1" *-- "1" PpDirective
+'PpDirective <|-- PpDefine
+'PpDirective <|-- PpUndef
+'PpDirective <|-- PpPragma
+'PpDirective <|-- PpLine
+'PpDirective <|-- PpError
+'PpDirective <|-- PpInclude
+'PpInclude "1" o-- "1" File
+'PpDirective <|-- PpConditional
+'PpConditional "*" o-- "1" PhysicLine
+'PpConditional <|-- PpCondIf
+'PpConditional <|-- PpCondElif
+'PpConditional <|-- PpCondElse
+'PpConditional <|-- PpCondEndif
+'PpCondIf "1" *-- "1" PpCondElse
+'PpCondIf "*" *-- "1" PpCondElif
+'PpCondIf "1" *-- "1" PpCondEndif
+'
+'LogicLine "*" -- "*" Statement
+'
+'Statement <|-- CompoundStatement
+'CompoundStatement "*" o-- "1" Statement
+'
+'Statement <|-- StmntMDefinition
+'Statement <|-- StmntMDeclaration
+'
+'Statement <|-- StmntMControl
+'StmntMControl <|-- IfStatement
+'IfStatement "1" o-- "1" KwIf
+'IfStatement "0..1" o-- "1" KwElse
+'IfStatement "1..2" -- "1" Statement
+'IfStatement "1" -- "1" BoolExpression
+'StmntMControl <|-- SwitchStatement
+'SwitchStatement "1" o-- "1" KwSwitch
+'SwitchStatement "*" o-- "1" SwitchStatementCase
+'SwitchStatement "1" o-- "1" SwitchStatementDefault
+'StmntMControl <|-- SwitchStatementCase
+'SwitchStatementCase "*" o-- "1" KwMCrtlSwitch
+'SwitchStatementCase "*" -- "1" Statement
+'SwitchStatementCase <|-- SwitchStatementDefault
+'StmntMControl <|-- DoWhileStatement
+'DoWhileStatement "1" -- "1" Statement
+'DoWhileStatement "1" -- "1" BoolExpression
+'StmntMControl <|-- WhileStatement
+'WhileStatement "1" -- "1" Statement
+'WhileStatement "1" -- "1" BoolExpression
+'StmntMControl <|-- ForStatement
+'ForStatement "1" -- "1" Statement
+'ForStatement "1" -- "1" BoolExpression
+'
+'Identifier <|-- Function
+'Identifier <|-- Variable
+'
+'Identifier "*" -- "1" IdentifierDeclaration
+'
+''Identifier "1" -- "1" IdentifierDefinition
+'
+'IdentifierDefinition  "1" -- "1" IdentifierSignature
+'IdentifierDeclaration "1" -- "1" IdentifierSignature
+'
+'IdentifierDefinition <|-- FunctionDefinition
+'IdentifierDefinition <|-- VariableDefinition
+'
+'IdentifierDeclaration <|-- VariableDeclaration
+'
+'Function -- FunctionDefinition
+'FunctionDefinition "1" -- "1" CompoundStatement
+'
+'Variable -- VariableDefinition
+'VariableDefinition "1" -- "1" Expression : init_value
+'
+'StmntMDefinition <|-- StmntTypedef
+'StmntMDefinition <|-- IdentifierDefinition
+'StmntMDefinition <|-- TagDefinition
+'StmntMDefinition <|-- LabelDefinition
+'
+'TagDefinition "*" -- "1" VariableDeclaration
+'
+'StmntMDeclaration <|-- IdentifierDeclaration
+'StmntMDeclaration <|-- TagDeclaration
+'
+'
+'Token <|-- TkWord
+'TkWord <|-- Keyword
+'TkWord <|-- Identifier
+'Identifier <|-- IdOrdinary
+'Identifier <|-- IdTag
+'Identifier <|-- IdLabel
+'Identifier <|-- IdMember
+'
+'Token <|-- Stringliteral
+'Token <|-- TkNumber
+'TkNumber <|-- IntLiteral
+'TkNumber <|-- FloatLiteral
+'
+'Token <|-- Symbol
+'
+'class Symbol {
+'  String text
+'  static leaf?() = true
+'}
+'
+'Token <|-- Expression
+'
+'Expression <|-- BoolExpression
+'
+'
+'Whitespace <|-- Comment
+'Comment "*" -- "*" PhysicLine
+'
+'class Keyword {
+'  static const String TEXT
+'  static leaf?() = true
+'}
+'
+'Keyword <|-- KwMStdType
+'KwMStdType <|-- Kw_Bool
+'KwMStdType <|-- KwChar
+'KwMStdType <|-- KwDouble
+'KwMStdType <|-- KwFloat
+'KwMStdType <|-- KwInt
+'KwMStdType <|-- KwVoid
+'
+'Keyword <|-- KwMTypeVariant
+'KwMTypeVariant <|-- KwLong
+'KwMTypeVariant <|-- KwShort
+'KwMTypeVariant <|-- KwSigned
+'KwMTypeVariant <|-- KwUnsigned
+'
+'Keyword <|-- KwMTypedef
+'KwMTypedef <|-- KwEnum
+'KwMTypedef <|-- KwStruct
+'KwMTypedef <|-- KwTypedef
+'KwMTypedef <|-- KwUnion
+'
+'Keyword <|-- KwMTypeQualifier
+'KwMTypeQualifier <|-- KwMonst
+'KwMTypeQualifier <|-- KwRestrict
+'KwMTypeQualifier <|-- KwVolatile
+'
+'Keyword <|-- KwMStorageQualifier
+'KwMStorageQualifier <|-- KwAuto
+'KwMStorageQualifier <|-- KwExtern
+'KwMStorageQualifier <|-- KwRegister
+'KwMStorageQualifier <|-- KwStatic
+'
+'Keyword <|-- KwMControl
+'KwMControl <|-- KwBreak
+'KwMControl <|-- KwContinue
+'KwMControl <|-- KwDo
+'KwMControl <|-- KwElse
+'KwMControl <|-- KwFor
+'KwMControl <|-- KwGoto
+'KwMControl <|-- KwIf
+'KwMControl <|-- KwReturn
+'KwMControl <|-- KwSwitch
+'KwMControl <|-- KwWhile 
+'KwMControl <|-- KwMCrtlSwitch
+'KwMCrtlSwitch <|-- KwCase
+'KwMCrtlSwitch <|-- KwDefault
+'
+'Keyword <|-- KwMMisc
+'KwMMisc <|-- Kw_Complex
+'KwMMisc <|-- Kw_Imaginary
+'
+'Keyword <|-- KwInline
+'Keyword <|-- KwSizeof
+

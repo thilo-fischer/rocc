@@ -1,0 +1,59 @@
+@startuml
+
+' Copyright (C) 2014-2015  Thilo Fischer.
+' Free for non-commercial and most commercial use. See LICENSE.txt for details.
+
+note as N1
+  This diagram does not depict the current
+  implemention, but the planned rework of it.
+end note
+
+class Session {
+  ' All the main_files of the translation units that make up the modules
+  input_files() : File
+}
+note right: formally known as Environment
+Logger "1" -- "1" Session : logger <
+' From the Elements UML diagram
+Element "1" <-- "0..1" Session : cursor <
+Directory "0..n" <-- "0..n" Session : include_dirs <
+Module "1..n" <-- "1" Session : modules <
+
+class Options {
+  + on_the_fly?()
+  ' path to the cache directory, Session will create its cache from this
+  + cache_dir()
+  ' emulate a certain compilers command line argument processing (and possibly other behaviour)
+  + compiler() : gcc, ...
+  + language() : C, C++
+  + dialect() : ANSI-C, C-99, ...
+  - cmdline_options : Map
+  - compiler
+}
+Session "1" --> "1" Options : options >
+Compiler "0..1" <-- "0..n" Options : compiler (private) <
+
+class Cache {
+  + root_dir : String
+}
+' No cache only for on-the-fly invokations
+Session "1" -- "0..1" Cache : cache >
+
+
+
+class ParsingContext {
+  ' Which namespace, class, function, compound statement, ...
+  + scope_stack
+}
+Token "1" <-- ParsingContext : cursor
+Comment <-- ParsingContext : ongoing_comment
+
+class PreprocessingContext {
+  + conditional_stack
+}
+ParsingContext "1" --> "1" PreprocessingContext : pp_context >
+PpDirLine "0..1" <-- PreprocessingContext : recent_line_directive <
+Macro "0..n" <-- PreprocessingContext
+
+
+@enduml
