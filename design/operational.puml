@@ -42,18 +42,46 @@ Session "1" -- "0..1" Cache : cache >
 
 
 class ParsingContext {
-  ' Which namespace, class, function, compound statement, ...
-  + scope_stack
+
 }
-Token "1" <-- ParsingContext : cursor
-Comment <-- ParsingContext : ongoing_comment
+note right: formally known as Environment
+
+class ContextBranch {
+}
+ParsingContext -- ContextBranch
+
+class PretokenizationContext {
+}
+ParsingContext "1" --> "1" PretokenizationContext : pretkn_context >
+PhysicalLine "0..n" <-- ParsingContext : ongoing_line
+
+class TokenizationContext {
+  ' remaining charactres of current line to tokenize
+  + remainder : String
+}
+ParsingContext "1" --> "1" TokenizationContext : tkn_context >
+' most recently generated token, shold be 0 only at the very beginning of translation unit
+Token "0..1" <-- ParsingContext : cursor
+' Refers to a comment if the comment's beginning has already been parsed, but the comment's ending has not yet been found (e.g. block comments that span several lines)
+Comment "0..1" <-- ParsingContext : ongoing_comment
 
 class PreprocessingContext {
-  + conditional_stack
 }
 ParsingContext "1" --> "1" PreprocessingContext : pp_context >
+' map from macro identifiers to their definitions
+Macro "0..n" <-- PreprocessingContext : macros
+' array of all preprocessing conditional branches chosen
+PpDirCond "0..n" <-- PreprocessingContext : conditional_stack <
+' most recent preprocessor line directive
 PpDirLine "0..1" <-- PreprocessingContext : recent_line_directive <
-Macro "0..n" <-- PreprocessingContext
+
+class CompilationContext {
+}
+ParsingContext "1" --> "1" CompilationContext : cc_context >
+' Which namespace, class, function, compound statement, etc. are we in at the current position in source code (formally known as expansion_stack)
+Element "1..n" <-- CompilationContext : scope_stack <
+' map from type identifiers to their definitions
+Typedef "0..n" <-- CompilationContext : typedefs
 
 
 @enduml

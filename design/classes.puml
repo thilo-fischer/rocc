@@ -12,9 +12,15 @@ class Element {
   + initialize(origin :Element)
   - announce()
   + origin()
+  ' string representation of this element useful to identify it in debugging context
   + to_s()
+  ' elements within this element's 'scope'
+  + content()
   + content?()
+  ' return all elements within this element's 'scope' that match the condition specified by 'what'
   + get_contained(what)
+  ' source code representing this element
+  + text()
   + register(obj :Element, key)
   # type_error(object)
 }
