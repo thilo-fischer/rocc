@@ -1,8 +1,8 @@
 /*
- * C code to be used when testing ooccor.
+ * C code to be used when testing rocc.
  *
  * Code declaring and defining many different kinds of symbols.
- * (Within ooccor, we also understand macro names as symbols.)
+ * (Within rocc, we also understand macro names as symbols.)
  *
  * Prints "Hello world!" and similar a circuitous way ...
  *

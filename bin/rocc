@@ -4,11 +4,11 @@
 # Copyright (C) 2014  Thilo Fischer.
 # Free software licensed under GPL v3. See LICENSE.txt for details.
 
-module Ooccor
+module Rocc
 
   require 'optparse'
 
-  require 'ooccor'
+  require 'rocc'
 
   # * parse command line arguments
 
@@ -28,7 +28,7 @@ module Ooccor
             $supported_compilers.keys,
             "Parse compiler arguments according to the given compiler.",
             " (Currently supported: #{$supported_compilers.keys.map{|s| s.to_s}.join(', ')})",
-            " Has to be the last ooccor argument, all following arguments are regarded as arguments to the compiler.") do |arg|
+            " Has to be the last rocc argument, all following arguments are regarded as arguments to the compiler.") do |arg|
       throw :compiler, $supported_compilers[arg].new
     end
 
@@ -46,7 +46,7 @@ module Ooccor
 
     opts.on("-v 'verbosity'",
             "--verbosity",
-            "Set log level of ooccor session.") do |arg|
+            "Set log level of rocc session.") do |arg|
       options[:verbosity] = arg
     end
 
@@ -101,4 +101,4 @@ module Ooccor
   #  This is free software, and you are welcome to redistribute it
   #  under certain conditions; type `show c' for details.
 
-end # module Ooccor
+end # module Rocc

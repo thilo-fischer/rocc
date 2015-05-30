@@ -31,14 +31,14 @@ def dbg(str, stack = nil)
 end
 
 
-module Ooccor
+module Rocc
 
-  require 'ooccor/version'
+  require 'rocc/version'
 
-  require 'ooccor/environment'
-  require 'ooccor/code_objects/program'
-  require 'ooccor/commands/commands'
-  require 'ooccor/compilers/compilers'
+  require 'rocc/environment'
+  require 'rocc/code_objects/program'
+  require 'rocc/commands/commands'
+  require 'rocc/compilers/compilers'
 
   # fixme: refactor
   class ProcessingEnvironment
@@ -54,7 +54,7 @@ module Ooccor
 
       # TODO: following attributes are not yet taken into account properly in the other functions.
       @parsing = { typedefs: {} }
-      @context_branches = [ { conditions: [], unbound_objects: [], grammar_stack: [ Ooccor::CodeObjects::GroTranslationUnit.new(nil) ] } ] # fixme: origin of translation unit
+      @context_branches = [ { conditions: [], unbound_objects: [], grammar_stack: [ Rocc::CodeObjects::GroTranslationUnit.new(nil) ] } ] # fixme: origin of translation unit
     end
 
     def initialize_copy(orig)
@@ -89,4 +89,4 @@ module Ooccor
 
   end # class ProcessingEnvironment
 
-end # module Ooccor
+end # module Rocc

@@ -3,9 +3,9 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Ooccor::CodeObjects
+module Rocc::CodeObjects
 
-  # Base class for all artifacts ooccor may identify when analysing source code.
+  # Base class for all artifacts rocc may identify when analysing source code.
   # All child classes shall get the prefix `Co' for *C*ode*O*bject to prevent name clashes with Ruby keywords or (std) lib identifiers, e.g. CoFile < CodeObject.
 
   class CodeObject
@@ -180,4 +180,4 @@ module Ooccor::CodeObjects
 
   end # class CodeObjectContainer
 
-end # module Ooccor::CodeObjects
+end # module Rocc::CodeObjects

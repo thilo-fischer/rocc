@@ -76,7 +76,7 @@ class File {
   + mod_date : Date
   ' Checksum on the file content, will be used for sound file modification check
   + checksum : String
-  ' From where did the analysis lead ooccur to this file? Can be multiple sources.
+  ' From where did the analysis lead rocc to this file? Can be multiple sources.
   + adducer alias origin : File(s), Command Line Args, ...
 }
 FilesystemElement <|-- File
@@ -113,10 +113,10 @@ class Token {
 LogicalLine "1..n" -- "0..n" Token : content alias tokens >
 
 Token  <|-- TknComment
-note on link : Comments are handled as Tokens in ooccor.
+note on link : Comments are handled as Tokens in rocc.
 
 Token  <|-- TknPreprocessor
-note on link : Preprocessor directives are handled as Tokens in ooccor.
+note on link : Preprocessor directives are handled as Tokens in rocc.
 
 Token  <|-- TknWord
 TknWord <|-- TknKeyword

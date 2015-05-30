@@ -1,6 +1,6 @@
-= ooccor
+= rocc
 
 Describe your project here
 
-:include:ooccor.rdoc
+:include:rocc.rdoc
 

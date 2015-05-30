@@ -3,7 +3,7 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Ooccor::Commands
+module Rocc::Commands
 
   class Command
 
@@ -48,4 +48,4 @@ module Ooccor::Commands
 
   end # class Command
 
-end # module Ooccor::Commands
+end # module Rocc::Commands

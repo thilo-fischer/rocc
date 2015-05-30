@@ -3,9 +3,9 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-require 'ooccor/code_objects/code_object'
+require 'rocc/code_objects/code_object'
 
-module Ooccor::CodeObjects
+module Rocc::CodeObjects
 
   # forward declarations
   class CoFile < CodeObject; end
@@ -121,4 +121,4 @@ module Ooccor::CodeObjects
   end # class CoPhysicLine
 
 
-end # module Ooccor::CodeObjects
+end # module Rocc::CodeObjects

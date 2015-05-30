@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Simple C code containing several different <em>"CodeObjects"</em> ooccor shall handle.
+ * @brief Simple C code containing several different <em>"CodeObjects"</em> rocc shall handle.
  */
 
 #include <stdio.h>

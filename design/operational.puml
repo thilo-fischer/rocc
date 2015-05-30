@@ -48,7 +48,7 @@ note right: formally known as Environment
 
 class ContextBranch {
 }
-ParsingContext -- ContextBranch
+ParsingContext -- "1..n" ContextBranch
 
 class PretokenizationContext {
 }

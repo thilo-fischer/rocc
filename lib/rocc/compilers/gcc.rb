@@ -3,7 +3,7 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Ooccor::Compilers
+module Rocc::Compilers
 
   class Gcc < Compiler
 
@@ -36,4 +36,4 @@ module Ooccor::Compilers
 
   end # class Gcc
 
-end # module Ooccor::Compilers
+end # module Rocc::Compilers

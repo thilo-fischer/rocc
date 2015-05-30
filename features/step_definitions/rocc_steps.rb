@@ -6,7 +6,7 @@ When /^I invoke as "([^"]*)" on "([^"]*)"$/ do |command, input|
 
   @input.map! {|i| i = "\"#{File.join(TESTDATA_DIR, i)}\""}
   
-  step %(I run `ooccor -e '#{@command}' #{@input.join(" ")}`)
+  step %(I run `rocc -e '#{@command}' #{@input.join(" ")}`)
 
 end
 

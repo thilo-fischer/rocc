@@ -3,9 +3,9 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Ooccor::CodeObjects
+module Rocc::CodeObjects
 
-  require 'ooccor/code_objects/grammar/grammar'
+  require 'rocc/code_objects/grammar/grammar'
 
   module Tokens
 
@@ -140,4 +140,4 @@ module Ooccor::CodeObjects
     end # CoToken
 
   end # module Tokens
-end # module Ooccor::CodeObjects
+end # module Rocc::CodeObjects

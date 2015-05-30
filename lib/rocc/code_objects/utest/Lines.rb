@@ -3,7 +3,7 @@
 
 #require_relative 'Lines'
 #require_relative 'File'
-require_relative '../../ooccor.rb'
+require_relative '../../rocc.rb'
 
 require 'test/unit'
 require 'mocha/setup'

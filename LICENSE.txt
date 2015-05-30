@@ -1,4 +1,4 @@
-ooccor - Object Oriented C Code Operations in Ruby
+rocc - C Code Operations in Ruby
 
 Copyright (C) 2014-2015  Thilo Fischer
 

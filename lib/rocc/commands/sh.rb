@@ -12,7 +12,7 @@ class CommandSh < Command
       opts.banner = "Usage: #{@name} [options] [--] shell-command [arguments]..."
       
       opts.on("--[no-]directory-shortcuts",
-              "whether to substitute ooccor directory shortcuts (/, @, :),",
+              "whether to substitute rocc directory shortcuts (/, @, :),",
               "default is to not do any substitution (might change in future ...)") do |arg|
         options[:directory_shortcuts] = arg
         raise "not yet implemented"

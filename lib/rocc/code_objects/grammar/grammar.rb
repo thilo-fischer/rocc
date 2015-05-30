@@ -3,7 +3,7 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Ooccor::CodeObjects
+module Rocc::CodeObjects
 
   #  module Grammar
 
@@ -428,4 +428,4 @@ module Ooccor::CodeObjects
 
   # end # module Grammar
 
-end # module Ooccor::CodeObjects::Grammar
+end # module Rocc::CodeObjects::Grammar

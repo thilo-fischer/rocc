@@ -5,20 +5,20 @@ Feature: Command line argument validation
   So I will get help invoking the program in the correct manner
 
   Scenario: Invalid command line argument
-    When I run `ooccor --this-is-an-invalid-command-line-argument`
+    When I run `rocc --this-is-an-invalid-command-line-argument`
     Then the exit status should not be 0
     And  the output should contain "invalid"
     And  the output should contain "argument"
     And  the output should contain "this-is-an-invalid-command-line-argument"
 
   Scenario: Select an invalid compiler
-    When I run `ooccor --compiler foobar`
+    When I run `rocc --compiler foobar`
     Then the exit status should not be 0
     And  the output should contain "invalid"
     And  the output should contain "compiler"
     And  the output should contain "foobar"
 
   Scenario: Unsupported compiler command line arguments
-    When I run `ooccor --compiler gcc -j -k -q -z`
+    When I run `rocc --compiler gcc -j -k -q -z`
     Then the output should contain "unsupported compiler argument"
 

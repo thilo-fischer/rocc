@@ -1,8 +1,8 @@
 # Ensure we require the local version and not one we might have installed already
-require File.join([File.dirname(__FILE__),'lib','ooccor','version.rb'])
+require File.join([File.dirname(__FILE__),'lib','rocc','version.rb'])
 spec = Gem::Specification.new do |s| 
-  s.name = 'ooccor'
-  s.version = Ooccor::VERSION
+  s.name = 'rocc'
+  s.version = Rocc::VERSION
   s.author = 'Thilo Fischer'
   s.email = 'thilo-fischer@gmx.de'
 #  s.homepage = 'http://your.website.com'
@@ -12,10 +12,10 @@ spec = Gem::Specification.new do |s|
 ")
   s.require_paths << 'lib'
   s.has_rdoc = true
-  s.extra_rdoc_files = ['README.rdoc','ooccor.rdoc']
-  s.rdoc_options << '--title' << 'ooccor' << '--main' << 'README.rdoc' << '-ri'
+  s.extra_rdoc_files = ['README.rdoc','rocc.rdoc']
+  s.rdoc_options << '--title' << 'rocc' << '--main' << 'README.rdoc' << '-ri'
   s.bindir = 'bin'
-  s.executables << 'ooccor'
+  s.executables << 'rocc'
   s.add_development_dependency('rake')
   s.add_development_dependency('rdoc')
   s.add_development_dependency('cucumber')

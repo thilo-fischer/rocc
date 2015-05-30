@@ -3,10 +3,10 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Ooccor::Commands
+module Rocc::Commands
 
   require 'set'
-  require 'ooccor/commands/command'
+  require 'rocc/commands/command'
 
   commands = %w[
     help
@@ -23,7 +23,7 @@ module Ooccor::Commands
   # sh
 
   commands.each do |c|
-    require "ooccor/commands/#{c}"
+    require "rocc/commands/#{c}"
   end
 
   erroneous = commands.to_set ^ Command.command_classes.keys.to_set
@@ -31,4 +31,4 @@ module Ooccor::Commands
     raise ScriptError.new("Erroneous command implementations: #{erroneous.to_a.join(", ")}.")
   end
 
-end # module Ooccor::Commands
+end # module Rocc::Commands
