@@ -98,32 +98,6 @@ module Rocc
     end # eval_path
 
     private
-
-    def set_up_logger(options)
-      log = Logger.new(STDOUT)
-      
-      if options.key?(:verbosity)
-        level = case options[:verbosity]
-                when "4", /^fatal/i   then Logger::FATAL
-                when "3", /^err/i     then Logger::ERROR
-                when "2", /^warn/i    then Logger::WARN
-                when "1", /^info/i    then Logger::INFO
-                when "0", /^de?bu?g/i then Logger::DEBUG
-                else nil
-                end
-        if level
-          log.level = level
-        else
-          log.level = Logger::WARN
-          log.warn{"Invalid log level: `#{options[:verbosity]}'. Fall back to default log level."}
-        end
-      else
-        log.level = Logger::WARN       
-      end
-      
-      log.debug{"Set log level to #{log.level}."}
-      log
-    end # set_up_logger
     
   end # class Environment
 

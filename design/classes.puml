@@ -3,6 +3,8 @@
 ' Copyright (C) 2014-2015  Thilo Fischer.
 ' Free for non-commercial and most commercial use. See LICENSE.txt for details.
 
+skinparam monochrome true
+
 note as N1
   This diagram does not depict the current
   implemention, but the planned rework of it.
@@ -61,9 +63,10 @@ Module "0..n" -- "1..n" TranslationUnit : origin >
 class FilesystemElement {
   ' Relative path of this FilesystemElement wrt its base_directory
   + rel_path()  : String
-
-  + abs_path()  : String
-  + real_path() : String
+  ' absolute path to this FilesystemElement
+  + abs_path() : String
+  ' path as specified by build setup and/or source code
+  + path()  : String
 }
 
 class File {
@@ -93,8 +96,8 @@ class BaseDirectory {
   + path : String
 }
 Directory <|-- BaseDirectory
-' A BaseDirectory's base_directory is the object itself.
-FilesystemElement "0..n" --> "1" BaseDirectory : base_directory
+'' A BaseDirectory's base_directory is the object itself.
+'FilesystemElement "0..n" --> "1" BaseDirectory : base_directory
 
 class PhysicalLine {
   line_number

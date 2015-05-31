@@ -78,6 +78,7 @@ PpDirLine "0..1" <-- PreprocessingContext : recent_line_directive <
 class CompilationContext {
 }
 ParsingContext "1" --> "1" CompilationContext : cc_context >
+CompilationContext "1" --> "1" TranslationUnit : translation_unit >
 ' Which namespace, class, function, compound statement, etc. are we in at the current position in source code (formally known as expansion_stack)
 Element "1..n" <-- CompilationContext : scope_stack <
 ' map from type identifiers to their definitions
