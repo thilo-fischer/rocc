@@ -65,6 +65,11 @@ module Rocc::Ui
           @options[:verbosity] = arg
         end
 
+        opts.on("--change-detection 'method'",
+                "Select method how to check if a file changed: mtime (default), sha1 or mtime+sha1.") do |arg|
+          @options[:change_detection] = arg
+        end
+
       end # OptionParser.new
 
       # parse all arguments until a --compiler argument
@@ -101,9 +106,9 @@ module Rocc::Ui
       @options.each do |key, value|
         case key
         when :on_the_fly
-          optsobj.enable(:on_the_fly)
-        when :verbosity
-          optsobj.set(:vebosity, value)
+          optsobj.enable(key)
+        when :verbosity, :change_detection
+          optsobj.set(key, value)
         else
           $log.warn{"No option associated with command line argument of `#{key}'"}
       end

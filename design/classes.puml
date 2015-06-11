@@ -54,9 +54,11 @@ ElementList --|> CollectionElement
 
 class Module {
   type : Executable, DynamicLib, StaticLib
+  + symbols(filter = nil) : { Identifier => Symbol }
 }
 
 class TranslationUnit {
+  + symbols(filter = nil) : { Identifier => Symbol }
 }
 Module "0..n" -- "1..n" TranslationUnit : origin >
 
@@ -81,10 +83,12 @@ class File {
   + checksum : String
   ' From where did the analysis lead rocc to this file? Can be multiple sources.
   + adducer alias origin : File(s), Command Line Args, ...
+  + symbols(filter = nil) : { Identifier => Symbol }
 }
 FilesystemElement <|-- File
 TranslationUnit   "0..n"  -- "1" File : origin alias main_file >
 TranslationUnit "0..n" -- "0..n" File : include_files >
+Symbol "0..n" <-- "1..n" File : symbols <
 
 class Directory {
   + name : String

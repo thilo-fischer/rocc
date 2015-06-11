@@ -56,7 +56,8 @@ module Rocc::Session
     def value(flag)
       assert_flagname(flag)
       @flags[flag]
-    end      
+    end
+
 
     protected
 
@@ -86,6 +87,7 @@ module Rocc::Session
       }
       @flags = {
         :verbosity = "WARN",
+        :change_detection = "mtime",
       }
     end
 
