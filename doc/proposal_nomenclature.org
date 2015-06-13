@@ -1,0 +1,76 @@
+THIS IS WORK IN PROGRESS. THE IDEA OF THE CONVENTIONS DEPICTED IN THIS FILE IS NOT SOUND YET AND THUS NOT YET USED IN THE IMPLEMENTATION.
+
+To speak about the code at ooccur's command line interface and in ooccor's source code, the nomenclature depicted in this file will be used.
+
+The entities ooccor operates with will be called /code elements/ or just /elements/.
+
+The elements can be grouped into several partitions at several layers. Borrowing from the taxonomic hierarchy of biological classification, the following hierarchy will be assumed.
+
+
+Code Elements /ce/
+-> Domains /D/
+-> Kingdoms /K/
+-> Order /O/
+-> Family /F/
+-> Species /S/
+
+* Code Elements
+** /D/ Physical /pyD/
+*** /F/ Files
+**** /S/ Header Files (.h, .hh, .hpp, .hxx, ...)
+**** /S/ Translation Unit Files (.c, .cc, .cpp, .cxx, ...)
+*** /F/ Physical Lines
+*** /F/ Identifier XXX:pyD?
+
+** /D/ Preprocessor /ppD/
+*** XXX:ppD? /F/ Comments
+**** /S/ Comment Blocks
+**** /S/ Inline Comments
+*** XXX:ppD? /F/ Logical Lines
+*** /F/ Preprocessor Conditionals (#if/#elif/#else/#endif) /ppCond/
+*** /F/ Macros (#define) /ppDef/
+**** /S/ Parameterless Macros (#define foo)
+**** /S/ Parameterized Macros (#define foo(), #define foo(arg), ...)
+*** /F/ Includes (#include) /ppIncl/
+**** /S/ Includes with Cevrons
+**** /S/ Includes with Double Quotes
+
+** Compiler Domain /ccD/
+*** Tokenizer Kingdom /tkK/
+**** /O/ Tokens /tkn/
+XXX
+***** Comment
+***** Keyword
+***** Operator
+***** Identifier
+***** Preprocessor
+*** EvaluatorXXX Kingdom /lxK/
+**** /O/ XXX
+***** /F/ Expression
+****** /S/ Atomic Expression
+****** /S/ Compound Expression
+***** /F/ Statement
+****** /S/ Atomic Statement
+****** /S/ Block Statement
+**** /F/ Translation Unit
+**** /F/ Types (typedef)
+**** /F/ TagXXX:Name?
+***** /S/ Structs
+***** /S/ Unions
+***** /S/ Enums
+**** /F/ Variables XXX:Freestanding/Member vs. const/static/volatile/... ?
+***** /S/ Freestanding Variables
+***** /S/ Member Variables
+**** /F/ Functions XXX:Freestanding/Member vs. const/static/volatile/... vs. templated ?
+***** /S/ Freestanding Functions
+***** /S/ Member Functions aka Methods
+**** /F/ Classes XXX:Abstract vs. Derived vs. templated ?
+***** /S/ Regular Classes
+***** /S/ Abstract Classes
+***** /S/ Pure Virtual Classes
+
+** Linker Domain /llD/
+*** /F/ Program
+**** /S/ Executable
+**** /S/ Library
+
