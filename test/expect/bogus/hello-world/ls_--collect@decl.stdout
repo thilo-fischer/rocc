@@ -1,0 +1,18 @@
+ M MAX_STRLEN
+ M UPPERCASE_H
+ M LOWERCASE_H
+ M HELLO_H_SUFFIX
+ M HELLO(1)
+ M PUNCTUATION(1)
+sS counting_s
+vV hello
+fF print_char(1)
+fF print_all_chars(1)
+ T counting_t
+ V SPACE
+ V WORLD
+ V counting
+ F new_line()
+ F print_n_chars(2)
+ F main(2)
+

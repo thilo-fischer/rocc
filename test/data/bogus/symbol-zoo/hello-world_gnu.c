@@ -31,12 +31,21 @@
 
 // forward declarations
 
+struct counting_s;
+
 char hello[];
-static int count;
-int max_count;
 
 static void print_char(char);
 void print_all_chars(const char* string);
+
+// type definistions
+
+struct counting_s {
+  int cur;
+  int max;
+};
+
+typedef struct counting_s counting_t;
 
 // constant definitions
 
@@ -47,8 +56,7 @@ const char *WORLD = "world";
 
 char hello[MAX_STRLEN];
 
-static int count;
-int max_count = 0;
+static counting_t counting = {0};
 
 // function definitions
 
@@ -80,13 +88,13 @@ int main(int argc, char **argv) {
     print_char(PUNCTUATION(0));
     new_line();
   } else {
-    max_count = argc;
-    for (count = 1; count < max_count; ++count) {
-      strncpy(hello, HELLO(count == 1), MAX_STRLEN);
+    counting.max = argc;
+    for (counting.cur = 1; counting.cur < counting.max; ++counting.cur) {
+      strncpy(hello, HELLO(counting.cur == 1), MAX_STRLEN);
       print_all_chars(hello);
       print_n_chars(&SPACE, 1);
-      print_all_chars(argv[count]);
-      print_char(PUNCTUATION(count < max_count - 1));
+      print_all_chars(argv[counting.cur]);
+      print_char(PUNCTUATION(counting.cur < counting.max - 1));
       new_line();
     }
   }

@@ -1,0 +1,21 @@
+MAX_STRLEN, #define
+UPPERCASE_H, #define
+LOWERCASE_H, #define
+HELLO_H_SUFFIX, #define
+HELLO, #define(uppercase)
+PUNCTUATION, #define(continue)
+counting_s, struct
+hello, extern char[]
+print_char, static void(char)
+print_all_chars, void(const char* string)
+counting_s, struct
+counting_t, typedef
+SPACE, const char
+WORLD, const char *
+hello, char[]
+counting, static counting_t
+print_char, static void(char c)
+new_line, static void(void)
+print_n_chars, void(const char* string, size_t n)
+print_all_chars, void(const char* string)
+main, int(int argc, char **argv)
