@@ -1,0 +1,22 @@
+type prefix
+===========
+
+i   include with <chevrons>
+I   include with "double quotes"
+M   macro definition (#define directive)
+T   type definition
+e/E enum declaration/definition
+s/S struct declaration/definition
+u/U union declaration/definition
+f/F function declaration/definition
+v/V variable declaration/definition
+c/C class declaration/definition (C++ only)
+
+parameter suffix
+================
+ for parameterized macro defintions and function declarations and definitions
+(n)    n parameters
+(n+)   variadic with at least n parameters (n parameters before ellipsis)
+(m..n) m mandatory and (n-m) optional parameters (functions with default parameters, C++ only)
+(i+k)  alternate form for (m..n) with m==i and (n-m)==k
+

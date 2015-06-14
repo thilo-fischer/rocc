@@ -116,8 +116,17 @@ PpDirConditional "0..n" -- "0..n" LogicalLine : conditions <
 
 class Token {
   + line_offset : Integer
+  ' to save alignments over multiple lines when refactoring code and changing the length of a token (planned nice-too-have feature ...)
+  + whitespace_after : String
 }
 LogicalLine "1..n" -- "0..n" Token : content alias tokens >
+' xxxxxxxxxxxxxxxxx
+' The directly previous/next Token, may be any Token in this file
+' Multiplicity 0 only allowed at the very beginning/end of a file
+Token "0..1" <--> "0..1" Token : direct_predecessor >
+' The previous/next Token that is not a comment or part of a preprocessor directive, might be a Token from another file
+' Multiplicity 0 only allowed at the very beginning/end of a translation unit
+Token "0..1" <--> "0..1" Token : effective_predecessor >
 
 Token  <|-- TknComment
 note on link : Comments are handled as Tokens in rocc.
