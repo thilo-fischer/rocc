@@ -1,0 +1,21 @@
+  M MAX_STRLEN
+  M UPPERCASE_H
+  M LOWERCASE_H
+  M HELLO_H_SUFFIX
+  M HELLO                  (1)
+  M PUNCTUATION            (1)
+  s counting_s
+--v hello                      : char[]
+.-f print_char             (1) : void
+--f print_all_chars        (1) : void
+  S counting_s
+  T counting_t
+-cV SPACE                      : char
+-cV WORLD                      : char*
+--V hello                      : char[]
+.-V counting                   : counting_t
+.-F print_char             (1) : void
+.-F new_line               (0) : void
+--F print_n_chars          (2) : void
+--F print_all_chars        (1) : void
+--F main                   (2) : int
