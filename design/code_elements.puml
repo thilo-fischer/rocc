@@ -55,7 +55,10 @@ ElementList --|> CollectionElement
 class Module {
   type : Executable, DynamicLib, StaticLib
   + symbols(filter = nil) : { Identifier => Symbol }
+  + linker_options : String[]
+  + external_libs : String[]
 }
+Module "0..n" --> "0..n" Module : depends_on >
 
 class TranslationUnit {
   + symbols(filter = nil) : { Identifier => Symbol }
@@ -169,6 +172,8 @@ note top
   also types and macros.
 end note
 PpDirConditional "0..n" -- "0..n" Symbol : conditions <
+' All specifications and all usages of a Symbol is a reference to it.
+TknIdentifier "1..n" <-- "0..n" Symbol : reference <
 
 Specification "1..n" -- "1..n" Symbol : origin <
 
