@@ -31,6 +31,10 @@ module Rocc::CodeElements::FileRepresented
       end
     end
 
+    def pursue(context)
+      
+    end
+    
 #    def symbols(filter = nil)
 #      if @symbols and up_to_date?
 #        @symbols

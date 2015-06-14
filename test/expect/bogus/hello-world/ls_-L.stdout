@@ -9,7 +9,7 @@
 .-f print_char             (char)                     : void
 --f print_all_chars        (const char*)              : void
   S counting_s                                        
-  T counting_t                                        
+ -T counting_t                                        
 -cV SPACE                                             : char
 -cV WORLD                                             : char*
 --V hello                                             : char[]
