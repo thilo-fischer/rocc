@@ -111,7 +111,7 @@ module Rocc::Session
           # TODO find all source code files in f and its subdirectories and add as translation units to mdl
           raise "Not yet supported" # TODO
         when f == "-"
-          mdl.add_translation_unit(:stdin)
+        mdl.add_translation_unit(:stdin) # FIXME seems wrong ... (?)
         else
           raise "Programming error :("
         end

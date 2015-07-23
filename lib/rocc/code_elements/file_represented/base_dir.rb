@@ -6,7 +6,7 @@
 module Rocc::CodeElements::FileRepresented
 
   ##
-  # Represet a directory where source files reside in.
+  # Represet the root directory of a source tree that is part of the current target source code.
   class CeBaseDirectory < CeDirectory
 
     attr_reader :path, :abs_path

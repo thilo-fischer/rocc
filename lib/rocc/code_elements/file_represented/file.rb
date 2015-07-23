@@ -8,7 +8,7 @@ module Rocc::CodeElements::FileRepresented
   require 'digest/sha1'
   
   ##
-  # Represet a directory where source files reside in.
+  # Represet a source code file.
   class CeFile < CeFilesystemElement
 
     attr_reader :adducer, :basename, :extension

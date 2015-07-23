@@ -1,0 +1,35 @@
+@startuml
+
+[-> main
+activate main
+
+create session
+main -> session: new
+session -> session: parse command line arguments
+main -> session: run
+activate session
+session -> session: parse_input
+activate session
+
+loop each input file
+
+create translation_unit
+session -> translation_unit: new
+
+...
+
+end 'loop each input file
+
+session --> session
+deactivate session
+
+session -> session: run interactive shell or process script or commands
+
+session --> main
+deactivate session
+
+main --> ]
+deactivate main
+
+@enduml
+
