@@ -13,8 +13,47 @@ activate session
 
 loop each input file
 
+participant "translation_unit as CeTranslationUnit" as translation_unit
 create translation_unit
 session -> translation_unit: new
+
+...
+
+[-> translation_unit: populate
+
+participant "ctx : ParsingContext" as ParsingContext
+
+create ParsingContext
+translation_unit -> ParsingContext : new
+
+participant "main_file : CeFile" as main_file
+translation_unit -> main_file : pursue(ctx)
+
+loop each physical line
+
+main_file -> physical_line : pursue(ctx)
+
+alt logical line completed
+
+physical_line -> logical_line : pursue(ctx)
+
+logical_line -> logical_line : tokenize
+
+loop each token
+
+token -> token : pursue(ctx)
+
+alt semantical entity completed
+
+token -> ctx : add(entity)
+
+end 'alt semantical entity completed
+
+end 'loop each token
+
+end 'alt logical line completed
+
+end 'loop each physical line
 
 ...
 
