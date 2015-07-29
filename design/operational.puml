@@ -40,44 +40,40 @@ class Cache {
 Session "1" -- "0..1" Cache : cache >
 
 
-
-class ParsingContext {
+class ReadlineContext {
 
 }
-note right: formally known as Environment
-
-class ContextBranch {
-}
-ParsingContext -- "1..n" ContextBranch
-
-class PretokenizationContext {
-}
-ParsingContext "1" --> "1" PretokenizationContext : pretkn_context >
-PhysicalLine "0..n" <-- ParsingContext : ongoing_line
-
-class TokenizationContext {
-  ' remaining charactres of current line to tokenize
-  + remainder : String
-}
-ParsingContext "1" --> "1" TokenizationContext : tkn_context >
-' most recently generated token, shold be 0 only at the very beginning of translation unit
-Token "0..1" <-- ParsingContext : cursor
+PhysicalLine "0..n" <-- ReadlineContext : ongoing_line
 ' Refers to a comment if the comment's beginning has already been parsed, but the comment's ending has not yet been found (e.g. block comments that span several lines)
-Comment "0..1" <-- ParsingContext : ongoing_comment
+Comment "0..1" <-- ReadlineContext : ongoing_comment
 
-class PreprocessingContext {
+' FIXME necessary ?!
+class TokenizationContext {
+' remaining charactres of current line to tokenize
++ remainder : String
 }
-ParsingContext "1" --> "1" PreprocessingContext : pp_context >
-' map from macro identifiers to their definitions
-Macro "0..n" <-- PreprocessingContext : macros
-' array of all preprocessing conditional branches chosen
-PpDirCond "0..n" <-- PreprocessingContext : conditional_stack <
-' most recent preprocessor line directive
-PpDirLine "0..1" <-- PreprocessingContext : recent_line_directive <
 
+ReadlineContext "1" --> "1" TokenizationContext
+class CompilationBranch {
+
+}
+TokenizationContext "1" --> "1..n" CompilationBranch
+PpDirCond "0..1" <-- "0..1" CompilationBranch
 class CompilationContext {
+
 }
-ParsingContext "1" --> "1" CompilationContext : cc_context >
+CompilationBranch "1" --> "1" CompilationContext
+
+' most recently generated token, shold be 0 only at the very beginning of translation unit
+Token "0..1" <-- CompilationContext : cursor
+
+' map from macro identifiers to their definitions
+Macro "0..n" <-- CompilationContext : macros
+' array of all preprocessing conditional branches chosen
+PpDirCond "0..n" <-- CompilationContext : conditional_stack <
+' most recent preprocessor line directive
+PpDirLine "0..1" <-- CompilationContext : recent_line_directive <
+
 CompilationContext "1" --> "1" TranslationUnit : translation_unit >
 ' Which namespace, class, function, compound statement, etc. are we in at the current position in source code (formally known as expansion_stack)
 Element "1..n" <-- CompilationContext : scope_stack <
