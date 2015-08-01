@@ -67,7 +67,7 @@ session -> session: run interactive shell or process script or commands
 session --> main
 deactivate session
 
-main --> ]
+[<-- main
 deactivate main
 
 @enduml

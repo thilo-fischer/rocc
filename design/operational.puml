@@ -80,5 +80,15 @@ Element "1..n" <-- CompilationContext : scope_stack <
 ' map from type identifiers to their definitions
 Typedef "0..n" <-- CompilationContext : typedefs
 
+class SymbolIndex {
++ find_symbols(identifier :String, namespace = nil, class = nil, linkage = none) : Symbol[]
++ find_innermost_symbol(identifier :String, namespace = nil, class = nil, linkage = none) : Symbol
++ find_function(identifier, linkage = external) alias find_innermost_symbol(identifier, :ordinary, Function, linkage) : Function
++ find_variable(identifier, linkage = external) alias find_innermost_symbol(identifier, :ordinary, Variable, linkage) : Variable
++ find_macro(identifier) alias find_innermost_symbol(identifier, :macros, Macro, nil/internal) : Macro
++ ...
+}
+TranslationUnit "1" --> "1" SymbolIndex : symbols >
+SymbolIndex "1" --> "0..n" Symbol : map
 
 @enduml

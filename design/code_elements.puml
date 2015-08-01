@@ -146,8 +146,8 @@ Token <|-- Tkn3Char
 Token <|-- Tkn2Char
 Token <|-- Tkn1Char
 
-
-class Specification {
+' The will be no Specification objects, each Specification is either a Declaration or a Definition
+abstract class Specification {
 }
 Token "1..n" -- "0..1" Specification : origin <
 
@@ -162,6 +162,8 @@ Specification <|-- Definition
 
 class Symbol {
   + name : String
+  + namespace() : Namespace
+  + linkage : Linkage
   # add_origin(spec : Specification)
 }
 note top
@@ -177,27 +179,111 @@ TknIdentifier "1..n" <-- "0..n" Symbol : reference <
 
 Specification "1..n" -- "1..n" Symbol : origin <
 
+enum Namespace {
+  :ordinary
+  :member
+  :tag
+  :label
+  :macro
+}
+
+enum Linkage {
+  :external
+  :internal
+  :none
+}
+
+
 class TypedSymbol {
-  + type : String
+  + namespace() -> :ordinary
 }
 Symbol <|-- TypedSymbol
+Type "1" <-- "0..n" TypedSymbol : type <
+
+Type <|-- TypeNative
+class TypeNative {
+  + name : String
+}
+note bottom
+void char short
+int long float
+double signed
+unsigned ...
+end note
+
+'Type <|-- TypeCompound
+'TypeCompound "0..n" -- "1" SymbolCompound
+'Type <|-- TypeEnum
+'TypeEnum "0..n" -- "1" Enum
+Type <|-- TypeTagged
+TypeTagged "0..n" -- "0..1" SymbolCompound
+TypeTagged "0..n" -- "0..1" Enum
+
+Type <|-- TypePointer
+TypePointer "0..1/n" --> "1" Type : + base_type >
+
+Type <|-- TypeDefined
+TypeDefined "1" --> "1" Typedef
+
+Type <|-- TypeWithStorageClass
+TypeWithStorageClass "0..n" --> "1" Type : + base_type >
+class TypeWithStorageClass {
+  + storage_class : StorageClassSpecifier
+}
+enum StorageClassSpecifier {
+  :auto
+  :register
+  :static
+  :extern
+  :typedef ???
+}
+
+Type <|-- TypeWithQualifier
+TypeWithQualifier "0..n" --> "1" Type : + base_type >
+class TypeWithQualifier {
+  + qualifier : TypeQualifier
+}
+enum TypeQualifier {
+  :const
+  :volatile
+}
+
+class TypeFunction {
+  + variadic?
+}
+Type <|-- TypeFunction
+TypeFunction "0..n" --> "1" Type : return_type >
+TypeFunction "0..n" --> "0..n" FunctionParameter : parameter_types >
+
+class FunctionParameter {
+  + linkage() -> :none
+  ' name used in implementation (if available), name used in specification (if unique), nil otherwise
+  + name()
+  ' same name used in all the function's specifications?
+  + name_consistent?()
+}
+Type "1" <-- "0..n" FunctionParameter : type
 
 TypedSymbol <|-- Typedef
+class Typedef {
+  + linkage() -> :none
+}
 TypedSymbol <|-- Variable
 
 class Function {
-  + arguments?()
-  + arg_count()
-  + arguments() : Map<String name, String type>
-  + arg_types() : String[]
-  + arg_names() : String[]
+  ' if param_count > 0
+  + parameters?()
+  + param_count()
+  ' implementation found?
   + implementation?()
 }
 TypedSymbol <|-- Function
 Function "0..1" -- "1..n" BlockStatement : implementation >
+Function "0..n" --> "1" TypeFunction : type >
+
 
 class FunctionSignature {
-  + arguments : Map<String name, String type>
+  + param_names : String[]
 }
 ' Only if it is a function's specification.
 Specification "1" -- "0..1" FunctionSignature
@@ -205,22 +291,37 @@ Function "1" -- "1..n" FunctionSignature
 ' FIXME How to handle multiple different but consistent signatures?
 
 class SymbolCompound {
-  + elements?()
-  + elem_count
-  + elements : Map<String name, String type>
+  + members?()
++ member_count : Integer
+  + namespace() -> :tag
 }
 Symbol <|-- SymbolCompound
 Struct --|> SymbolCompound
 Union  --|> SymbolCompound
 
-class Enum {
-  + elements?()
-  + elem_count
-  + elements : Map<String name, Integer value>
+class Member {
+  + namespace() -> :member
 }
-Symbol <|-- Enum
+TypedSymbol <|-- Member
+SymbolCompound "1" -- "0..n" Member : members >
+
+' Naming the class Enum confuses plantuml => CeEnum
+class CeEnum {
+  + constants?()
+  + constants_count() : int
+  + namespace() -> :tag
+}
+Symbol <|-- CeEnum
+
+class EnumConstant {
+  + linkage() -> :none
+  + value : Integer
+}
+Symbol <|-- EnumConstant
+CeEnum "1" -- "0..n" EnumConstant : constants >
 
 class Macro {
+  + namespace() -> :macro
 }
 Symbol <|-- Macro
 
