@@ -111,7 +111,7 @@ module Rocc::Session
           # TODO find all source code files in f and its subdirectories and add as translation units to mdl
           raise "Not yet supported" # TODO
         when f == "-"
-        mdl.add_translation_unit(:stdin) # FIXME seems wrong ... (?)
+        mtranslation_units << CeTranslationUnit.new(:stdin)
         else
           raise "Programming error :("
         end
@@ -121,8 +121,8 @@ module Rocc::Session
       # XXX set up according to linker options if such are supplied
       mdl = CeModule.new(translation_units, "a.out")
       @modules = [ mdl ]
-             
-      # files.map { |f| f.expand(ProcessingEnvironment.new($env.program)) }
+      
+      @modules.each { |m| m.populate }
 
     end # parse_input
 

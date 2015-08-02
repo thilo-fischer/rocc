@@ -3,9 +3,9 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Rocc
+module Rocc::Contexts
 
-  class ParsingContext
+  class LinereadContext
 
     attr_reader :recent_token
 
@@ -21,6 +21,6 @@ module Rocc
       @recent_token
     end
 
-  end # class ExpandContext
+  end # class LinereadContext
 
 end # module Rocc

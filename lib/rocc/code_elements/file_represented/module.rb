@@ -3,6 +3,8 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
+require 'rocc/code_elements/code_element'
+
 module Rocc::CodeElements::FileRepresented
 
   ##
@@ -19,6 +21,10 @@ module Rocc::CodeElements::FileRepresented
     end
 
     alias translation_units origin
+    
+    def populate
+      translation_units.each { |t| t.populate }
+    end
 
   end # class CeModule
 

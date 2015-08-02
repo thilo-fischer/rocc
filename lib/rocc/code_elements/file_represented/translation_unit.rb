@@ -3,6 +3,8 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
+require 'rocc/code_elements/code_element'
+
 module Rocc::CodeElements::FileRepresented
 
   ##
@@ -24,12 +26,13 @@ module Rocc::CodeElements::FileRepresented
     end
 
     def name
-      main_file.basename
+      main_file.basename + ".o"
     end
 
     def populate
-      ctx = ParsingContext.new(self)
+      ctx = LinereadContext.new(self)
       main_file.pursue(ctx)
+      cxt.terminate
     end
 
     def symbols(filter = nil)

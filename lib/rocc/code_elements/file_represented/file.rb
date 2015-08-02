@@ -3,6 +3,8 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
+require 'rocc/code_elements/file_represented/filesystem_element'
+
 module Rocc::CodeElements::FileRepresented
 
   require 'digest/sha1'
@@ -30,11 +32,7 @@ module Rocc::CodeElements::FileRepresented
         basename
       end
     end
-
-    def pursue(context)
-      
-    end
-    
+   
 #    def symbols(filter = nil)
 #      if @symbols and up_to_date?
 #        @symbols
@@ -46,6 +44,7 @@ module Rocc::CodeElements::FileRepresented
 
     def lines
       unless @lines and up_to_date?
+        update_changedetection
         File.open(abs_path, "r") do |file|
           @lines = file.readlines.map(&:chomp!)
         end
@@ -63,6 +62,8 @@ module Rocc::CodeElements::FileRepresented
       @content
     end
 
+    private
+    
     ##
     # Test if file changed since we parsed it the last time.
     #
@@ -130,9 +131,6 @@ module Rocc::CodeElements::FileRepresented
     def volatile_checksum
       Digest::SHA1.hexdigest(IO.read(abs_path))
     end
-
-
-    private
 
     def change_detection_mtime?
       $options.value(:change_detection).include?("mtime")
