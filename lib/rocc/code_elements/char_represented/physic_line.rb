@@ -98,10 +98,7 @@ module Rocc::CodeElements
     def pursue(context)
 
       continued = check_continued_line
-
-      if continued.class < String
-        warn continued
-      end
+      warn continued if continued.class < String
       
       if continued
         context.announce_continued_line(self)
@@ -117,13 +114,6 @@ module Rocc::CodeElements
         logic_line.pursue(context)
         
       end
-
-#        # merge physical lines
-#        if env.remainders.include? self.class
-#          text = env.remainders[self.class].map {|ln| ln.text.sub(/\\$/,"")}.join + text
-#          origin = env.remainders[self.class][0] .. self
-#          env.remainders.delete self.class
-#        end
 
      end # pursue
 

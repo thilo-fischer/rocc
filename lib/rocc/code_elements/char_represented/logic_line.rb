@@ -31,7 +31,6 @@ module Rocc::CodeObjects
 #          origin = env.remainders[self.class][0] .. self
 #          env.remainders.delete self.class
 #        end
-
       else
         origin.text
       end
@@ -42,12 +41,9 @@ module Rocc::CodeObjects
       nil
     end
 
-    def expand(env)
-      env.expansion_stack.push self
-      @preprocessing = env.preprocessing
-      tokenize(env).map {|t| t.expand(env)}
-      env.expansion_stack.pop
-    end # expand
+    def pursue(context)
+      tokenize(context).map {|t| t.pursue(context.XXX)}      
+    end
 
     def tokens
       raise "#{to_s} has not yet been tokenized." unless @tokens
@@ -56,64 +52,25 @@ module Rocc::CodeObjects
 
     alias content tokens
 
-    def conditions
-      result = []
-      @preprocessing[:conditional_stack].each do |cond|
-        result << cond.summarize
-      end
-    end
-    
     private
 
-    def validate_origin(origin)
-      raise type_error origin unless origin.is_a? CoContainer
-      origin.validate_origin CoPhysicLine
-    end
+    def tokenize(lr_ctx)
 
+      tkn_ctx = TokenizationContext.new(text) # lx_ctx.cc_ctx, 
 
-    def tokenize(env)
-
-      dbg "Tokenizing line -> "
-
-      # create copy of `text'
-      env.tokenization[:remainder] = remainder = @text.dup
-      env.tokenization[:line_offset] = 0
-      
-      @tokens = []
-      tkn = nil
-
-      if env.tokenization[:ongoing_comment]
+      if lr_ctx.multiline_comment
         # handle ongoing multi line comment
-        tkn = Tokens::TknMultiLineBlockComment.pick!(env)
-        @tokens << tkn if tkn
+        Tokens::TknMultiLineBlockComment.pick!(tkn_ctx)
+        lr_ctx.leave_multiline_comment if tkn_ctx.recent_token.complete?
+      else
+        # remove leading whitespace
+        tkn_ctx.lstrip
       end
+      
+      tkn_ctx.pick_pp_directives
 
-      # remove leading and trailing whitespace
-      remainder.rstrip!
-      env.tokenization[:line_offset] += remainder.slice!(/^\s*/).length
-
-      # handle comments interfering with preprocessor directives
-      while tkn = Tokens::TknComment.pick!(env)
-        @tokens << tkn if tkn
-      end
-      return @tokens if remainder.empty?
-      if remainder[0] == "#" then
-        remainder[0] = ""
-        env.tokenization[:line_offset] += remainder.slice!(/^\s*/).length
-        while tkn = Tokens::TknComment.pick!(env)
-          @tokens << tkn if tkn
-        end    
-        remainder.prepend "#"
-      end
-
-      # handle preprocessor directives
-      tkn = Tokens::TknPpDirective.pick!(env)
-      @tokens << tkn if tkn
-
-      until remainder.empty? do
-        if Tokens::CoToken::PICKING_ORDER.find {|c| tkn = c.pick!(env)}
-          @tokens << tkn
-        else
+      until tkn_ctx.finished? do
+        unless Tokens::CoToken::PICKING_ORDER.find {|c| c.pick!(tkn_ctx)}
           raise "Could not dertermine next token in `#{remainder}'"
         end
       end
