@@ -10,6 +10,10 @@ note as N1
   implemention, but the planned rework of it.
 end note
 
+'      =============
+package BaseClasses <<Frame>> #EEEEEE {
+'      =============
+
 class Element {
   + initialize(origin :Element)
   - announce()
@@ -50,7 +54,14 @@ class ElementList {
 }
 ElementList --|> CollectionElement
 
+'       =============
+' endpkg BaseClasses
+'       =============
+}
 
+'      =================
+package FileRepresented <<Frame>> #EEEEEE {
+'      =================
 
 class Module {
   type : Executable, DynamicLib, StaticLib
@@ -106,6 +117,15 @@ Directory <|-- BaseDirectory
 '' A BaseDirectory's base_directory is the object itself.
 'FilesystemElement "0..n" --> "1" BaseDirectory : base_directory
 
+'       =================
+' endpkg FileRepresented
+'       =================
+}
+
+'      =================
+package CharRepresented <<Frame>> #EEEEEE {
+'      =================
+
 class PhysicalLine {
   line_number
 }
@@ -150,6 +170,16 @@ Token <|-- Tkn1Char
 abstract class Specification {
 }
 Token "1..n" -- "0..1" Specification : origin <
+
+'       =================
+' endpkg CharRepresented
+'       =================
+}
+
+
+'      =============
+package Semantics <<Frame>> #EEEEEE {
+'      =============
 
 class Declaration {
 }
@@ -347,58 +377,29 @@ AtomicExpression --|> Expression
 CompoundExpression --|> Expression
 CompoundExpression "0..1" -- "0..n" Expression : content >
 
+class Reference {
+}
+Symbol "1" -- "0..n" Reference : references >
+
+Invokation <|-- Reference
+MacroExpansion <|-- Invokation
+FunctionInvokation <|-- Invokation
+
+LvalueRef <|-- Reference
+ArgumentRef <|-- Reference
+ConstArgref <|-- ArgumentRef
+
+ArgumentRef "0..n" -- "1" FunctionInvokation
+
+
+'       ===========
+' endpkg Semantics
+'       ===========
+}
+
 @enduml
 
-'' fixme: replace "static" for class members and "const" by according uml notation
 '
-'class CodeObject {
-'  String where/get_location()
-'  String what/get_text()
-'  static leaf?()
-'  static REG_EXP
-'  PpConditional[] when()
-'  static void register()
-'  static CodeObject[] get_all()           ' get all "is_a?"
-'  static CodeObject[] get_all_instances() ' get all "instance_of?"
-'  CodeObject parent
-'}
-'
-'note as NoteCodeObject
-'  All classes in this diagram
-'  shall be (direct or indirect)
-'  subclasses of CodeObject.
-'end note
-'NoteCodeObject .. CodeObject
-'
-'File <|-- Sourcefile
-'File <|-- Headerfile
-'File "*" *-- "1" PhysicLine
-'
-'class File {
-'  String rel_path
-'  String abs_path
-'  int lines
-'  bool valid?/exists?
-'  void update()
-'}
-'
-'PhysicLine "*" *-- "1" LogicLine
-'
-'class PhysicLine {
-'  int char_length
-'  int real_line_number       # 'ordinary' line number
-'  int specified_line_number  # line number wrt #line preprocessor directive
-'}
-'
-''note as NoteLogicLine
-''  Comments have already
-''  been removed from what
-''  we call LogicLines here.
-''end note
-''NoteLogicLine .. LogicLine
-''=> deprecated: comments are still part of logical lines
-'
-'LogicLine "1" *-- "1" PpDirective
 'PpDirective <|-- PpDefine
 'PpDirective <|-- PpUndef
 'PpDirective <|-- PpPragma
@@ -415,8 +416,6 @@ CompoundExpression "0..1" -- "0..n" Expression : content >
 'PpCondIf "1" *-- "1" PpCondElse
 'PpCondIf "*" *-- "1" PpCondElif
 'PpCondIf "1" *-- "1" PpCondEndif
-'
-'LogicLine "*" -- "*" Statement
 '
 'Statement <|-- CompoundStatement
 'CompoundStatement "*" o-- "1" Statement

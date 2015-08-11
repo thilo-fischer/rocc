@@ -14,12 +14,12 @@ module Rocc::CodeObjects
   
   
   class CoLogicLine < CodeObject
-    attr_reader :preprocessing
+    attr_reader :indentation
 
     def initialize(origin)
       super(origin)
       @tokens = nil
-      @preprocessing = nil
+      @indentation = nil
     end # initialize
 
     def text
@@ -42,7 +42,7 @@ module Rocc::CodeObjects
     end
 
     def pursue(context)
-      tokenize(context).map {|t| t.pursue(context.XXX)}      
+      tokenize(context).map {|t| t.pursue(context.compilation_context)}      
     end
 
     def tokens
@@ -54,9 +54,10 @@ module Rocc::CodeObjects
 
     private
 
+    # TODO move more code from here to TokenizationContext, rename TokenizationContext => Tokenizer
     def tokenize(lr_ctx)
 
-      tkn_ctx = TokenizationContext.new(text) # lx_ctx.cc_ctx, 
+      tkn_ctx = TokenizationContext.new(self) # lx_ctx.cc_ctx, 
 
       if lr_ctx.multiline_comment
         # handle ongoing multi line comment
@@ -64,7 +65,7 @@ module Rocc::CodeObjects
         lr_ctx.leave_multiline_comment if tkn_ctx.recent_token.complete?
       else
         # remove leading whitespace
-        tkn_ctx.lstrip
+        @indentation = tkn_ctx.lstrip
       end
       
       tkn_ctx.pick_pp_directives
@@ -74,7 +75,13 @@ module Rocc::CodeObjects
           raise "Could not dertermine next token in `#{remainder}'"
         end
       end
-      
+
+      if tkn_ctx.recent_token and
+        tkn_ctx.recent_token.class.is_a? Tokens::TknMultiLineBlockComment and
+        not tkn_ctx.recent_token.complete?
+        lr_ctx.announce_multiline_comment(tkn_ctx.recent_token)
+      end
+        
       @tokens
 
     end # tokenize

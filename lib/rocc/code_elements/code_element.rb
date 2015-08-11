@@ -60,12 +60,36 @@ module Rocc::CodeElements
     alias adducer origin
 
     ##
+    # string to represent this element in rocc debugging and internal error messages
+    def name_dbg
+      class_s = self.class.to_s
+      disp = name
+      if (class_s == name)
+        name
+      else
+        class_s + "(" + name + ")"
+      end
+    end
+
+    ##
+    # string to represent this element in messages from rocc
+    def name
+      self.class.to_s
+    end
+
+    ##
+    # character(s) to use to separate this element from its origin in path information
+    def path_separator
+      " > "
+    end
+    
+    ##
     # path to file and to scope in file in which the element is defined
     def path
       if @origin
-        @origin.path + path_separator + name_disp
+        @origin.path + path_separator + name
       else
-        name_disp
+        name
       end
     end
 
@@ -74,9 +98,9 @@ module Rocc::CodeElements
     # listing all elements actually in the origin-chain
     def path_full
       if @origin
-        @origin.path_full + path_separator + name_disp
+        @origin.path_full + path_separator + name
       else
-        name_disp
+        name
       end
     end
 
@@ -100,24 +124,6 @@ module Rocc::CodeElements
     ##
     # like path, but discard scope information, i.e. only give file path and line number
     alias location path
-
-    ##
-    # string to represent this element in rocc debugging and internal error messages
-    def name_dbg
-      class_s = self.class.to_s
-      disp = name
-      if (class_s == name)
-        name
-      else
-        class_s + "(" + name + ")"
-      end
-    end
-
-    ##
-    # string to represent this element in messages from rocc
-    def name
-      self.class.to_s
-    end
 
     # rrr
     def string_representation(options = {})
@@ -191,12 +197,6 @@ module Rocc::CodeElements
 #      origin
 #    end
 
-    ##
-    # character(s) to use to separate this element from its origin in path information
-    def path_separator
-      " > "
-    end
-    
   end # class CodeElement
 
 end # module Rocc::CodeObjects

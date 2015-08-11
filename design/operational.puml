@@ -39,49 +39,47 @@ class Cache {
 ' No cache only for on-the-fly invokations
 Session "1" -- "0..1" Cache : cache >
 
-
-class ReadlineContext {
-
+class ParsingContext {
 }
-PhysicalLine "0..n" <-- ReadlineContext : ongoing_line
-' Refers to a comment if the comment's beginning has already been parsed, but the comment's ending has not yet been found (e.g. block comments that span several lines)
-Comment "0..1" <-- ReadlineContext : ongoing_comment
 
-' FIXME necessary ?!
+ParsingContext --> LinereadContext
+PhysicalLine "0..n" <-- LinereadContext : ongoing_lines
+
+ParsingContext --> CommentContext
+' Refers to a comment if the comment's beginning has already been parsed, but the comment's ending has not yet been found (e.g. block comments that span several lines)
+CommentContext "1" --> "0..1" MultilineComment : ongoing_comment
+
+ParsingContext --> CompilationContext
+class CompilationContext {
+}
+CompilationContext "1" <--> "1..n" CompilationBranch : branches
+
 class TokenizationContext {
 ' remaining charactres of current line to tokenize
 + remainder : String
 }
+CommentContext "1" <-- "0..n" TokenizationContext : comment_context >
 
-ReadlineContext "1" --> "1" TokenizationContext
-class CompilationBranch {
-
-}
-TokenizationContext "1" --> "1..n" CompilationBranch
-PpDirCond "0..1" <-- "0..1" CompilationBranch
-class CompilationContext {
-
-}
-CompilationBranch "1" --> "1" CompilationContext
-
-' most recently generated token, shold be 0 only at the very beginning of translation unit
-Token "0..1" <-- CompilationContext : cursor
-
-' map from macro identifiers to their definitions
-Macro "0..n" <-- CompilationContext : macros
 ' array of all preprocessing conditional branches chosen
-PpDirCond "0..n" <-- CompilationContext : conditional_stack <
-' most recent preprocessor line directive
-PpDirLine "0..1" <-- CompilationContext : recent_line_directive <
+PpDirCond "0..1" <-- "0..1" CompilationBranch : conditions >
 
-CompilationContext "1" --> "1" TranslationUnit : translation_unit >
+Token "0..1" <-- CompilationBranch : cursor
+
 ' Which namespace, class, function, compound statement, etc. are we in at the current position in source code (formally known as expansion_stack)
-Element "1..n" <-- CompilationContext : scope_stack <
-' map from type identifiers to their definitions
-Typedef "0..n" <-- CompilationContext : typedefs
+Element "1..n" <-- CompilationBranch : scope_stack <
+
+class TranslationUnit {
+  + announce_pp_dir_line(pp_line_directive)
+  + pp_line_number(line, conditions) : int
+  + announce_symbol(symbol)
+  + announce_reference(reference)
+}
+CompilationContext "1" --> "1" TranslationUnit : translation_unit >
+PpDirLine "0..n" <-- TranslationUnit : line_directives <
 
 class SymbolIndex {
-+ find_symbols(identifier :String, namespace = nil, class = nil, linkage = none) : Symbol[]
++ announce_symbol(symbol)
++ find_symbols(identifier :String, namespace = nil, class = nil, linkage = none, conditions = nil) : Symbol[]
 + find_innermost_symbol(identifier :String, namespace = nil, class = nil, linkage = none) : Symbol
 + find_function(identifier, linkage = external) alias find_innermost_symbol(identifier, :ordinary, Function, linkage) : Function
 + find_variable(identifier, linkage = external) alias find_innermost_symbol(identifier, :ordinary, Variable, linkage) : Variable
@@ -90,5 +88,8 @@ class SymbolIndex {
 }
 TranslationUnit "1" --> "1" SymbolIndex : symbols >
 SymbolIndex "1" --> "0..n" Symbol : map
+
+TranslationUnit "1" --> "1" ReferenceIndex : symbols >
+ReferenceIndex "1" --> "0..n" Reference : map
 
 @enduml

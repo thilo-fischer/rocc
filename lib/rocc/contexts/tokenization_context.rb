@@ -5,28 +5,39 @@
 
 module Rocc::Contexts
 
+  ##
+  # ...
+  #
+  # Not contained in ParsingContext as this context is recreated at each new tokenization method invokation and thus does not need to be ... over multiple method invokations.
   class TokenizationContext
 
 #    attr_reader :compilation_context
-    attr_reader :tokens, :remainder, :charpos
+    attr_reader :line, :tokens, :remainder, :charpos
 
-    def initialize(line_text) # compilation_context, 
-#      @compilation_context = compilation_context
+    def initialize(line) # compilation_context, 
+      # @compilation_context = compilation_context
+      @line = line
       @tokens = []
-      @remainder = line_text.dup
+      @remainder = line.text.dup
       @charpos = 0
     end
 
+    ##
+    # return true if all tokens have been picked from the context's line, false otherwise
     def finished?
       @remainder.empty?
     end
 
+    ##
+    # Return the most recently picked token or nil if no tokens have been picked so far.
     def recent_token
       @tokens.last
     end
 
     def lstrip
-      @charpos += @remainder.slice!(/^\s*/).length
+      whitespace = @remainder.slice!(/^\s*/)
+      @charpos += whitespace.length
+      whitespace
     end
 
 #    def strip
@@ -49,15 +60,12 @@ module Rocc::Contexts
       end
 
       # handle preprocessor directives
-      tkn = Tokens::TknPpDirective.pick!(env)
-      @tokens << tkn if tkn
+      Tokens::TknPpDirective.pick!(self)
     end
     
-    def progress_token(tkn = nil, length)
-      @recent_token = tkn if tkn
-      @line_offset += length
-      @line_offset += @remainder.slice!(/^\s*/).length
-      @recent_token
+    def add_token(tkn)
+      @charpos += tkn.text.length + tkn.whitespace_after.length
+      @tokens << tkn
     end
 
   end # class TokenizationContext

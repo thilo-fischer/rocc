@@ -98,7 +98,7 @@ module Rocc::CodeElements
     def pursue(context)
 
       continued = check_continued_line
-      warn continued if continued.class < String
+      warn continued if continued.class.is_a? String
       
       if continued
         context.announce_continued_line(self)
