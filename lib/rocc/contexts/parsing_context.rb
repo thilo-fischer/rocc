@@ -10,17 +10,21 @@ require 'compilation_context'
 module Rocc::Contexts
 
   ##
-  # All-embracing context class holding the different contexts used
-  # for passing information in between method invokations at different
-  # levels (preprocessing, tokenization, compilation/interpretation).
+  # All-embracing context class holding the contexts used for passing
+  # information in between method invokations at different levels
+  # (preprocessing, tokenization, compilation/interpretation).
   class ParsingContext
 
-    attr_reader :lineread_context, :comment_context, :compilation_context
+    attr_reader :lineread_context
 
     def initialize(translation_unit)
-      @lineread_context = LinereadContext.new
-      @comment_context = CommentContext.new
-      @compilation_context = CompilationContext.new(translation_unit)
+      @lineread_context = LinereadContext.new(CommentContext.new(CompilationContext.new(translation_unit)))
+    end
+
+    def terminate # FIXME! getting called at end of translation_unit?
+      @lineread_context.comment_context.compilation_context.terminate
+      @lineread_context.comment_context.terminate
+      @lineread_context.terminate
     end
 
   end # class ParsingContext

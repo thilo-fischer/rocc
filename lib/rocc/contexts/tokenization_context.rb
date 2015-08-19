@@ -11,11 +11,10 @@ module Rocc::Contexts
   # Not contained in ParsingContext as this context is recreated at each new tokenization method invokation and thus does not need to be ... over multiple method invokations.
   class TokenizationContext
 
-#    attr_reader :compilation_context
     attr_reader :line, :tokens, :remainder, :charpos
 
-    def initialize(line) # compilation_context, 
-      # @compilation_context = compilation_context
+    def initialize(comment_context, line)
+      @comment_context = comment_context
       @line = line
       @tokens = []
       @remainder = line.text.dup
@@ -28,6 +27,11 @@ module Rocc::Contexts
       @remainder.empty?
     end
 
+    def terminate
+      # FIXME find something better to do than raise that string ...
+      raise "not completed" unless finished?
+    end
+    
     ##
     # Return the most recently picked token or nil if no tokens have been picked so far.
     def recent_token
@@ -67,6 +71,20 @@ module Rocc::Contexts
       @charpos += tkn.text.length + tkn.whitespace_after.length
       @tokens << tkn
     end
+
+    def in_multiline_comment?
+      not @comment_context.completed?
+    end
+
+    def announce_multiline_comment(comment)
+      @comment_context.announce_multiline_comment(comment)
+    end
+
+    # FIXME rename leave => end (?)
+    def leave_multiline_comment
+      @comment_context.leave_multiline_comment
+    end
+
 
   end # class TokenizationContext
 

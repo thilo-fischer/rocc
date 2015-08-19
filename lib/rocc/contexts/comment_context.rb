@@ -7,12 +7,22 @@ module Rocc::Contexts
 
   class CommentContext
 
-    attr_reader :multiline_comment
+    attr_reader :multiline_comment, :compilation_context
 
-    def initialize
+    def initialize(compilation_context)
+      @compilation_context = compilation_context
       @multiline_comment = nil
     end
     
+    def terminate
+      # FIXME find something better to do than raise that string ...
+      raise "not completed" unless completed?
+    end
+
+    def completed?
+      @multiline_comment == nil
+    end
+
     def announce_multiline_comment(comment)
       @multiline_comment ||= comment
     end

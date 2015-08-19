@@ -62,6 +62,10 @@ module Rocc::CodeElements::FileRepresented
       @content
     end
 
+    def pursue(parsing_context)
+      super(parsing_context.lineread_context)
+    end
+
     private
     
     ##

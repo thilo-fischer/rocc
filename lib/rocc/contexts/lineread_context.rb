@@ -7,29 +7,28 @@ module Rocc::Contexts
 
   class LinereadContext
 
-    attr_reader :translation_unit, :compilation_brances, :first_continued_line, :multiline_comment
+    attr_reader :first_continued_line, :comment_context
 
-    def initialize(translation_unit)
-      @translation_unit = translation_unit
-      @compilation_branches = [ CompilationBranch.new(self) ]
+    def initialize(comment_context)
+      @comment_context = comment_context
       @first_continued_line = nil
-      @multiline_comment = nil
     end
     
+    def terminate
+       # FIXME find something better to do than raise that string ...
+     raise "not completed" unless completed?
+    end
+
+    def completed?
+      @first_continued_line == nil
+    end
+
     def announce_continued_line(physical_line)
       @first_continued_line ||= physical_line
     end
 
     def leave_continued_lines
       @first_continued_line = nil
-    end
-
-    def announce_multiline_comment(comment)
-      @multiline_comment ||= comment
-    end
-
-    def leave_multiline_comment
-      @multiline_comment = nil
     end
 
   end # class LinereadContext

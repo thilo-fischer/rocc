@@ -30,7 +30,7 @@ module Rocc::CodeElements::FileRepresented
     end
 
     def populate
-      ctx = LinereadContext.new(self)
+      ctx = ParsingContext.new(self)
       main_file.pursue(ctx)
       cxt.terminate
     end

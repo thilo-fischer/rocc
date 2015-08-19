@@ -41,8 +41,9 @@ module Rocc::CodeObjects
       nil
     end
 
-    def pursue(context)
-      tokenize(context).map {|t| t.pursue(context.compilation_context)}      
+    def pursue(lineread_context)
+      comment_context = lineread_context.comment_context
+      tokenize(comment_context).map {|t| t.pursue(comment_context.compilation_context)}
     end
 
     def tokens
@@ -55,34 +56,37 @@ module Rocc::CodeObjects
     private
 
     # TODO move more code from here to TokenizationContext, rename TokenizationContext => Tokenizer
-    def tokenize(lr_ctx)
+    def tokenize(comment_context)
 
-      tkn_ctx = TokenizationContext.new(self) # lx_ctx.cc_ctx, 
-
-      if lr_ctx.multiline_comment
+      tokenization_context = TokenizationContext.new(comment_context, self)
+    
+      if tokenization_context.in_multiline_comment?
         # handle ongoing multi line comment
-        Tokens::TknMultiLineBlockComment.pick!(tkn_ctx)
-        lr_ctx.leave_multiline_comment if tkn_ctx.recent_token.complete?
+        Tokens::TknMultiLineBlockComment.pick!(tokenization_context)
+        tokenization_context.leave_multiline_comment unless tokenization_context.recent_token.complete? # FIXME leave multiline comment when parsing `*/'
       else
         # remove leading whitespace
-        @indentation = tkn_ctx.lstrip
+        @indentation = tokenization_context.lstrip
       end
       
-      tkn_ctx.pick_pp_directives
+      tokenization_context.pick_pp_directives
 
-      until tkn_ctx.finished? do
-        unless Tokens::CoToken::PICKING_ORDER.find {|c| c.pick!(tkn_ctx)}
+      until tokenization_context.finished? do
+        unless Tokens::CoToken::PICKING_ORDER.find {|c| c.pick!(tokenization_context)}
           raise "Could not dertermine next token in `#{remainder}'"
         end
       end
 
-      if tkn_ctx.recent_token and
-        tkn_ctx.recent_token.class.is_a? Tokens::TknMultiLineBlockComment and
-        not tkn_ctx.recent_token.complete?
-        lr_ctx.announce_multiline_comment(tkn_ctx.recent_token)
+      # FIXME enter multiline comment when parsing `/*'
+      if tokenization_context.recent_token and
+        tokenization_context.recent_token.class.is_a? Tokens::TknMultiLineBlockComment and
+        not tokenization_context.recent_token.complete?
+        tokenization_context.announce_multiline_comment(tokenization_context.recent_token)
       end
         
-      @tokens
+     tokenization_context.terminate
+
+     @tokens
 
     end # tokenize
 

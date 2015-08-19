@@ -95,23 +95,23 @@ module Rocc::CodeElements
       end
     end
 
-    def pursue(context)
+    def pursue(lineread_context)
 
-      continued = check_continued_line
+      continued = check_continued_line()
       warn continued if continued.class.is_a? String
       
       if continued
-        context.announce_continued_line(self)
+        lineread_context.announce_continued_line(self)
       else
         
-        if context.continued_lines?
-          logic_line = CeLogicLine.new(context.first_continued_line .. self)
-          context.clear_continued_lines
+        if lineread_context.continued_lines?
+          logic_line = CeLogicLine.new(lineread_context.first_continued_line .. self)
+          lineread_context.clear_continued_lines
         else
           logic_line = CeLogicLine.new(self)
         end
 
-        logic_line.pursue(context)
+        logic_line.pursue(lineread_context)
         
       end
 
