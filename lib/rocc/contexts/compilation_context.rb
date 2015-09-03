@@ -7,50 +7,130 @@ module Rocc::Contexts
 
   class CompilationContext
 
-    attr_reader :parent, :tkn_cursor
+    # XXX remove @id ?
+    
+    attr_reader :parent, :children, :tkn_cursor, :conditions, :pending_tokens, :scope_stack, :id
 
-    def initialize(parent, condition = nil)
+    def initialize(parent, conditions = nil, id = "*")
       @parent = parent
       @children = []
+      @next_child_id = 0
 
-      @condition = condition
+      @conditions = conditions
+
+      @id = id
+
+      @active = true
 
       @tkn_cursor = nil
 
       #@macros = {}
       #@typedefs = {}
       @symbols = SymbolIndex.new
+
+      @pending_tokens = []
+
+      @scope_stack = []
     end
 
-    def branch(condition)
-      b = new(self, condition)
+    def branch(conditional)
+      b = new(self, Conditions.new(@conditions, conditional), @id + ".#{@next_child_id}")
       @children << b
+      @next_child_id += 1
    #   b.setup(self)
     end
 
-    def conditions
-      if root?
-        raise "Programming error!" unless condition == nil
-        []
-      else
-        @parent.conditions << condition
-      end
+    def children?
+      not children.empty?
     end
     
+    alias branches children
+    alias branches? children?
+    
+
     def root?
       @parent.is_a? CoTranslationUnit
     end
 
-    def find_symbol(name, ...)
-      result = @symbols.find_symbol(...)
-      return if result
-      return @parent.find_symbol(...)
+    def push_pending(token)
+      @pending_tokens << token
+    end
+
+    def clear_pending
+      @pending_tokens = []
+    end
+
+    def pending?
+      not @pending_tokens.empty?
+    end
+
+    def pending_to_s
+      result = ""
+      @pending_tokens.each {|t| result += t.text + t.whitespace_after }
+    end
+
+    def enter_scope(scope)
+      @scope_stack << scope
+    end
+
+    def current_scope
+      @scope_stack.last
+    end
+
+    def leave_scope
+      @scope_stack.pop
+    end
+
+    def find_symbol(name, *varargs)
+      result = []
+      result += @symbols.find_symbol(name, *varargs)
+      result += @parent.find_symbol(name, *varargs)
+      result
     end
 
     def terminate
+      raise "TODO error handling 82398237" if pending?
       @parent.annouce_symbols(@symbols)
+      deactivate
     end
-    
+
+    ##
+    # Mark this compilation branch as dead end. Log accroding message
+    # if logging level is set accrodingly. token argument is begin
+    # used for informational purposes only. If a block is passed to
+    # the method, that block must evaluate to a String object and the
+    # String object will be included in the message being logged.
+    def fail(token)
+      deactivate
+      # FIXME need end-user-friendly logging (with conditionals' ids?)
+      $log.info do
+        message = yield
+        "#{token.path}: Failed in processing branch #{@id}" +
+          if message
+            ": " + message
+          else
+            "."
+          end
+      end
+      $log.warn{"Branch conditions: " + @conditions.dbg_name}
+    end
+
+    def active?
+      @active
+    end
+
+    protected
+
+    def deactivate
+      @active = false
+      if root?
+        raise "all compilation branches ended" # FIXME
+      else
+        @parent.children.remove(self) # XXX ?
+        @parent.deactivate unless @parent.children.find {|c| c.active? }
+      end
+    end
+      
 #    def progress_token(tkn = nil, length)
 #      @recent_token = tkn if tkn
 #      @line_offset += length
@@ -69,4 +149,4 @@ module Rocc::Contexts
 
   end # class CompilationContext
 
-end # module Rocc
+end # module Rocc::Contexts

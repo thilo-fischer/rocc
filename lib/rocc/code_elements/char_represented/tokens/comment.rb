@@ -3,8 +3,7 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Rocc::CodeObjects
-  module Tokens
+module Rocc::CodeElements::Tokens
 
     class TknComment               < CoToken;         end
     class TknLineComment           < TknComment;      end
@@ -96,5 +95,4 @@ module Rocc::CodeObjects
 
     end
 
-  end # module Tokens
-end # module Rocc::CodeObjects
+end # module Rocc::CodeElements::Tokens

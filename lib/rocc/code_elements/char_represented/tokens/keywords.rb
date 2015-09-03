@@ -3,9 +3,7 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Rocc::CodeObjects
-
-  module Tokens
+module Rocc::CodeElements::Tokens
 
     # forward declarations
     class CoToken               < CodeObject;     end
@@ -22,16 +20,14 @@ module Rocc::CodeObjects
     class TknKwCtrlflow < TknKeyword
       @PICKING_REGEXP = Regexp.union %w(return if else for while do continue break switch case default goto)
 
-      def expand_with_context(env, ctxt)
-        if ctxt[:unbound_objects].empty?
-          ctxt[:unbound_objects] << self
+      def pursue_branch(compilation_context)
+        ctx = compilation_context #alias
+        if ctx.pending?
+          ctx.fail(self){"Syntax error: `#{text}' following `#{ctx.pending_to_s}'."}
         else
-          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
-          warn "Found `#{ctxt[:unbound_objects].inspect}' in front of `#{to_s}'"
-          env.context_branches.delete(ctxt)
-          raise
+          super
         end
-      end # expand_with_context
+      end
       
     end
 
@@ -54,26 +50,28 @@ module Rocc::CodeObjects
     class TknKwStorageClassSpecifier < TknKeyword
       @PICKING_REGEXP = Regexp.union %w(typedef static extern auto register)
 
-      def expand_with_context(env, ctx)
-        if ctx[:unassociated_tokens].find {|t| t.is_a? TknKwStorageClassSpecifier}
-          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
-          env.context.delete(ctx)
-          raise
+      def pursue_branch(compilation_context)
+        ctx = compilation_context # alias
+        if another_storclaspec = ctx.pending_tokens.find {|t| t.is_a? TknKwStorageClassSpecifier}
+          # XXX is it really a *syntax* error or is it an error at another level?
+          ctx.fail(self){"Syntax error: Multipe storage class specifiers given: `#{another_storclaspec.text}' and `#{self.text}'."}
         else
           super
         end
-      end # expand_with_context
+      end
 
     end
 
 
     class TknKwSpecifier < TknKeyword
 
+      THIS_CLASS = TknKwSpecifier
       SUBCLASSES = [ TknKwTypeSpecifier, TknKwStorageClassSpecifier ] # fixme(?): use `inherited' hook ?
       @PICKING_REGEXP = Regexp.union(SUBCLASSES.map{|c| c.picking_regexp})
 
+      # TODO old implementation. still in accordance with pick/pick_string/pick_string!/create ?
       def self.pick!(env)
-        if self != TknKwSpecifier
+        if self != THIS_CLASS
           # allow subclasses to call superclasses method implementation
           super
         else
@@ -92,14 +90,15 @@ module Rocc::CodeObjects
 
 
     class TknKeyword < TknWord
+
+      THIS_CLASS = TknKeyword
       SUBCLASSES = [ TknKwCtrlflow, TknKwTagged, TknKwTypeSpecifier, TknKwTypeQualifier, TknKwStorageClassSpecifier, TknKwMisc ]
       @PICKING_REGEXP = Regexp.union(SUBCLASSES.map{|c| c.picking_regexp})
 
-      # todo: test which version of pick! works faster
-      # (adapt TknKwSpecifier.pick! accordingly)
+      # XXX test which version of pick! works faster, this or the one commented out below. (adapt TknKwSpecifier.pick! accordingly)
 
       def self.pick!(env)
-        if self != TknKeyword
+        if self != THIS_CLASS
           # allow subclasses to call superclasses method implementation
           super
         else
@@ -122,6 +121,5 @@ module Rocc::CodeObjects
 
     end # TknKeyword
 
-  end # module Tokens
-end # module Rocc::CodeObjects
+end # module Rocc::CodeElements::Tokens
 
