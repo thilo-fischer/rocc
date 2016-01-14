@@ -111,6 +111,7 @@ module Rocc::Ui
           optsobj.set(key, value)
         else
           $log.warn{"No option associated with command line argument of `#{key}'"}
+        end
       end
     end # set_options
 

@@ -10,14 +10,15 @@ module Rocc::Session
 
   require 'logger'
 
-  require "rocc/session/options"
+  require 'rocc/session/options'
+  require 'rocc/ui/cmdlineparser'
 
   class Session
 
     def initialize
 
       # parse command line arguments
-      cmdlineparser = CommandLineParser.new
+      cmdlineparser = Rocc::Ui::CommandLineParser.new
       cmdlineparser.parse
 
       # set up logging according to command line arguments

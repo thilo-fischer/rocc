@@ -61,7 +61,7 @@ module Rocc::Session
 
     protected
 
-    attr_reader @switches, @flags
+    attr_reader :switches, :flags
     
     def enable(switch)
       assert_switchname(switch)
@@ -83,11 +83,11 @@ module Rocc::Session
 
     def set_defaults
       @switches = {
-        :on_the_fly = false,
+        :on_the_fly => false,
       }
       @flags = {
-        :verbosity = "WARN",
-        :change_detection = "mtime",
+        :verbosity => "WARN",
+        :change_detection => "mtime",
       }
     end
 

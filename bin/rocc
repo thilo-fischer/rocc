@@ -8,7 +8,7 @@ module Rocc
 
   require 'rocc'
 
-  session = Session.new
+  session = Rocc::Session::Session.new
   session.run
   
 end # module Rocc
