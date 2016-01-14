@@ -41,11 +41,11 @@ logical_line -> logical_line : tokenize
 
 loop each token
 
-token -> token : pursue(ctx)
+logical_line -> token : pursue(ctx)
 
 alt semantical entity completed
 
-token -> ctx : add(entity)
+token -> ParsingContext : add(entity)
 
 end 'alt semantical entity completed
 
@@ -67,7 +67,7 @@ session -> session: run interactive shell or process script or commands
 session --> main
 deactivate session
 
-[<-- main
+[<-- main 
 deactivate main
 
 @enduml

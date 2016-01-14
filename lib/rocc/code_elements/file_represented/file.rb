@@ -80,11 +80,11 @@ module Rocc::CodeElements::FileRepresented
     #   differs from its checksum when it was parsed the last time.
     # [+mtime+sha1+] If no change detected with the +mtime+ mechanism,
     #   also test for change using the +sha1+ mechanism.
-    #
+    #--
     # XXX We will read the date and compute the checksum more often
-    # than necessary: once to check if file is up to date, and once
-    # more if the file changed after the according CodeElements were
-    # updated at update_changedetection.
+    # than necessary (twice instead of once): once to check if file is
+    # up to date, and once more if the file changed after the
+    # according CodeElements were updated at update_changedetection.
     def up_to_date?
       if change_detection_mtime?
         return false if @mod_time != volatile_mod_time

@@ -106,7 +106,9 @@ module Rocc::Session
         raise "No such file or directory: `f'" unless File::exist?(f)
         case
         when File::file?(f)
-          translation_units << CeTranslationUnit.new(ce_file(f))
+          tu = CeTranslationUnit.new(ce_file(f))
+          tu.populate
+          translation_units << tu
         when File::directory?(f)
           # TODO find all source code files in f and its subdirectories and add as translation units to mdl
           raise "Not yet supported" # TODO
