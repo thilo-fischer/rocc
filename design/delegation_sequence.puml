@@ -1,5 +1,7 @@
 @startuml
 
+skinparam monochrome true
+
 [-> main
 activate main
 

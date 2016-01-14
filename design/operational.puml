@@ -3,6 +3,8 @@
 ' Copyright (C) 2014-2015  Thilo Fischer.
 ' Free for non-commercial and most commercial use. See LICENSE.txt for details.
 
+skinparam monochrome true
+
 note as N1
   This diagram does not depict the current
   implemention, but the planned rework of it.
