@@ -4,10 +4,11 @@
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
 require 'rocc/code_elements/code_element'
+require 'rocc/code_elements/char_represented/logic_line'
 
-module Rocc::CodeElements
+module Rocc::CodeElements::CharRepresented
 
-  class CePhysicLine < CodeElement
+  class CePhysicLine < Rocc::CodeElements::CodeElement
 
     ##
     # index of this element in the origin's array of lines
@@ -104,11 +105,11 @@ module Rocc::CodeElements
         lineread_context.announce_continued_line(self)
       else
         
-        if lineread_context.continued_lines?
-          logic_line = CeLogicLine.new(lineread_context.first_continued_line .. self)
-          lineread_context.clear_continued_lines
-        else
+        if lineread_context.completed?
           logic_line = CeLogicLine.new(self)
+        else
+          logic_line = CeLogicLine.new(lineread_context.first_continued_line .. self)
+          lineread_context.leave_continued_lines
         end
 
         logic_line.pursue(lineread_context)
@@ -128,4 +129,4 @@ module Rocc::CodeElements
   end # class CePhysicLine
 
 
-end # module Rocc::CodeElements
+end # module Rocc::CodeElements::CharRepresented

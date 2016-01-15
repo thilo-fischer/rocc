@@ -3,17 +3,12 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Rocc::CodeObjects
-
-  require 'rocc/code_objects/code_object'
-
-  # forward declarations
-  class CoFile < CodeObject; end
-
-  require 'rocc/code_objects/tokens/tokens'
+require 'rocc/code_elements/code_element'
+require 'rocc/code_elements/char_represented/tokens/tokens'
   
-  
-  class CoLogicLine < CodeObject
+module Rocc::CodeElements::CharRepresented
+
+  class CeLogicLine < Rocc::CodeElements::CodeElement
     attr_reader :indentation
 
     def initialize(origin)
@@ -72,7 +67,7 @@ module Rocc::CodeObjects
       tokenization_context.pick_pp_directives
 
       until tokenization_context.finished? do
-        unless Tokens::CoToken::PICKING_ORDER.find {|c| c.pick!(tokenization_context)}
+        unless Tokens::CeToken::PICKING_ORDER.find {|c| c.pick!(tokenization_context)}
           raise "Could not dertermine next token in `#{remainder}'"
         end
       end
@@ -90,6 +85,6 @@ module Rocc::CodeObjects
 
     end # tokenize
 
-  end # class CoLogicLine
+  end # class CeLogicLine
 
-end # module Rocc::CodeObjects
+end # module Rocc::CodeElements::CharRepresented

@@ -8,7 +8,8 @@ module Rocc::CodeElements
   ##
   # Base class for all artifacts rocc may identify when analysing source code.
   # All child classes shall get the prefix `Ce' for *C*ode*E*lement to prevent name clashes with Ruby keywords or (std) lib identifiers, e.g. CoFile < CodeElement.
-
+  #--
+  # XXX consider making CodeElement a module instead of a class and use it as mixin
   class CodeElement
 
     def initialize(origin = nil)

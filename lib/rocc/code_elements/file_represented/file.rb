@@ -4,6 +4,7 @@
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
 require 'rocc/code_elements/file_represented/filesystem_element'
+require 'rocc/code_elements/char_represented/physic_line.rb'
 
 module Rocc::CodeElements::FileRepresented
 
@@ -27,7 +28,7 @@ module Rocc::CodeElements::FileRepresented
 
     def name
       if @extension
-        basename + '.' + @extension
+        basename + @extension
       else
         basename
       end
@@ -56,7 +57,7 @@ module Rocc::CodeElements::FileRepresented
       unless @content and up_to_date?
         @content = []
         lines.each_with_index do |ln, idx|
-          @content << CoPhysicLine.new(self, ln, idx)
+          @content << Rocc::CodeElements::CharRepresented::CePhysicLine.new(self, ln, idx)
         end
       end
       @content
@@ -137,11 +138,11 @@ module Rocc::CodeElements::FileRepresented
     end
 
     def change_detection_mtime?
-      $options.value(:change_detection).include?("mtime")
+      Rocc::Session::Session::current_session.options.value(:change_detection).include?("mtime")
     end
 
     def change_detection_sha1?
-      $options.value(:change_detection).include?("sha1")
+      Rocc::Session::Session::current_session.options.value(:change_detection).include?("sha1")
     end
 
   end # class CeFile

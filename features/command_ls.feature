@@ -9,12 +9,12 @@ Feature: Command `ls'
 @announce-stderr
 
   Scenario Outline: List all externally declared symbols in short form
-    When I invoke as "ls" on "<input>"
-    Then the output should look as specified in the according file
+    When I invoke "ls" on "<code>"
+    Then the output should look as specified by "<expect>"
 
   Scenarios: minimal
-    | input                                                                          |
-    | minimal/main.c                                                                 |
+    | code                                                                           | expect  |
+    | trivial/minimal/main.c                                                                 | trivial/minimal/ls |
 #   | simple_01/main_00.c                                                            |
 #   | simple_01/main_01.c                                                            |
 #   | simple_01/main_02.c                                                            |

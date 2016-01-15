@@ -25,17 +25,20 @@ module Rocc::Session
   class Options
 
     ##
-    # Instantiate an Options instance with all default values.
-    def initialize
-      set_defaults
-    end
-
-    ##
-    # Instantiate an Options instance providing access to the option
-    # configuration held by the +other+ Options object.
-    def initilaize(other)
-      @switches = other.switches
-      @flags    = other.flags
+    # Without an argument, initialize an Options object with all
+    # options set to their default values. If another Options object
+    # is given as +other+ argument, instantiate an Options instance
+    # providing access to that objects option set. (Shallow copy,
+    # i.e. both objects will share the same data structures and
+    # modification to one object will always also affect the other
+    # object.)
+    def initialize(other = nil)
+      if other
+        @switches = other.switches
+        @flags    = other.flags
+      else
+        set_defaults
+      end
     end
     
     ##
@@ -128,8 +131,8 @@ module Rocc::Session
     ##
     # Returns an Options object based on this object's maps, i.e. a
     # read-only interface to this object's option configuration.
-    def read_only
-      @read_only ||= Options.new(self)
+    def readonly
+      @readonly ||= Options.new(self)
     end
     
   end # OptionsRw

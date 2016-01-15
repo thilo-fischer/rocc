@@ -46,6 +46,7 @@
 # == Central TODO list
 #
 # * FIXME adapt copyright note (2014-201*6*)
+# * FIXME read about Modules (when being used as namespaces) and see how to simplify some of the "Rocc::CodeElements::FileRepresented::" paths ... => ack --ruby 'Rocc::'
 # * test suite
 #   * XXX more tests
 #

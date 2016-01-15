@@ -3,9 +3,9 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-require 'lineread_context'
-reauire 'comment_context'
-require 'compilation_context'
+require 'rocc/contexts/lineread_context'
+require 'rocc/contexts/comment_context'
+require 'rocc/contexts/compilation_context'
 
 module Rocc::Contexts
 

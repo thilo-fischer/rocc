@@ -38,7 +38,7 @@ Compiler "0..1" <-- "0..n" Options : compiler (private) <
 class Cache {
   + root_dir : String
 }
-' No cache only for on-the-fly invokations
+' Normally it is 1--1, but cache multiplicity may be 0 for on-the-fly invokations
 Session "1" -- "0..1" Cache : cache >
 
 class ParsingContext {

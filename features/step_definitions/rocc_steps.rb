@@ -1,32 +1,46 @@
-When /^I invoke as "([^"]*)" on "([^"]*)"$/ do |command, input|
+When /^I invoke "([^"]*)" on "([^"]*)"$/ do |command, input|
 
   @command   = command
   @input     = input.split(/\s+/)
   @input_dir = File.dirname(@input.first)
 
-  @input.map! {|i| i = "\"#{File.join(TESTDATA_DIR, i)}\""}
+  @input.map! {|i| i = "\"#{File.join(TESTDATA_DIR, 'code', i)}\""}
   
   step %(I run `rocc -e '#{@command}' #{@input.join(" ")}`)
 
 end
 
-Then /^the output should look as specified in the according file$/ do
+Then /^the output should look as specified by "([^"]*)"$/ do |basepath|
 
-  @result_file = File.join(
-                           TESTDATA_DIR,
-                           @input_dir,
-                           "expected_results",
-                           @command.gsub(/\W/, '_')
-                           )
+  @basepath = File.join(TESTDATA_DIR, 'expect', basepath)
 
-  @expected_result = IO.read(@result_file)
-
+  filename_out = basepath + '.stdout'
+  @expect_out = IO.read(filename_out) 
+  
+  filename_err = basepath + '.stderr'
+  if File.exist?(filename_err)
+    @expect_err = IO.read(filename_err)
+  else
+    @expect_err = nil
+  end
+  
   # fixme: is there a better syntax? e.g. with `step' instead of `steps'?
   steps %Q{
-Then the output should contain exactly:
+    Then the stdout should contain exactly:
 """
-#{@expected_result}
+#{@expect_out}
 """
-}
+  }
+  
+  if @expect_err
+    # fixme: is there a better syntax? e.g. with `step' instead of `steps'?
+    steps %Q{
+      And the stderr should contain exactly:
+"""
+#{@expect_err}
+"""
+  }
+  end
+  
 end
 

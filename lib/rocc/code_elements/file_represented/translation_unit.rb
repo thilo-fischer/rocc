@@ -4,6 +4,7 @@
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
 require 'rocc/code_elements/code_element'
+require 'rocc/contexts/parsing_context'
 
 module Rocc::CodeElements::FileRepresented
 
@@ -37,7 +38,7 @@ module Rocc::CodeElements::FileRepresented
     # Will do the parsing no matter if the symbol table is already
     # available and up to date. Test with +up_to_date?+ 
     def populate
-      ctx = ParsingContext.new(self)
+      ctx = Rocc::Contexts::ParsingContext.new(self)
       main_file.pursue(ctx)
       cxt.terminate
     end

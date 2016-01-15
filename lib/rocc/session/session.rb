@@ -5,7 +5,8 @@
 
 ##
 # Things related to the currently running program instance.
-
+#--
+# XXX use Singleton mixin? (TRPL 7.4.5)
 module Rocc::Session
 
   require 'logger'
@@ -15,8 +16,13 @@ module Rocc::Session
   require 'rocc/code_elements/file_represented/base_dir'
   require 'rocc/code_elements/file_represented/translation_unit'
   require 'rocc/code_elements/file_represented/module'
+  require 'rocc/code_elements/file_represented/file'
 
   class Session
+
+    def self.current_session
+      @@session
+    end
 
     def initialize
 
@@ -41,7 +47,8 @@ module Rocc::Session
 
       @run = cmdlineparser.run
       @input_files = cmdlineparser.input_files
-      
+
+      @@session = self
     end
 
     def options
@@ -110,7 +117,7 @@ module Rocc::Session
         raise "No such file or directory: `f'" unless File::exist?(f)
         case
         when File::file?(f)
-          tu = CeTranslationUnit.new(ce_file(f))
+          tu = Rocc::CodeElements::FileRepresented::CeTranslationUnit.new(ce_file(f, base_directories))
           tu.populate
           translation_units << tu
         when File::directory?(f)
@@ -144,7 +151,7 @@ module Rocc::Session
 
       # if not found, add according base_dir
       unless base_dir
-        base_dir = CeBaseDirectory.new(:command_line_argument, File::dirname(path))
+        base_dir = Rocc::CodeElements::FileRepresented::CeBaseDirectory.new(:command_line_argument, File::dirname(path))
         # TODO if base_dir is parent directory of another dir already included in base_directories, remove that other base directory from base_directories and substitute its references to base_dir's according child dircetories
         base_directories << base_dir        
       end
@@ -160,12 +167,12 @@ module Rocc::Session
 
       parent_dir = base_dir
       dirs.each do |d|
-        ce_dir = CeDirectory.new(parent_dir, d)
+        ce_dir = Rocc::CodeElements::FileRepresented::CeDirectory.new(parent_dir, d)
         parent_dir.add_child(ce_dir)
         parent_dir = ce_dir
       end
       
-      result = CeFile.new(  parent_dir, { :command_line_argument => [ path ] }, basename, extname )
+      result = Rocc::CodeElements::FileRepresented::CeFile.new(  parent_dir, { :command_line_argument => [ path ] }, basename, extname )
     end # ce_file
     
   end # class Session

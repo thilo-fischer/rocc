@@ -3,11 +3,14 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Rocc::CodeElements::Tokens
+require 'rocc/code_elements/code_element'
+
+module Rocc::CodeElements::CharRepresented
+  module Tokens
 
   # forward declarations
 
-  class CoToken          < CodeObject; end
+  class CoToken          < Rocc::CodeElements::CodeElement; end
   class TknComment       < CoToken;    end
   class TknPreprocessor  < CoToken;    end
   class TknWord          < CoToken;    end
@@ -24,7 +27,7 @@ module Rocc::CodeElements::Tokens
   # and >= or as tokens >, > and =.
   PICKING_ORDER = [ TknWord, TknStringLiteral, TknNumber, TknComment, Tkn3Char, Tkn2Char, Tkn1Char ]
 
-  class CoToken < CodeObject
+  class CoToken < Rocc::CodeElements::CodeElement
     attr_reader :text, :charpos, :direct_predecessor, :direct_successor
 
     def initialize(origin, text, charpos, whitespace_after = "", direct_predecessor = nil)
@@ -176,4 +179,5 @@ module Rocc::CodeElements::Tokens
 
   end # CoToken
 
-end # module Rocc::CodeElements::Tokens
+  end # module Tokens
+end # module Rocc::CodeElements::CharRepresented
