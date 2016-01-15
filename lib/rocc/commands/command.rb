@@ -5,6 +5,8 @@
 
 module Rocc::Commands
 
+  #--
+  # TODO move command management (registration, invokation, ...) from commands' base class Rocc::Commands::Command to appropriate management class or to module Rocc::Commands
   class Command
 
     class << self

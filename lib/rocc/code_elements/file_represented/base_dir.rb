@@ -12,15 +12,32 @@ module Rocc::CodeElements::FileRepresented
   class CeBaseDirectory < CeDirectory
 
     attr_reader :path, :abs_path
-    
-    def initialize(origin, path)
-      super(origin)
+
+    ##
+    #--
+    # FIXME adducer sensible?
+    def initialize(adducer, path)
+      name = File::basename(path)
+      super(nil, name)
       @path = path
       @abs_path = File::expand_path(path)
     end
 
+    # Overwrite the CeFilesystemElement's implementation of parent_dir, return always nil.
+    def parent_dir
+      nil
+    end
+
+    def has_parent_dir?
+      false
+    end
+    
+    def is_base_dir?
+      true
+    end
+    
     def rel_path
-      '.'
+      '+/' + name # use '+' as symbol for base directories ..?
     end
 
   end # class CeBaseDirectory

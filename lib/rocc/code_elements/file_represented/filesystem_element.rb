@@ -10,17 +10,29 @@ module Rocc::CodeElements::FileRepresented
   ##
   # Base class to represet input files and the directories these files
   # reside in.
-  class CeFilesystemElement < CodeElement
+  class CeFilesystemElement < Rocc::CodeElements::CodeElement
 
     attr_reader :name
 
-    def initialize(parent_dir, name)
-      super(parent_dir)
+    ##
+    # origin is the CeDirectory element representing the objects
+    # parent direcotery (or nil or a symbol representing the adducer
+    # for base directories).
+    #
+    # name is the file name as a string.
+    def initialize(origin, name)
+      super(origin)
       @name = name
     end
 
+    # For all CeFilesystemElements except for CeBaseDirectories, origin represents the parent directory.
     alias parent_dir origin
+    alias has_parent_dir? origin
 
+    def is_base_dir?
+      false
+    end
+    
     # Relative path of this element wrt its base directory.
     def rel_path
       parent_dir.rel_path + '/' + name

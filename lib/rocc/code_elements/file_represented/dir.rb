@@ -11,7 +11,9 @@ module Rocc::CodeElements::FileRepresented
   # Represet a directory where source files reside in.
   class CeDirectory < CeFilesystemElement
 
-    def initialize(parent_dir, name)
+    attr_reader :content
+
+    def initialize(origin, name)
       super
       @content = []
     end
@@ -20,6 +22,11 @@ module Rocc::CodeElements::FileRepresented
       @content << filesystem_element
     end
 
+    def adducer
+      # XXX return array of all files in this dir and its subdirectories?
+      @content
+    end
+    
 #    protected
 #    # to be used from CeBaseDirectory::initialize
 #    def initialize(origin)

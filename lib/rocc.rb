@@ -73,8 +73,8 @@ module Rocc
   require 'rocc/compilers/compilers'
 
   require 'rocc/session/session'
+  require 'rocc/commands/commands'
   
 #  require 'rocc/code_objects/program'
-#  require 'rocc/commands/commands'
 
 end # module Rocc

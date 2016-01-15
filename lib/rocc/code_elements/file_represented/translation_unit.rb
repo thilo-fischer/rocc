@@ -10,7 +10,7 @@ module Rocc::CodeElements::FileRepresented
   ##
   # Represents translation units. A translation unit usually
   # corresponds to an object file being created during compilation.
-  class CeTranslationUnit < CodeElement
+  class CeTranslationUnit < Rocc::CodeElements::CodeElement
 
     attr_reader :include_files
 
@@ -79,7 +79,7 @@ module Rocc::CodeElements::FileRepresented
       # If none of the files included from the main file (directly or
       # indirectly) has changed, return true. Otherwise (if at least
       # one file changed), return false.
-      return not @include_files.find { |incfile| not incfile.up_to_date? }
+      not @include_files.find { |incfile| not incfile.up_to_date? }
     end
 
   end # class CeTranslationUnit

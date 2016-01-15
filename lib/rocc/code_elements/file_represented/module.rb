@@ -13,7 +13,7 @@ module Rocc::CodeElements::FileRepresented
   #
   # Named CeModule instead of Module as Module is already occupied
   # from Ruby.
-  class CeModule < CodeElement
+  class CeModule < Rocc::CodeElements::CodeElement
 
     def initialize(translation_units, name)
       super(translation_units)

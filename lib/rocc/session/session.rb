@@ -12,6 +12,9 @@ module Rocc::Session
 
   require 'rocc/session/options'
   require 'rocc/ui/cmdlineparser'
+  require 'rocc/code_elements/file_represented/base_dir'
+  require 'rocc/code_elements/file_represented/translation_unit'
+  require 'rocc/code_elements/file_represented/module'
 
   class Session
 
@@ -26,12 +29,12 @@ module Rocc::Session
 
       @options = OptionsRw.new
 
-      # XXX set options from config files, config files may be specified as command line arguments
-      set_config_dir(cmdlineparser.local_config_dir)
+      # set options from config files, config files may be specified as command line arguments
+      #set_config_dir(cmdlineparser.local_config_dir)
       # XXX read options from system/global/local config files
-      # config_system.set_options(@options)
-      # config_global.set_options(@options)
-      # config_local.set_options(@options)
+      #config_system.set_options(@options)
+      #config_global.set_options(@options)
+      #config_local.set_options(@options)
 
       # set options from command line (overriding )
       cmdlineparser.set_options(@options)
@@ -60,7 +63,7 @@ module Rocc::Session
         #  under certain conditions; type `show c' for details.
         raise "Not yet supported" # TODO
       else
-        Commands::invoke(self, @run)
+        Rocc::Commands::Command::invoke(self, @run)
       end
 
     end # run
@@ -99,7 +102,7 @@ module Rocc::Session
 
     def parse_input
 
-      base_directories = [ CeBaseDirectory.new(:working_dir, '.') ]
+      base_directories = [ Rocc::CodeElements::FileRepresented::CeBaseDirectory.new(:working_dir, '.') ]
       
       translation_units = []
 
@@ -114,7 +117,7 @@ module Rocc::Session
           # TODO find all source code files in f and its subdirectories and add as translation units to mdl
           raise "Not yet supported" # TODO
         when f == "-"
-        mtranslation_units << CeTranslationUnit.new(:stdin)
+        mtranslation_units << CodeElements::FileRepresented::CeTranslationUnit.new(:stdin)
         else
           raise "Programming error :("
         end
@@ -122,7 +125,7 @@ module Rocc::Session
       
       # set up one default module
       # XXX set up according to linker options if such are supplied
-      mdl = CeModule.new(translation_units, "a.out")
+      mdl = Rocc::CodeElements::FileRepresented::CeModule.new(translation_units, "a.out")
       @modules = [ mdl ]
       
       @modules.each { |m| m.populate }

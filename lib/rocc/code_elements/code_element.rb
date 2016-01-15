@@ -13,43 +13,43 @@ module Rocc::CodeElements
 
     def initialize(origin = nil)
       @origin = origin
-      announce
+      #announce
     end
 
-    # rrr
-    # register the object at its origin
-    def announce
-      @origin.register(self) if @origin
-    end
-
-    ##
-    # The code element this element originates form, i.e. the element
-    # at the previous level in the full path.
-    # rrr
-    attr_reader origin
-#    def origin(depth = 1)
-#      case depth
-#      when Integer
-#        if depth == 0
-#          self
-#        elsif depth > 0
-#          @origin.origin(depth - 1)
-#        else
-#          raise
-#        end
-#      when Class
-#        raise "Programmin error :(" unless depth < CodeElement
-#        if self.is_a? depth then
-#          self
-#        elsif self.is_a? CoProgram
-#          nil
-#        else
-#          @origin.origin(depth)
-#        end
-#      else
-#        raise
-#      end
-#    end # origin
+#    # rrr
+#    # register the object at its origin
+#    def announce
+#      @origin.register(self) if @origin
+#    end
+#
+#    ##
+#    # The code element this element originates form, i.e. the element
+#    # at the previous level in the full path.
+#    # rrr
+    attr_reader :origin
+##    def origin(depth = 1)
+##      case depth
+##      when Integer
+##        if depth == 0
+##          self
+##        elsif depth > 0
+##          @origin.origin(depth - 1)
+##        else
+##          raise
+##        end
+##      when Class
+##        raise "Programmin error :(" unless depth < CodeElement
+##        if self.is_a? depth then
+##          self
+##        elsif self.is_a? CoProgram
+##          nil
+##        else
+##          @origin.origin(depth)
+##        end
+##      else
+##        raise
+##      end
+##    end # origin
 
     ##
     # The object that represents the reason for this code element to
@@ -125,28 +125,28 @@ module Rocc::CodeElements
     # like path, but discard scope information, i.e. only give file path and line number
     alias location path
 
-    # rrr
-    def string_representation(options = {})
-      if options.key?(:format)
-        case options[:format]
-        when :short
-          name
-        when :long
-          path
-        when :code
-          text
-        else
-          raise
-        end
-      else
-        name
-      end
-    end
-
-    # rrr
-    def list(io, options = {})
-      io.puts string_representation(options)
-    end
+#    # rrr
+#    def string_representation(options = {})
+#      if options.key?(:format)
+#        case options[:format]
+#        when :short
+#          name
+#        when :long
+#          path
+#        when :code
+#          text
+#        else
+#          raise
+#        end
+#      else
+#        name
+#      end
+#    end
+#
+#    # rrr
+#    def list(io, options = {})
+#      io.puts string_representation(options)
+#    end
 
     ##
     # process this code element and update the given context accordingly
@@ -154,26 +154,26 @@ module Rocc::CodeElements
       content.map {|c| c.pursue(context) }
     end
     
-    # take in objects that originate from this object
-    # rrr
-    def register(obj, key = obj.class)
-      dbg self.to_s
-      @origin.register(obj, key)
-    end
-
-    # fixme
-    # rrr
-    def <=>(other)
-      if @origin == other.origin
-        if self.respond_to?(:origin_offset)
-          return self.origin_offset <=> other.origin_offset
-        else
-          return 0
-        end
-      else
-        return @origin <=> other.origin
-      end
-    end
+#    # take in objects that originate from this object
+#    # rrr
+#    def register(obj, key = obj.class)
+#      dbg self.to_s
+#      @origin.register(obj, key)
+#    end
+#
+#    # fixme
+#    # rrr
+#    def <=>(other)
+#      if @origin == other.origin
+#        if self.respond_to?(:origin_offset)
+#          return self.origin_offset <=> other.origin_offset
+#        else
+#          return 0
+#        end
+#      else
+#        return @origin <=> other.origin
+#      end
+#    end
 
     protected
 
