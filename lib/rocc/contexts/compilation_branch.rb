@@ -12,7 +12,7 @@ module Rocc::Contexts
     def initialize(origin, conditional)
       @conditional = conditional
       case origin
-      when TranslationUnit
+      when CeTranslationUnit
         @compilation_context = CompilationContext.new(origin)
         @parent_branch = nil
       when CompilationBranch

@@ -3,10 +3,10 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Rocc::CodeObjects::Tokens
+module Rocc::CodeElements::CharRepresented::Tokens
 
   # forward declarations
-  class TknPpDirective   < CoToken;          end
+  class TknPpDirective   < CeToken;          end
   class TknPpInclude     < TknPpDirective;   end
   class TknPpDefine      < TknPpDirective;   end
   class TknPpUndef       < TknPpDirective;   end
@@ -20,7 +20,7 @@ module Rocc::CodeObjects::Tokens
   class TknPpCondEndif   < TknPpConditional; end
 
 
-  class TknPpDirective < CoToken
+  class TknPpDirective < CeToken
     @PICKING_REGEXP = /^#\s*\w+/
     SUBCLASSES = [ TknPpInclude, TknPpConditional, TknPpDefine, TknPpUndef, TknPpError, TknPpPragma, TknPpLine ] # fixme(?): use `inherited' hook ?
 
@@ -328,4 +328,4 @@ module Rocc::CodeObjects::Tokens
 
   end # class
 
-end # module Rocc::CodeObjects::Tokens
+end # module Rocc::CodeElements::CharRepresented::Tokens

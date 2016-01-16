@@ -3,11 +3,13 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
+require 'rocc/code_elements/char_represented/tokens/token'
+
 module Rocc::CodeElements::CharRepresented::Tokens
 
     # forward declarations
-    class CoToken               < Rocc::CodeElements::CodeElement; end
-    class TknWord               < Rocc::CodeElements::CharRepresented::Tokens::CoToken; end
+    class CeToken               < Rocc::CodeElements::CodeElement; end
+    class TknWord               < Rocc::CodeElements::CharRepresented::Tokens::CeToken; end
     class TknKeyword            < TknWord;        end
     class TknKwCtrlflow         < TknKeyword;     end
     class TknKwTagged           < TknKeyword;     end
@@ -121,6 +123,5 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     end # TknKeyword
 
-  end # module Tokens
-#end # module Rocc::CodeElements::CharRepresented
+end # module Rocc::CodeElements::CharRepresented::Tokens
 

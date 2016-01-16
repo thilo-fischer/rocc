@@ -5,20 +5,21 @@
 
 require 'rocc/code_elements/code_element'
 
-module Rocc::CodeElements::CharRepresented
-  module Tokens
+# forward declaration (sort of ...)
+module Rocc::CodeElements::CharRepresented; end
+
+module Rocc::CodeElements::CharRepresented::Tokens
 
   # forward declarations
-
-  class CoToken          < Rocc::CodeElements::CodeElement; end
-  class TknComment       < CoToken;    end
-  class TknPreprocessor  < CoToken;    end
-  class TknWord          < CoToken;    end
-  class TknStringLiteral < CoToken;    end
-  class TknNumber        < CoToken;    end
-  class Tkn3Char         < CoToken;    end
-  class Tkn2Char         < CoToken;    end
-  class Tkn1Char         < CoToken;    end
+  class CeToken          < Rocc::CodeElements::CodeElement; end
+  class TknComment       < CeToken; end
+  class TknPreprocessor  < CeToken; end
+  class TknWord          < CeToken; end
+  class TknStringLiteral < CeToken; end
+  class TknNumber        < CeToken; end
+  class Tkn3Char         < CeToken; end
+  class Tkn2Char         < CeToken; end
+  class Tkn1Char         < CeToken; end
 
   ##
   # Order in which to test which token is the next.  It is important
@@ -27,8 +28,8 @@ module Rocc::CodeElements::CharRepresented
   # and >= or as tokens >, > and =.
   PICKING_ORDER = [ TknWord, TknStringLiteral, TknNumber, TknComment, Tkn3Char, Tkn2Char, Tkn1Char ]
 
-  class CoToken < Rocc::CodeElements::CodeElement
-    attr_reader :text, :charpos, :direct_predecessor, :direct_successor
+  class CeToken < Rocc::CodeElements::CodeElement
+    attr_reader :text, :charpos, :direct_predecessor, :direct_successor, :whitespace_after
 
     def initialize(origin, text, charpos, whitespace_after = "", direct_predecessor = nil)
       super(origin)
@@ -36,6 +37,7 @@ module Rocc::CodeElements::CharRepresented
       @charpos = charpos
       @whitespace_after = whitespace_after
       @direct_predecessor = direct_predecessor
+      @direct_predecessor.direct_successor = self if @direct_predecessor
     end # initialize
 
     # FIXME annonce is defined in CodeElement, but is repeatedly being overloaded with no-operation implementations. Consider removing announce from CodeElement base class.
@@ -88,8 +90,6 @@ module Rocc::CodeElements::CharRepresented
       # find regexp in string
       # return part of string matching regexp 
       str = tokenization_context.remainder.slice(@PICKING_REGEXP)
-      dbg "found " + path if str
-      str
     end # pick_string
 
 
@@ -103,8 +103,6 @@ module Rocc::CodeElements::CharRepresented
       # remove part of string matching regexp
       # return part of string matching regexp
       str = tokenization_context.remainder.slice!(@PICKING_REGEXP)
-      dbg "found " + path if str
-      str
     end # pick_string!
 
     ##
@@ -118,7 +116,8 @@ module Rocc::CodeElements::CharRepresented
     def self.pick(tokenization_context, str = nil)
       str ||= self.pick_string(tokenization_context)
       if str then
-        whitespace_after = tokenization_context.lstrip
+        $log.debug{ "pick `#{str}' from `#{tokenization_context.remainder}'"  }
+        raise "deprecated" # XXX handle whitespace_after
         create(tokenization_context, str, whitespace_after)
       end
 
@@ -132,7 +131,8 @@ module Rocc::CodeElements::CharRepresented
     def self.pick!(tokenization_context)
       str = self.pick_string!(tokenization_context)
       if str
-        whitespace_after = tokenization_context.lstrip
+        whitespace_after = tokenization_context.lstrip!
+        $log.debug{ "pick! `#{str}' + `#{whitespace_after}', remainder: `#{tokenization_context.remainder}'" }
         create(tokenization_context, str, whitespace_after)
       end
     end # pick!
@@ -142,8 +142,9 @@ module Rocc::CodeElements::CharRepresented
     def self.create(tokenization_context, text, whitespace_after = "")
       pred = tokenization_context.recent_token
       new_tkn = new(tokenization_context.line, text, tokenization_context.charpos, whitespace_after, pred)
-      pred.direct_successor = new_tkn if pred
       tokenization_context.add_token(new_tkn)
+      $log.debug{ "new token: #{new_tkn.name_dbg}" }
+      new_tkn
     end
 
     ##
@@ -167,7 +168,7 @@ module Rocc::CodeElements::CharRepresented
 
     protected
 
-    #      @ORIGIN_CLASS = CoLogicLine
+    #      @ORIGIN_CLASS = CeLogicLine
 
     def direct_successor=(s)
       @direct_successor = s
@@ -177,7 +178,6 @@ module Rocc::CodeElements::CharRepresented
       @PICKING_REGEXP
     end
 
-  end # CoToken
+  end # CeToken
 
-  end # module Tokens
-end # module Rocc::CodeElements::CharRepresented
+end # module Rocc::CodeElements::CharRepresented::Tokens

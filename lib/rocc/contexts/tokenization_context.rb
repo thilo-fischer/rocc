@@ -3,6 +3,8 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
+require 'rocc/helpers'
+
 module Rocc::Contexts
 
   ##
@@ -24,6 +26,8 @@ module Rocc::Contexts
     ##
     # return true if all tokens have been picked from the context's line, false otherwise
     def finished?
+      #$log.debug{ "TokenizationContext.finished? => #{@remainder.empty?}, remainder: `#{@remainder}'" }
+      #$log.debug{ Rocc::Helpers.backtrace(8) }
       @remainder.empty?
     end
 
@@ -38,7 +42,7 @@ module Rocc::Contexts
       @tokens.last
     end
 
-    def lstrip
+    def lstrip!
       whitespace = @remainder.slice!(/^\s*/)
       @charpos += whitespace.length
       whitespace
@@ -50,7 +54,7 @@ module Rocc::Contexts
 #    end
 
     def pick_comments
-      while Tokens::TknComment.pick!(self); end
+      while Rocc::CodeElements::CharRepresented::Tokens::TknComment.pick!(self); end
     end
     
     def pick_pp_directives
@@ -64,7 +68,7 @@ module Rocc::Contexts
       end
 
       # handle preprocessor directives
-      Tokens::TknPpDirective.pick!(self)
+      Rocc::CodeElements::CharRepresented::Tokens::TknPpDirective.pick!(self)
     end
     
     def add_token(tkn)

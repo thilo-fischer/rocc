@@ -5,6 +5,7 @@
 
 require 'rocc/code_elements/code_element'
 require 'rocc/code_elements/char_represented/tokens/tokens'
+require 'rocc/contexts/tokenization_context'
   
 module Rocc::CodeElements::CharRepresented
 
@@ -38,7 +39,10 @@ module Rocc::CodeElements::CharRepresented
 
     def pursue(lineread_context)
       comment_context = lineread_context.comment_context
-      tokenize(comment_context).map {|t| t.pursue(comment_context.compilation_context)}
+      tokens = tokenize(comment_context)
+
+      compilation_context = comment_context.compilation_context
+      tokens.map {|t| t.pursue(compilation_context)}
     end
 
     def tokens
@@ -53,7 +57,7 @@ module Rocc::CodeElements::CharRepresented
     # TODO move more code from here to TokenizationContext, rename TokenizationContext => Tokenizer
     def tokenize(comment_context)
 
-      tokenization_context = TokenizationContext.new(comment_context, self)
+      tokenization_context = Rocc::Contexts::TokenizationContext.new(comment_context, self)
     
       if tokenization_context.in_multiline_comment?
         # handle ongoing multi line comment
@@ -61,13 +65,13 @@ module Rocc::CodeElements::CharRepresented
         tokenization_context.leave_multiline_comment unless tokenization_context.recent_token.complete? # FIXME leave multiline comment when parsing `*/'
       else
         # remove leading whitespace
-        @indentation = tokenization_context.lstrip
+        @indentation = tokenization_context.lstrip!
       end
       
       tokenization_context.pick_pp_directives
 
       until tokenization_context.finished? do
-        unless Tokens::CeToken::PICKING_ORDER.find {|c| c.pick!(tokenization_context)}
+        unless Tokens::PICKING_ORDER.find {|c| c.pick!(tokenization_context)}
           raise "Could not dertermine next token in `#{remainder}'"
         end
       end
@@ -81,7 +85,7 @@ module Rocc::CodeElements::CharRepresented
         
      tokenization_context.terminate
 
-     @tokens
+     @tokens = tokenization_context.tokens
 
     end # tokenize
 

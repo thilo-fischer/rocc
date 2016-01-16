@@ -3,11 +3,9 @@
 # Copyright (C) 2014-2015  Thilo Fischer.
 # Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
 
-module Rocc::CodeObjects
+module Rocc::CodeElements::CharRepresented::Tokens
 
-module Tokens
-
-  class TknWord < CoToken
+  class TknWord < CeToken
     # one word-charcter that is no digit
     # followed by an arbitrary number of word-charcters or digits
     @PICKING_REGEXP = /^[A-Za-z_]\w*\b/
@@ -31,13 +29,13 @@ module Tokens
         macros = env.preprocessing[:macros][@text]
 
         if macros.length == 1 && macros.first.conditions.empty?
-          CoMacroExpansion.new(self, macros.first).expand(env)
+          CeMacroExpansion.new(self, macros.first).expand(env)
         else
           env_fork_master = env.fork
           macros.each do |m|
             env_fork = env_fork_master.fork
-            env_fork_master.preprocessing[:conditional_stack] << CoPpConditions.negate(m.conditions)
-            CoMacroExpansion.new(self, m).expand(env_fork)
+            env_fork_master.preprocessing[:conditional_stack] << CePpConditions.negate(m.conditions)
+            CeMacroExpansion.new(self, m).expand(env_fork)
             env.merge(env_fork)
           end
           if env_fork_master.preprocessing[:conditional_stack].compliable
@@ -54,7 +52,7 @@ module Tokens
 
   end # TknWord
 
-  class TknStringLiteral < CoToken
+  class TknStringLiteral < CeToken
     # a double quote
     # optionally followed by
     # an arbitrary number of arbitrary characters (non-greedy)
@@ -63,20 +61,20 @@ module Tokens
     @PICKING_REGEXP = /^"(.*?[^\\])?"/
   end
 
-  class TknNumber < CoToken
+  class TknNumber < CeToken
     @PICKING_REGEXP = /^(0[xX])?(\d|\.\d)\d*\a*\b/
   end
 
-  class Tkn3Char < CoToken
+  class Tkn3Char < CeToken
     # <<=, >>=, ...
     @PICKING_REGEXP = /^((<<|>>)=|\.\.\.)/
   end
 
-  class Tkn2Char < CoToken
+  class Tkn2Char < CeToken
     @PICKING_REGEXP = /^([+\-*\/%=!&|<>\^]=|<<|>>|##)/
   end
 
-  class Tkn1Char < CoToken
+  class Tkn1Char < CeToken
     
     @PICKING_REGEXP = /^[+\-*\/%=!&|<>\^,:;?()\[\]{}~#]/
 
@@ -204,5 +202,4 @@ module Tokens
     
   end # Tkn1Char
 
-end # module Tokens
-end # module Rocc::CodeObjects
+end # module Rocc::CodeElements::CharRepresented::Tokens

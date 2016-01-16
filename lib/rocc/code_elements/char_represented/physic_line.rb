@@ -12,7 +12,7 @@ module Rocc::CodeElements::CharRepresented
 
     ##
     # index of this element in the origin's array of lines
-    attr_reader :index
+    attr_reader :index, :text
  
     def initialize(origin, text, index) #, ppdir_line_list = nil)
       super origin
