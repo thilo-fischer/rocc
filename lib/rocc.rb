@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2015  Thilo Fischer.
-# Software is free for non-commercial and most commercial use. Integration into commercial applications may require according licensing. See LICENSE.txt for details.
+# Copyright (C) 2014-2016  Thilo Fischer.
+#
+# This file is part of rocc.
+#
+# rocc is free software with a multi-license approach: you can
+# redistribute it and/or modify as if it was under the terms of the
+# GNU General Public License as long as the things you publish to
+# satisly the GPL's copyleft still can be integrated into the rocc
+# project's main codebase without restricting the multi-license
+# approach. See LICENSE.txt from the top-level directory for details.
 
 ##
 # This is the central rocc lib file. Software using the rocc lib
@@ -45,8 +53,7 @@
 #
 # == Central TODO list
 #
-# * FIXME adapt copyright note (2014-201*6*)
-# * FIXME read about Modules (when being used as namespaces) and see how to simplify some of the "Rocc::CodeElements::FileRepresented::" paths ... => ack --ruby 'Rocc::'
+# * XXX can we simplify some of the "Rocc::CodeElements::FileRepresented::" paths ?! => ack --ruby 'Rocc::'
 # * test suite
 #   * XXX more tests
 #

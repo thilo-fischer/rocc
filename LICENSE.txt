@@ -1,43 +1,44 @@
 rocc - C Code Operations in Ruby
 
-Copyright (C) 2014-2015  Thilo Fischer
+Copyright (C) 2014-2016  Thilo Fischer
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+rocc is free software with a multi-license approach. You can
+redistribute it and/or modify it as if it was under the terms of the
+GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any
+later version as long as you comply with the following additonal
+requirement:
 
-Any software accessing this program's libraries or its command line
-interface is regarded as work based on this program and must as such
-be published under a compatible open source license when being
-distributed. This applies specifically to any (graphical) user
-interfaces integrating the program into source code editors and
-integrated development environments (IDEs).
+When you contribute to the rocc software or publishing work based on
+rocc that you must published open source due to the GNU General Public
+License copyleft principle, you must license your work in a way that
+allows the copy right holder of rocc to integrate your work into his
+version of rocc and still allows the copyright holder to release his
+version of rocc under other additional licenses that allows work based
+on rocc to be licensed under non-GPLv3-compatible open source licenses
+and also commercial closed-source licenses.
 
-The copyright holder reserves the right to multi-license the program
-to allow work based on it (but not the program itself) to be
-licensed under non-GPLv3-compatible open source licenses and
-also commercial closed-source licenses. If licensed to allow
-commercial work based on it, possible earnings from this licensing
-will be used to fund this program's further development or other
-open source projects and possibly to reward developers that did
-great contributions to this program in the past.
+You can achieve this e.g. by licensing the work you publish under the same
+license as rocc (recommended), by dual-licensing your work under an
+open source license with copyleft restriction and an additional
+specific license that grants the rocc copyright holder the necessary
+rights, by publishing it under a license with no copyleft (e.g. BSD,
+MIT) or sufficiently weak copyleft, or by releasing your work to the
+public domain.
 
-Any developer contibuting to this program by publishing modifications
-and/or additions made to the programs source code agrees to the
-right of this program's copyright holder to multi-license the program
-including the contirbuting developer's contributions according
-to the conditions given in the previous paragraph.
-The copyright of the contribution stays with the contribution's
-developer, the copyright of the overall program and the right to
-multi-license it stays with the original copyright holder.
+By contibuting to this program by publishing modifications and/or
+additions made to rocc's source code you agrees to the right of rocc's
+copyright holder to multi-license the program including your
+contributions to allow work based on rocc to be published under
+non-GPLv3-compatible licenses. The copyright of the contribution stays
+with the contributor, the copyright of the overall program and the
+right to multi-license it stays with the copyright holder of the
+overall program.
 
-A contribution to this program is a modification 
+Any software utilizing rocc's libraries or its command line interface
+is regarded as work based on rocc for which the copyleft principle of
+the GPL applies.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
