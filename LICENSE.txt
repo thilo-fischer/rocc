@@ -10,13 +10,15 @@ later version as long as you comply with the following additonal
 requirement:
 
 When you contribute to the rocc software or publishing work based on
-rocc that you must published open source due to the GNU General Public
+rocc that you must publish open source due to the GNU General Public
 License copyleft principle, you must license your work in a way that
-allows the copy right holder of rocc to integrate your work into his
+allows the copyright holder of rocc to integrate your work into his
 version of rocc and still allows the copyright holder to release his
-version of rocc under other additional licenses that allows work based
-on rocc to be licensed under non-GPLv3-compatible open source licenses
-and also commercial closed-source licenses.
+version of rocc under other additional licenses. These other licenses
+will ensure the rocc software stays open source and the copyleft
+principle will apply to *all source code of rocc*, but they may allow
+work *based on* rocc to be licensed under non-GPLv3-compatible open
+source licenses and also commercial closed-source licenses.
 
 You can achieve this e.g. by licensing the work you publish under the same
 license as rocc (recommended), by dual-licensing your work under an
@@ -29,7 +31,7 @@ public domain.
 By contibuting to this program by publishing modifications and/or
 additions made to rocc's source code you agrees to the right of rocc's
 copyright holder to multi-license the program including your
-contributions to allow work based on rocc to be published under
+contributions to allow work *based on* rocc to be published under
 non-GPLv3-compatible licenses. The copyright of the contribution stays
 with the contributor, the copyright of the overall program and the
 right to multi-license it stays with the copyright holder of the
@@ -37,8 +39,13 @@ overall program.
 
 Any software utilizing rocc's libraries or its command line interface
 is regarded as work based on rocc for which the copyleft principle of
-the GPL applies.
+the GPL applies. If you consider creating a software based on rocc
+under a non-GPLv3-compatible license, contact rocc's copyright holder
+about an according licensing angreement.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+You can find a copy of the GNU General Public License at
+<http://www.gnu.org/licenses/>.
