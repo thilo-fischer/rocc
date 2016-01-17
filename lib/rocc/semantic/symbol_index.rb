@@ -5,7 +5,7 @@
 # This file is part of rocc.
 #
 # rocc is free software with a multi-license approach: you can
-# redistribute it and/or modify as if it was under the terms of the
+# redistribute it and/or modify it as if it was under the terms of the
 # GNU General Public License as long as the things you publish to
 # satisly the GPL's copyleft still can be integrated into the rocc
 # project's main codebase without restricting the multi-license
@@ -31,7 +31,14 @@ module Rocc::Semantic
     
     def find_symbols(identifier, namespace = nil, family = nil, linkage = nil, conditions = nil)
       #FIXME apply filters for namespace, familiy etc.
-      @symbols[identifier]
+      case identifier
+      when String
+        @symbols[identifier]
+      when RegExp
+        @symbols.values.find {|s| s.identifier =~ identifier}
+      else
+        raise
+      end
     end
 
     def find_innermost_symbol(identifier, namespace = nil, family = nil, linkage = nil, conditions = nil)

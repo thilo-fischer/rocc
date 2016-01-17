@@ -158,19 +158,15 @@ module Rocc::CodeElements::CharRepresented::Tokens
     ##
     # Token's implementation of CodeElements.pursue.
     def pursue(compilation_context)
-      if compilation_context.branches?
-        compilation_context.branches.each {|b| pursue(b) }
-      else
-        pursue_branch(compilation_context)
-      end
+      compilation_context.active_branches.each {|b| pursue_branch(compilation_context, b) }
     end
 
     ##
     # Process this token within the given compilation context.
     # Default implementation suitable for all tokens that can't do
-    # anything better; concrete token classes shall override this
-    # method when possible.
-    def pursue_branch(compilation_context)
+    # anything better: Add token to the list of pending tokens.
+    # Concrete token classes shall override this method when possible.
+    def pursue_branch(compilation_context, branch)
       compilation_context.push_pending(self)
     end
 
