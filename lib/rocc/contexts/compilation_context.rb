@@ -34,7 +34,10 @@ module Rocc::Contexts
     def deactivate_branch(branch)
       active_branches.delete(branch)
     end
-    
+
+    def terminate
+      @main_branch.terminate
+    end
     
   end # class CompilationContext
 

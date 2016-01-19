@@ -114,7 +114,6 @@ class File {
 FilesystemElement <|-- File
 TranslationUnit   "0..n"  -- "1" File : origin alias main_file >
 TranslationUnit "0..n" -- "0..n" File : include_files >
-Symbol "0..n" <-- "1..n" File : symbols <
 
 class Directory {
   + name : String
@@ -178,11 +177,6 @@ Token <|-- Tkn3Char
 Token <|-- Tkn2Char
 Token <|-- Tkn1Char
 
-' The will be no Specification objects, each Specification is either a Declaration or a Definition
-abstract class Specification {
-}
-Token "1..n" -- "0..1" Specification : origin <
-
 '       =================
 ' endpkg CharRepresented
 '       =================
@@ -192,6 +186,11 @@ Token "1..n" -- "0..1" Specification : origin <
 '      =============
 package Semantics <<Frame>> #EEEEEE {
 '      =============
+
+' The will be no Specification objects, each Specification is either a Declaration or a Definition
+abstract class Specification {
+}
+Token "1..n" -- "0..1" Specification : origin <
 
 class Declaration {
 }
@@ -203,18 +202,19 @@ Specification <|-- Definition
 
 
 class Symbol {
-  + name : String
+  + identifier : String
   + namespace() : Namespace
   + linkage : Linkage
   # add_origin(spec : Specification)
 }
 note top
   Anything in the source code which can be
-  ssociated with something like a name:
+  associated with something like a name:
   Anything called a symbol by the linker
   (varibles, functions), classes/structs/unions/enums,
   also types and macros.
 end note
+Symbol "0..n" <-- "1..n" File : symbols <
 PpDirConditional "0..n" -- "0..n" Symbol : conditions <
 ' All specifications and all usages of a Symbol is a reference to it.
 TknIdentifier "1..n" <-- "0..n" Symbol : reference <
@@ -389,6 +389,12 @@ AtomicExpression --|> Expression
 CompoundExpression --|> Expression
 CompoundExpression "0..1" -- "0..n" Expression : content >
 
+Literal --|> AtomicExpression
+IntegerLitaral --|> Literal
+FloatLitaral --|> Literal
+CharLitaral --|> Literal
+StringLitaral --|> Literal
+
 class Reference {
 }
 Symbol "1" -- "0..n" Reference : references >
@@ -410,170 +416,3 @@ ArgumentRef "0..n" -- "1" FunctionInvokation
 }
 
 @enduml
-
-'
-'PpDirective <|-- PpDefine
-'PpDirective <|-- PpUndef
-'PpDirective <|-- PpPragma
-'PpDirective <|-- PpLine
-'PpDirective <|-- PpError
-'PpDirective <|-- PpInclude
-'PpInclude "1" o-- "1" File
-'PpDirective <|-- PpConditional
-'PpConditional "*" o-- "1" PhysicLine
-'PpConditional <|-- PpCondIf
-'PpConditional <|-- PpCondElif
-'PpConditional <|-- PpCondElse
-'PpConditional <|-- PpCondEndif
-'PpCondIf "1" *-- "1" PpCondElse
-'PpCondIf "*" *-- "1" PpCondElif
-'PpCondIf "1" *-- "1" PpCondEndif
-'
-'Statement <|-- CompoundStatement
-'CompoundStatement "*" o-- "1" Statement
-'
-'Statement <|-- StmntMDefinition
-'Statement <|-- StmntMDeclaration
-'
-'Statement <|-- StmntMControl
-'StmntMControl <|-- IfStatement
-'IfStatement "1" o-- "1" KwIf
-'IfStatement "0..1" o-- "1" KwElse
-'IfStatement "1..2" -- "1" Statement
-'IfStatement "1" -- "1" BoolExpression
-'StmntMControl <|-- SwitchStatement
-'SwitchStatement "1" o-- "1" KwSwitch
-'SwitchStatement "*" o-- "1" SwitchStatementCase
-'SwitchStatement "1" o-- "1" SwitchStatementDefault
-'StmntMControl <|-- SwitchStatementCase
-'SwitchStatementCase "*" o-- "1" KwMCrtlSwitch
-'SwitchStatementCase "*" -- "1" Statement
-'SwitchStatementCase <|-- SwitchStatementDefault
-'StmntMControl <|-- DoWhileStatement
-'DoWhileStatement "1" -- "1" Statement
-'DoWhileStatement "1" -- "1" BoolExpression
-'StmntMControl <|-- WhileStatement
-'WhileStatement "1" -- "1" Statement
-'WhileStatement "1" -- "1" BoolExpression
-'StmntMControl <|-- ForStatement
-'ForStatement "1" -- "1" Statement
-'ForStatement "1" -- "1" BoolExpression
-'
-'Identifier <|-- Function
-'Identifier <|-- Variable
-'
-'Identifier "*" -- "1" IdentifierDeclaration
-'
-''Identifier "1" -- "1" IdentifierDefinition
-'
-'IdentifierDefinition  "1" -- "1" IdentifierSignature
-'IdentifierDeclaration "1" -- "1" IdentifierSignature
-'
-'IdentifierDefinition <|-- FunctionDefinition
-'IdentifierDefinition <|-- VariableDefinition
-'
-'IdentifierDeclaration <|-- VariableDeclaration
-'
-'Function -- FunctionDefinition
-'FunctionDefinition "1" -- "1" CompoundStatement
-'
-'Variable -- VariableDefinition
-'VariableDefinition "1" -- "1" Expression : init_value
-'
-'StmntMDefinition <|-- StmntTypedef
-'StmntMDefinition <|-- IdentifierDefinition
-'StmntMDefinition <|-- TagDefinition
-'StmntMDefinition <|-- LabelDefinition
-'
-'TagDefinition "*" -- "1" VariableDeclaration
-'
-'StmntMDeclaration <|-- IdentifierDeclaration
-'StmntMDeclaration <|-- TagDeclaration
-'
-'
-'Token <|-- TkWord
-'TkWord <|-- Keyword
-'TkWord <|-- Identifier
-'Identifier <|-- IdOrdinary
-'Identifier <|-- IdTag
-'Identifier <|-- IdLabel
-'Identifier <|-- IdMember
-'
-'Token <|-- Stringliteral
-'Token <|-- TkNumber
-'TkNumber <|-- IntLiteral
-'TkNumber <|-- FloatLiteral
-'
-'Token <|-- Symbol
-'
-'class Symbol {
-'  String text
-'  static leaf?() = true
-'}
-'
-'Token <|-- Expression
-'
-'Expression <|-- BoolExpression
-'
-'
-'Whitespace <|-- Comment
-'Comment "*" -- "*" PhysicLine
-'
-'class Keyword {
-'  static const String TEXT
-'  static leaf?() = true
-'}
-'
-'Keyword <|-- KwMStdType
-'KwMStdType <|-- Kw_Bool
-'KwMStdType <|-- KwChar
-'KwMStdType <|-- KwDouble
-'KwMStdType <|-- KwFloat
-'KwMStdType <|-- KwInt
-'KwMStdType <|-- KwVoid
-'
-'Keyword <|-- KwMTypeVariant
-'KwMTypeVariant <|-- KwLong
-'KwMTypeVariant <|-- KwShort
-'KwMTypeVariant <|-- KwSigned
-'KwMTypeVariant <|-- KwUnsigned
-'
-'Keyword <|-- KwMTypedef
-'KwMTypedef <|-- KwEnum
-'KwMTypedef <|-- KwStruct
-'KwMTypedef <|-- KwTypedef
-'KwMTypedef <|-- KwUnion
-'
-'Keyword <|-- KwMTypeQualifier
-'KwMTypeQualifier <|-- KwMonst
-'KwMTypeQualifier <|-- KwRestrict
-'KwMTypeQualifier <|-- KwVolatile
-'
-'Keyword <|-- KwMStorageQualifier
-'KwMStorageQualifier <|-- KwAuto
-'KwMStorageQualifier <|-- KwExtern
-'KwMStorageQualifier <|-- KwRegister
-'KwMStorageQualifier <|-- KwStatic
-'
-'Keyword <|-- KwMControl
-'KwMControl <|-- KwBreak
-'KwMControl <|-- KwContinue
-'KwMControl <|-- KwDo
-'KwMControl <|-- KwElse
-'KwMControl <|-- KwFor
-'KwMControl <|-- KwGoto
-'KwMControl <|-- KwIf
-'KwMControl <|-- KwReturn
-'KwMControl <|-- KwSwitch
-'KwMControl <|-- KwWhile 
-'KwMControl <|-- KwMCrtlSwitch
-'KwMCrtlSwitch <|-- KwCase
-'KwMCrtlSwitch <|-- KwDefault
-'
-'Keyword <|-- KwMMisc
-'KwMMisc <|-- Kw_Complex
-'KwMMisc <|-- Kw_Imaginary
-'
-'Keyword <|-- KwInline
-'Keyword <|-- KwSizeof
-

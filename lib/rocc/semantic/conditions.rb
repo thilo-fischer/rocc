@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/code_elements/char_represented/tokens/preprocessor.rb'
+
 module Rocc::Semantic
 
   class Conditions
@@ -29,18 +31,22 @@ module Rocc::Semantic
       @subsets = []
       @conditionals = []
       @dbg_name = "<"
-      varargs.each do |arg|
-        case (arg)
-        when Conditions
-          @subsets << arg
-        when CoPpConditional
-          @conditionals << arg
-        else
-          raise "invalid argument"
+      if varargs.count == 1 and varargs.first == nil
+        @dbg_name += "true"
+      else
+        varargs.each do |arg|
+          case (arg)
+          when Conditions
+            @subsets << arg
+          when Rocc::CodeElements::CharRepresented::Tokens::TknPpConditional
+            @conditionals << arg
+          else
+            raise "invalid argument: #{arg.inspect}"
+          end
+          @dbg_name += "#{arg.dbg_name},"
         end
-        @dbg_name += "#{arg.dbg_name},"
+        @dbg_name.chop!
       end
-      @dbg_name.chop!
       @dbg_name += ">"
     end
 
@@ -84,7 +90,7 @@ module Rocc::Semantic
     # conditions of the other, i.e. this object's conditions is a
     # superset of the other's.
     def >(other)
-      self - other
+      self - other # FIXME
     end
 
     ##
@@ -92,12 +98,13 @@ module Rocc::Semantic
     # the conditions of the other, i.e. this object's conditions is a
     # subset of the other's.
     def <(other)
-      other - self
+      other - self # FIXME
     end
 
-    def =(other)
-      (not self < other) and (not self > other)
-    end
+    # FIXME ==
+#    def =(other)
+#      (not self < other) and (not self > other)
+#    end
 
     
 

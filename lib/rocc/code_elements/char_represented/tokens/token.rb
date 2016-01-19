@@ -23,8 +23,10 @@ module Rocc::CodeElements::CharRepresented::Tokens
   class TknComment       < CeToken; end
   class TknPreprocessor  < CeToken; end
   class TknWord          < CeToken; end
+  class TknIntegerLiteral        < CeToken; end
+  class TknFloatLiteral        < CeToken; end
+  class TknCharLiteral        < CeToken; end
   class TknStringLiteral < CeToken; end
-  class TknNumber        < CeToken; end
   class Tkn3Char         < CeToken; end
   class Tkn2Char         < CeToken; end
   class Tkn1Char         < CeToken; end
@@ -34,7 +36,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
   # to test for Tkn3Char before Tkn2Char and for Tkn2Char before
   # Tkn1Char to ensure to detect e.g. the >>= token not as as tokens >
   # and >= or as tokens >, > and =.
-  PICKING_ORDER = [ TknWord, TknStringLiteral, TknNumber, TknComment, Tkn3Char, Tkn2Char, Tkn1Char ]
+  PICKING_ORDER = [ TknWord, TknStringLiteral, TknCharLiteral, TknIntegerLiteral, TknFloatLiteral, TknComment, Tkn3Char, Tkn2Char, Tkn1Char ]
 
   class CeToken < Rocc::CodeElements::CodeElement
     attr_reader :text, :charpos, :direct_predecessor, :direct_successor, :whitespace_after
@@ -57,19 +59,19 @@ module Rocc::CodeElements::CharRepresented::Tokens
     ##
     # string to represent this element in rocc debugging and internal error messages
     def name_dbg
-      "Tkn[" + @text + "]"
+      "Tkn[#{@text}]"
     end
 
     ##
     # string to represent this element in messages from rocc
     def name
-      "`" + @text + "' token"
+      "`#{@text} token"
     end
 
     ##
     # character(s) to use to separate this element from its origin in path information
     def path_separator
-      ":" + @charpos + " > "
+      ":#{@charpos} > "
     end
 
     ##
@@ -167,7 +169,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # anything better: Add token to the list of pending tokens.
     # Concrete token classes shall override this method when possible.
     def pursue_branch(compilation_context, branch)
-      compilation_context.push_pending(self)
+      branch.push_pending(self)
     end
 
     protected

@@ -11,8 +11,6 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'rocc/code_elements/code_element'
-
 module Rocc::Semantic
 
   class SymbolIndex
@@ -28,19 +26,33 @@ module Rocc::Semantic
         @symbols[symbol.identifier] = [ symbol ]
       end
     end
-    
+
+    # Returns an array of all symbols found in this index that match
+    # the given critaria. Returns an empty array if no such symbol
+    # found. namespace refers to the term namespace as used in C
+    # context, i.e. one of :ordinary, :member, :tag, :label, :macro
+    # (XXX find a better name for this). family specifies whether the
+    # symbol shall be a variable/function/macro/typedef/..., argument
+    # shall be the according subclass of CeSymbol corresponding to the
+    # appropriate familiy. linkage may specifiy the desired linkage of
+    # the symbol if applicable (elements from some families don't have
+    # any linkage). conditions specifies the conditions to be assumed
+    # for preprocessor conditionals.
     def find_symbols(identifier, namespace = nil, family = nil, linkage = nil, conditions = nil)
       #FIXME apply filters for namespace, familiy etc.
       case identifier
       when String
-        @symbols[identifier]
+        @symbols[identifier] || []
       when RegExp
-        @symbols.values.find {|s| s.identifier =~ identifier}
+        @symbols.values.select {|s| s.identifier =~ identifier}
       else
         raise
       end
     end
 
+    #--
+    # XXX move functions find_innermost_symbol, find_function etc. (wrappers for find_symbols) to mixin class to be included by CompilationContext, CompilationBranch, TranslationUnit etc. as well
+    
     def find_innermost_symbol(identifier, namespace = nil, family = nil, linkage = nil, conditions = nil)
       matched_symbols = find_symbols(identifier, namespace, family, linkage, conditions)
       if matched_symbols

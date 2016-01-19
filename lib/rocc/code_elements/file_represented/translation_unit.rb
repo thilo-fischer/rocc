@@ -48,7 +48,7 @@ module Rocc::CodeElements::FileRepresented
     def populate
       ctx = Rocc::Contexts::ParsingContext.new(self)
       main_file.pursue(ctx)
-      cxt.terminate
+      ctx.terminate
     end
 
     ##

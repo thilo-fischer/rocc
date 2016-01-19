@@ -12,6 +12,7 @@
 # approach. See LICENSE.txt from the top-level directory for details.
 
 require 'rocc/semantic/symbol_index'
+require 'rocc/semantic/conditions'
 
 module Rocc::Contexts
 
@@ -25,9 +26,9 @@ module Rocc::Contexts
     # branch derives from for usual branches, it is the current
     # CompilationContext for the initial branch. +conditional+ refers
     # to a +CePpConditional+ object, it is nil for the initial branch.
-    def initialize(parent, conditional, id)
+    def initialize(parent, conditions, id)
       @parent = parent
-      @conditional = conditional
+      @conditions = Rocc::Semantic::Conditions.new(conditions)
       @id = id
 
       case @parent
@@ -47,12 +48,15 @@ module Rocc::Contexts
 
       @scope_stack = []
 
+      @arising = nil
+
       @children = []
       @next_child_id = 0
     end
 
-    def branch_out(conditional)
-      b = new(self, conditional, @id + ".#{@next_child_id}")
+    # FIXME rename branch_out -> fork
+    def branch_out(condition)
+      b = new(self, @conditions + condition, @id + ".#{@next_child_id}")
       @children << b
       @next_child_id += 1
     end
@@ -93,53 +97,79 @@ module Rocc::Contexts
       @scope_stack.pop
     end
 
+    def arising=(arising)
+      if @arising and not arising < @arising
+        raise "inconsistent arisings detected"
+      end
+      @arising = arising
+    end
+
+    def arising
+      @arising
+    end
+
+    def finalize_arising
+      arising = @arising
+      @arising = nil
+      arising
+    end
+
     def find_symbols(identifier, *varargs)
       result = []
       result += @symbol_idx.find_symbols(identifier, *varargs)
-      result += @parent.find_symbols(identifier, *varargs)
+      result += @parent.find_symbols(identifier, *varargs) if not root?
       result
     end
 
     def terminate
-      raise "TODO error handling 82398237" if pending?
+      if has_pending?
+        fail{"Branch terminated while still having pending tokens."}
+        $log.debug{"Pending tokens: #{pending_to_s}"}
+        return
+      end
+      @children.each {|c| c.terminate }
       @parent.annouce_symbols(@symbols)
       deactivate
     end
 
     ##
-    # Mark this compilation branch as dead end. Log accroding message
-    # if logging level is set accrodingly. token argument is begin
-    # used for informational purposes only. If a block is passed to
+    # Mark this compilation branch as dead end. Log according message
+    # if logging level is set accrodingly. If a block is passed to
     # the method, that block must evaluate to a String object and the
     # String object will be included in the message being logged.
-    def fail(token)
+    def fail
       deactivate
-      # FIXME need end-user-friendly logging (with conditionals' ids?)
-      $log.info do
+      $log.warn do
         message = yield
-        "#{token.path}: Failed in processing branch #{@id}" +
+        "Failed processing branch #{@id}" +
           if message
-            ": " + message
+            ": #{message}"
           else
             "."
           end
       end
-      $log.warn{"Branch conditions: " + @conditions.dbg_name}
+      $log.info "Conditions of failed branch: #{@conditions.dbg_name}"
     end
 
     def active?
       @active
     end
 
-    protected
-
-    def deactivate
-      @active = false
+    def activate(branch = self)      
+      @active = true if branch == self
       if root?
-        raise "all compilation branches ended" # FIXME
+        parent.activate_branch(branch)
       else
-        @parent.children.remove(self) # XXX ?
-        @parent.deactivate unless @parent.children.find {|c| c.active? }
+        parent.activate(branch)
+      end
+    end
+      
+    def deactivate(branch = self)      
+      @active = false if branch == self
+      if root?
+        parent.deactivate_branch(branch)
+      else
+        parent.deactivate(branch)
       end
     end
       
@@ -159,6 +189,9 @@ module Rocc::Contexts
 #      @symbols = master.symbols.branch
 #    end
 
+    def conditions
+      
+    end
     
   end # class CompilationBranch
 

@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/code_elements/char_represented/tokens/token.rb'
+
 module Rocc::CodeElements::CharRepresented::Tokens
 
   # forward declarations

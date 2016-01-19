@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/semantic/specification'
+
 module Rocc::CodeElements::CharRepresented::Tokens
 
   class TknWord < CeToken
@@ -21,57 +23,87 @@ module Rocc::CodeElements::CharRepresented::Tokens
     def self.pick!(env)
       if self != TknWord
         # allow subclasses to call superclasses method implementation
+        # FIXME smells
         super
       else
+        # FIXME handle macros named like keywords
         if pick_string(env) then
-          tkn = TknKeyword.pick!(env)
-          tkn ||= super
+          TknKeyword.pick!(env) || TknIdentifier.pick!(env)
         end
       end
     end # pick!
     
-    def expand(env)
-
-      if env.preprocessing[:macros].key?(@text) then
-
-        macros = env.preprocessing[:macros][@text]
-
-        if macros.length == 1 && macros.first.conditions.empty?
-          CeMacroExpansion.new(self, macros.first).expand(env)
+    def pursue_branch(compilation_context, branch)
+      @symbols = branch.find_symbols(@text)
+      @symbols.each do |s|
+        case s.family
+        when CeMacro
+          if s.conditions > branch.conditions
+            subbranch = branch.branch_out(s.conditions - branch.conditions)
+            mexp = CeMacroExpansion.new(self, s)
+            mexp.pursue_branch(compilation_context, subbranch)
+          else
+            mexp = CeMacroExpansion.new(self, s)
+            mexp.pursue_branch(compilation_context, branch)
+          end
+        #when CeTypedef
         else
-          env_fork_master = env.fork
-          macros.each do |m|
-            env_fork = env_fork_master.fork
-            env_fork_master.preprocessing[:conditional_stack] << CePpConditions.negate(m.conditions)
-            CeMacroExpansion.new(self, m).expand(env_fork)
-            env.merge(env_fork)
-          end
-          if env_fork_master.preprocessing[:conditional_stack].compliable
-            super(env_fork_master)
-            env.merge(env_fork_master)
-          end
+          super
         end
-
-      else # no macro
-        super(env)
       end
+    end # pursue_branch
 
-    end # expand
+  end # class TknWord
 
-  end # TknWord
+  class TknIdentifier < TknWord
+  end # class TknIdentifier
+
+  class TknIntegerLiteral < CeToken
+    @PICKING_REGEXP = Regexp.union(/^[+-]?\d+[ul]*\b/i, /^[+-]?0x(\d|[abcdef])+[ul]*\b/i)
+    
+    def pursue_branch(compilation_context, branch)
+      super
+      #branch.announce_symbol(self)
+    end # pursue_branch
+    
+  end # class TknIntegerLiteral
+
+  class TknFloatLiteral < CeToken
+    # C99 allows hex float literals
+    @PICKING_REGEXP = Regexp.union(/^[+-]?(\d+\.|\.\d)\d*(e[+-]?\d+)?\b/i, /^[+-]?((\d|[abcdef])+\.|\.(\d|[abcdef]))(\d|[abcdef])*p[+-]?\d+\b/i)
+
+    def pursue_branch(compilation_context, branch)
+      super
+      #branch.announce_symbol(self)
+    end # pursue_branch
+    
+  end # class TknFloatLiteral
+
+  class TknCharLiteral < CeToken
+    @PICKING_REGEXP = Regexp.union(/^L'.'/, /^L'\\(['"?\\abfnrtv]|[01234567]+|[xuU](\d|[AaBbCcDdEeFf])+)'/)
+    
+    def pursue_branch(compilation_context, branch)
+      super
+      #branch.announce_symbol(self)
+    end # pursue_branch
+    
+  end # class TknCharLiteral
 
   class TknStringLiteral < CeToken
+    # an optional 'L' followed by
     # a double quote
     # optionally followed by
     # an arbitrary number of arbitrary characters (non-greedy)
     # where the last character is no backslash
     # followed by a double quote
-    @PICKING_REGEXP = /^"(.*?[^\\])?"/
-  end
+    @PICKING_REGEXP = /^L?"(.*?[^\\])?"/
 
-  class TknNumber < CeToken
-    @PICKING_REGEXP = /^(0[xX])?(\d|\.\d)\d*\a*\b/
-  end
+    def pursue_branch(compilation_context, branch)
+      super
+      #branch.announce_symbol(self)
+    end # pursue_branch
+    
+  end # class TknStringLiteral
 
   class Tkn3Char < CeToken
     # <<=, >>=, ...
@@ -85,6 +117,134 @@ module Rocc::CodeElements::CharRepresented::Tokens
   class Tkn1Char < CeToken
     
     @PICKING_REGEXP = /^[+\-*\/%=!&|<>\^,:;?()\[\]{}~#]/
+
+    def pursue_branch(compilation_context, branch)
+      # FIXME refactor: split into smaller functions
+
+      case @text
+      when ","
+        case branch.arising
+        when Specification, Definition
+          raise "TODO finalize specification, start next specification"
+        end
+        
+        case branch.current_scope
+        when nil
+          raise "syntax error or not yet supported"
+        when Rocc::Semantic::FunctionSignature
+          if branch.arising.is_a? FunctionParameter
+            raise "TODO"
+          else
+            raise "programming error"
+          end
+        end
+        
+      when ";"
+        case branch.arising
+        when nil
+          # do nothing
+          
+        when ArisingDefinition
+          definition = Definition.new(branch.arising.origin)
+          known_symbol = branch.find_symbol(identifier, namespace, branch.arising.symbol_family) # FIXME conditions # TODO linkage?
+          case known_symbol.count
+          when 0
+            symbol = branch.arising.symbol_family.new([definition], identifier)
+            branch.announce_symbol(symbol)
+          when 1
+            symbol = symbol.first
+            symbol.add_specification(definition)
+          else
+            raise "programming error"
+          end
+        when ArisingSpecification
+          declaration = Declaration.new(branch.arising.origin)
+          known_symbol = branch.find_symbol(identifier, namespace, branch.arising.symbol_family) # FIXME conditions # TODO linkage?
+          case known_symbol.count
+          when 0
+            symbol = branch.arising.symbol_family.new([definition], identifier)
+          when 1
+            symbol = symbol.first
+            symbol.add_specification(definition)
+            branch.announce_symbol(symbol)
+          else
+            raise "programming error"
+          end
+        else
+          raise "not yet supported, #{branch.arising.inspect}"
+        end
+        branch.clear_arising
+        
+      when "("
+        if branch.has_pending?
+          case branch.pending_tokens.last
+          when TknIdentifier
+            identifier = branch.pending_tokens.last.text
+            if branch.current_scope.is_a?(CeTranslationUnit)
+              if branch.arising == nil or branch.arising.is_a?(CeSpecification)
+                functions = branch.find_symbol(identifier, :ordinary, CeFunction) # FIXME conditions # TODO linkage?
+                case functions.count
+                when 0
+                  # new function, origin is empty array because Specification that adduces the function can only be instantiated when FunctionSignature is complete and we parse either ';' or '{' to determine whether to instantiate it as Declaration or Definition
+                  function = CeFunction.new([], identifier)
+                when 1
+                  function = functions.first
+                else
+                  raise "programming error"
+                end
+                branch.enter_scope(Rocc::Semantic::FunctionSignature.new(function))
+                branch.clear_arising
+              end
+              end
+          when TknKwMisc
+            if branch.pending_tokens.last.text == "sizeof"
+              raise "not yet supported"
+            end
+          end
+        else
+          # XXX could also be a cast
+          branch.enter_scope(CompoundExpression.new([self]))
+        end
+        
+      when ")"
+        case branch.current_scope
+        when FunctionSignature
+          raise "TODO"
+        when CompoundExpression
+          raise "TODO"
+        else
+          raise "syntax error or not yet supported"
+        end
+
+      when "{"
+        case branch.arising
+        when nil
+          raise "not yet supported: start compound statement"
+          
+        when ArisingDefinition, ArisingSpecification
+          raise "syntax error or not yet supported" unless branch.arising.symbol_familiy < CoFunction
+          definition = Definition.new(branch.arising.origin, function_signature)
+          known_symbol = branch.find_symbol(identifier, :ordinary, CoFunction) # FIXME conditions # TODO linkage?
+          case known_symbol.count
+          when 0
+            symbol = CoFunction.new([definition], identifier)
+            branch.announce_symbol(symbol)
+          when 1
+            symbol = symbol.first
+            symbol.add_specification(definition)
+          else
+            raise "programming error"
+          end
+        else
+          raise "not yet supported, #{branch.arising.inspect}"
+        end
+        branch.clear_arising
+        
+      else
+        super
+      end
+  
+    end # pursue_branch 
 
     def expand_with_context(env, ctxt)
 

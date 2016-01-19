@@ -13,6 +13,8 @@
 
 require 'rocc/code_elements/char_represented/tokens/token'
 
+require 'rocc/semantic/specification' # currently used only by TknKwTypeSpecifier => XXX split keywords.rb to several files and require 'rocc/semantic/specification' only in TknKwTypeSpecifier file?
+
 module Rocc::CodeElements::CharRepresented::Tokens
 
     # forward declarations
@@ -30,26 +32,74 @@ module Rocc::CodeElements::CharRepresented::Tokens
     class TknKwCtrlflow < TknKeyword
       @PICKING_REGEXP = Regexp.union %w(return if else for while do continue break switch case default goto)
 
-      def pursue_branch(compilation_context)
-        ctx = compilation_context #alias
-        if ctx.pending?
-          ctx.fail(self){"Syntax error: `#{text}' following `#{ctx.pending_to_s}'."}
+      def pursue_branch(compilation_context, branch)
+        if branch.has_pending?
+          branch.fail{"Syntax error: #{name_dbg} `#{text}' following `#{branch.pending_to_s}'."}
         else
           super
         end
-      end
+      end # pursue_branch
       
-    end
+    end # class TknKwCtrlflow
 
 
-    class TknKwTagged < TknKeyword
+    class TknKwTagged < TknKeyword 
       @PICKING_REGEXP = Regexp.union %w(enum struct union)
-    end
+      
+      def pursue_branch(compilation_context, branch)
+        invalid_ptkn = branch.pending_tokens.find do |ptkn|
+          case ptkn
+          when TknKwTypeQualifier, TknKwStorageClassSpecifier
+            false
+          else
+            true
+          end
+        end
+        if invalid_ptkn
+          branch.fail{"Syntax error: #{name_dbg} `#{text}' following #{invalid_ptkn.name_dbg} `#{invalid_ptkn.text}' (`#{branch.pending_to_s}#{text}')."}
+        else
+          arisig = case @text
+                   when "enum"
+                     CeEnum
+                   when "struct"
+                     CeStruct
+                   when "union"
+                     CeUnion
+                   else
+                     raise "programming error"
+                   end
+          branch.set_arising(arising)
+          super
+        end
+      end # pursue_branch
+      
+    end # class TknKwTagged
 
 
     class TknKwTypeSpecifier < TknKeyword
       @PICKING_REGEXP = Regexp.union %w(void char short int long float double signed unsigned bool)
-    end
+
+      def pursue_branch(compilation_context, branch)
+        invalid_ptkn = branch.pending_tokens.find do |ptkn|
+          case ptkn
+          when TknKwTypeQualifier, TknKwStorageClassSpecifier
+            false
+          when TknKwTypeSpecifier
+            (text =~ Regexp.union('char', 'short', 'int', 'long')) and # XXX %w(char short int long)) and
+            (ptkn.text == "signed" or ptkn.text == "unsigned")
+          else
+            true
+          end
+        end
+        if invalid_ptkn
+          branch.fail{"Syntax error: #{name_dbg} `#{text}' following #{invalid_ptkn.name_dbg} `#{invalid_ptkn.text}' (`#{branch.pending_to_s}#{text}')."}
+        else
+          branch.set_arising(Rocc::Semantic::Specification)
+          super
+        end
+      end # pursue_branch
+      
+    end # class TknKwTypeSpecifier
 
 
     class TknKwTypeQualifier < TknKeyword
@@ -60,17 +110,16 @@ module Rocc::CodeElements::CharRepresented::Tokens
     class TknKwStorageClassSpecifier < TknKeyword
       @PICKING_REGEXP = Regexp.union %w(typedef static extern auto register)
 
-      def pursue_branch(compilation_context)
-        ctx = compilation_context # alias
-        if another_storclaspec = ctx.pending_tokens.find {|t| t.is_a? TknKwStorageClassSpecifier}
+      def pursue_branch(compilation_context, branch)
+        if another_storclaspec = branch.pending_tokens.find {|t| t.is_a? TknKwStorageClassSpecifier}
           # XXX is it really a *syntax* error or is it an error at another level?
-          ctx.fail(self){"Syntax error: Multipe storage class specifiers given: `#{another_storclaspec.text}' and `#{self.text}'."}
+          branch.fail{"Syntax error: Multipe storage class specifiers given: `#{another_storclaspec.text}' and `#{self.text}'."}
         else
           super
         end
       end
 
-    end
+    end # class TknKwStorageClassSpecifier
 
 
     class TknKwSpecifier < TknKeyword
@@ -91,7 +140,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         end
       end   
 
-    end
+    end # class TknKwSpecifier
 
 
     class TknKwMisc < TknKeyword
