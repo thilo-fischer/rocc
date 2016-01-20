@@ -14,6 +14,8 @@
 require 'rocc/code_elements/code_element'
 require 'rocc/contexts/parsing_context'
 
+require 'rocc/semantic/symbol_index'
+
 module Rocc::CodeElements::FileRepresented
 
   ##
@@ -38,6 +40,10 @@ module Rocc::CodeElements::FileRepresented
       main_file.basename + ".o"
     end
 
+    def announce_symbols(symbols)
+      @symbol_idx.announce_symbols(symbols)
+    end
+
     ##
     # Parse translation unit's main source file. (Implies parsing all
     # files included from the main file with the +#include+
@@ -46,6 +52,7 @@ module Rocc::CodeElements::FileRepresented
     # Will do the parsing no matter if the symbol table is already
     # available and up to date. Test with +up_to_date?+ 
     def populate
+      @symbol_idx = Rocc::Semantic::SymbolIndex.new
       ctx = Rocc::Contexts::ParsingContext.new(self)
       main_file.pursue(ctx)
       ctx.terminate
@@ -60,7 +67,7 @@ module Rocc::CodeElements::FileRepresented
     # translation unit's files having been changed).
     def symbols(filter = nil)
       # update symbols if not yet populated or outdated (lazy loading -- sort of ...)
-      unless @symbols and up_to_date?
+      unless @symbol_idx and up_to_date?
         populate
       end
       
@@ -69,7 +76,7 @@ module Rocc::CodeElements::FileRepresented
         # TODO Make filter an optional block and use select method?
         raise "Not yet supported" # TODO
       else
-        @symbols
+        @symbol_idx
       end
     end
 

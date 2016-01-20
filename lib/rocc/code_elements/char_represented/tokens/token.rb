@@ -23,10 +23,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
   class TknComment       < CeToken; end
   class TknPreprocessor  < CeToken; end
   class TknWord          < CeToken; end
-  class TknIntegerLiteral        < CeToken; end
-  class TknFloatLiteral        < CeToken; end
-  class TknCharLiteral        < CeToken; end
-  class TknStringLiteral < CeToken; end
+  class TknLiteral        < CeToken; end
+  class TknIntegerLiteral        < TknLiteral; end
+  class TknFloatLiteral        < TknLiteral; end
+  class TknCharLiteral        < TknLiteral; end
+  class TknStringLiteral < TknLiteral; end
   class Tkn3Char         < CeToken; end
   class Tkn2Char         < CeToken; end
   class Tkn1Char         < CeToken; end

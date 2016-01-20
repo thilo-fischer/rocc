@@ -38,6 +38,10 @@ module Rocc::Contexts
     def terminate
       @main_branch.terminate
     end
+
+    def announce_symbols(symbols)
+      @translation_unit.announce_symbols(symbols)
+    end
     
   end # class CompilationContext
 

@@ -213,7 +213,7 @@ module Rocc::Contexts
         return
       end
       @children.each {|c| c.terminate }
-      @parent.annouce_symbols(@symbols)
+      @parent.announce_symbols(@symbols)
       deactivate
     end
 

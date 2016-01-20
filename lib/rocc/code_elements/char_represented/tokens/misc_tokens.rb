@@ -91,7 +91,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       else
         case branch.current_scope
         when Rocc::Semantic::ExpressionMixin
-          branch.current_scope.expression = Expression.new(branch.current_scope, self) # FIXME create "LiteralExpression" (or something like this) object
+          branch.current_scope.expression = Rocc::Semantic::AtomicExpression.new(branch.current_scope, self)
         end
       end
     end # pursue_branch
@@ -282,10 +282,10 @@ module Rocc::CodeElements::CharRepresented::Tokens
       when "}"
         raise if branch.has_pending?
         raise if branch.has_arising?
-        raise unless branch.current_scope.is_a? CompoundStatement
+        raise "invalid current scope -- #{branch.scope_stack_trace}" unless branch.current_scope.is_a? Rocc::Semantic::CompoundStatement
         branch.current_scope.close(self)
         branch.leave_scope
-        branch.leave_scope if branch.current_scope.is_a? CeFunction
+        branch.leave_scope if branch.current_scope.is_a? Rocc::Semantic::CeFunction
 
       when "("
         if branch.has_pending?

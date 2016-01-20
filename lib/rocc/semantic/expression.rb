@@ -34,6 +34,17 @@ module Rocc::Semantic
     
   end # class Expression
 
+  class AtomicExpression < Expression
+    alias content adducer
+    # adducer is content
+    def initialize(origin, adducer)
+      super(origin, adducer)
+    end
+    def complete?
+      true
+    end
+  end
+
   class CompoundExpression < Expression
     attr_reader :expressions
     # adducer is opening parenthesis token
