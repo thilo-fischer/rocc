@@ -11,7 +11,7 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'rocc/sematic/symbol'
+require 'rocc/semantic/symbol'
 
 module Rocc::Semantic
 

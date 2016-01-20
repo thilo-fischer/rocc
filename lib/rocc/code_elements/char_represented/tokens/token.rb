@@ -112,6 +112,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       # find regexp in string
       # remove part of string matching regexp
       # return part of string matching regexp
+      #warn "reminder: #{tokenization_context.remainder.inspect}"
+      #warn "PICKING_REGEXP: #{@PICKING_REGEXP.inspect}"
+      #warn "self: #{self.inspect}"
       str = tokenization_context.remainder.slice!(@PICKING_REGEXP)
     end # pick_string!
 
@@ -160,7 +163,10 @@ module Rocc::CodeElements::CharRepresented::Tokens
     ##
     # Token's implementation of CodeElements.pursue.
     def pursue(compilation_context)
-      compilation_context.active_branches.each {|b| pursue_branch(compilation_context, b) }
+      compilation_context.active_branches.each do |b|
+        warn "pursue_branch #{b.id} #{name_dbg}" # FIXME loglevel trace ?!
+        pursue_branch(compilation_context, b)
+      end
     end
 
     ##

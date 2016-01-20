@@ -189,6 +189,7 @@ package Semantics <<Frame>> #EEEEEE {
 
 ' The will be no Specification objects, each Specification is either a Declaration or a Definition
 abstract class Specification {
+  + storage_class : StorageClassSpecifier
 }
 Token "1..n" -- "0..1" Specification : origin <
 
@@ -267,11 +268,11 @@ TypePointer "0..1/n" --> "1" Type : + base_type >
 Type <|-- TypeDefined
 TypeDefined "1" --> "1" Typedef
 
-Type <|-- TypeWithStorageClass
-TypeWithStorageClass "0..n" --> "1" Type : + base_type >
-class TypeWithStorageClass {
-  + storage_class : StorageClassSpecifier
-}
+'Type <|-- TypeWithStorageClass
+'TypeWithStorageClass "0..n" --> "1" Type : + base_type >
+'class TypeWithStorageClass {
+'  + storage_class : StorageClassSpecifier
+'}
 enum StorageClassSpecifier {
   :auto
   :register

@@ -15,7 +15,7 @@ require 'rocc/code_elements/code_element'
 
 module Rocc::Semantic
 
-  class Specification < Rocc::CodeElements::CodeElement
+  class CeSpecification < Rocc::CodeElements::CodeElement
 
     ##
     # +origin+ of a specification shall be an array of those tokens
@@ -24,6 +24,6 @@ module Rocc::Semantic
       super
     end
 
-  end # class Specification
+  end # class CeSpecification
 
 end # module Rocc::Semantic

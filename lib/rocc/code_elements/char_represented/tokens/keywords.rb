@@ -13,13 +13,16 @@
 
 require 'rocc/code_elements/char_represented/tokens/token'
 
-require 'rocc/semantic/specification' # currently used only by TknKwTypeSpecifier => XXX split keywords.rb to several files and require 'rocc/semantic/specification' only in TknKwTypeSpecifier file?
+require 'rocc/semantic/arising_specification'
+require 'rocc/semantic/statement'
+#require 'rocc/semantic/expression' # not (yet) in use
+require 'rocc/semantic/function'
 
 module Rocc::CodeElements::CharRepresented::Tokens
 
     # forward declarations
     class CeToken               < Rocc::CodeElements::CodeElement; end
-    class TknWord               < Rocc::CodeElements::CharRepresented::Tokens::CeToken; end
+    class TknWord               < CeToken; end
     class TknKeyword            < TknWord;        end
     class TknKwCtrlflow         < TknKeyword;     end
     class TknKwTagged           < TknKeyword;     end
@@ -36,8 +39,51 @@ module Rocc::CodeElements::CharRepresented::Tokens
         if branch.has_pending?
           branch.fail{"Syntax error: #{name_dbg} `#{text}' following `#{branch.pending_to_s}'."}
         else
-          super
-        end
+
+          keyword = @text.to_sym
+
+          case keyword
+              
+          when :return
+            function = branch.find_scope(Rocc::Semantic::CeFunction)
+            raise "`#{keyword}' used outside of function" unless function
+            s = Rocc::Semantic::ReturnStatement.new(branch.current_scope, self, function)
+            branch.enter_scope(s)
+            
+          when :else
+            bmrs = branch.most_recent_scope
+            raise "programming error" unless bmrs.is_a?(Rocc::Semantic::IfStatement)
+            s = Rocc::Semantic::ElseStatement.new(branch.current_scope, self, bmrs)
+            branch.enter_scope(s)
+            
+          when :while
+            if branch.current_scope.is_a?(Rocc::Semantic::DoWhileStatement)
+              raise "not yet supported"
+            else
+              raise "not yet supported -> same as case's else branch"               
+            end
+            
+          when :continue
+            affected_scope = branch.find_scope(Rocc::Semantic::IterationStatement)
+            raise "`#{keyword}' used outside of loop" unless affected_scope
+            s = Rocc::Semantic::ContinueStatement.new(branch.current_scope, self, affected_scope)
+            branch.enter_scope(s)
+            
+          when :break
+            affected_scope = branch.find_scope(Rocc::Semantic::IterationStatement, Rocc::Semantic::SwitchStatement)
+            raise "`#{keyword}' used outside of loop and switch" unless affected_scope
+            s = Rocc::Semantic::BreakStatement.new(branch.current_scope, self, affected_scope)
+            branch.enter_scope(s)
+            
+          else
+            statement_class = KEYWORD_TO_ORDINARY_STATEMENT_MAP[keyword]
+            raise "programming error" unless statement_class
+            s = statement_class.new(branch.current_scope, self)
+            branch.enter_scope(s)
+            
+          end # case keyword
+          
+        end # 
       end # pursue_branch
       
     end # class TknKwCtrlflow
@@ -68,7 +114,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
                    else
                      raise "programming error"
                    end
-          branch.set_arising(arising)
+          branch.arising = arising
           super
         end
       end # pursue_branch
@@ -94,29 +140,59 @@ module Rocc::CodeElements::CharRepresented::Tokens
         if invalid_ptkn
           branch.fail{"Syntax error: #{name_dbg} `#{text}' following #{invalid_ptkn.name_dbg} `#{invalid_ptkn.text}' (`#{branch.pending_to_s}#{text}')."}
         else
-          branch.set_arising(Rocc::Semantic::Specification)
+          branch.arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.pending_tokens)
           super
         end
       end # pursue_branch
       
+      def name_dbg
+        "TknType[#{@text}]"
+      end
+    
     end # class TknKwTypeSpecifier
 
 
     class TknKwTypeQualifier < TknKeyword
       @PICKING_REGEXP = Regexp.union %w(volatile const restrict)
-    end
+      def pursue_branch(compilation_context, branch)
+        raise "TODO"
+      end
+   end
 
 
     class TknKwStorageClassSpecifier < TknKeyword
       @PICKING_REGEXP = Regexp.union %w(typedef static extern auto register)
 
       def pursue_branch(compilation_context, branch)
-        if another_storclaspec = branch.pending_tokens.find {|t| t.is_a? TknKwStorageClassSpecifier}
-          # XXX is it really a *syntax* error or is it an error at another level?
-          branch.fail{"Syntax error: Multipe storage class specifiers given: `#{another_storclaspec.text}' and `#{self.text}'."}
+
+        # TODO typedef needs special treatment
+
+        if branch.has_arising?
+          raise unless branch.arising.is_a? Rocc::Semantic::Temporary::ArisingSpecification
         else
-          super
+          branch.arising = Rocc::Semantic::Temporary::ArisingSpecification.new(self)
         end
+        
+        branch.arising.storage_class = @text.to_sym
+
+        if branch.find_scope(CeFunction)
+          if branch.find_scope(CeFunctionSignature)
+            raise "register is the only storage class specifier allowed for function parameters" unless branch.arising.storage_class == :register
+          else
+            # XXX all storage class specifiers allowed in function body? (=> typedef?)
+            #raise if [].includes?(branch.arising.storage_class)
+          end
+        else
+          raise "auto not allowed outside of function body" if [:auto].includes?(branch.arising.storage_class)
+        end
+        
+        case branch.arising.storage_class
+        when :extern
+          branch.arising.linkage = :extern
+        when :static
+          branch.arising.linkage = :intern
+        end
+        
       end
 
     end # class TknKwStorageClassSpecifier

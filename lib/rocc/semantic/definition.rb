@@ -16,7 +16,7 @@ require 'rocc/semantic/specification'
 
 module Rocc::Semantic
 
-  class Definition < Specification
+  class CeDefinition < CeSpecification
 
     ##
     # +origin+ of a definition shall be an array of those tokens
@@ -25,6 +25,6 @@ module Rocc::Semantic
       super
     end
 
-  end # class Definition
+  end # class CeDefinition
 
 end # module Rocc::Semantic

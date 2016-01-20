@@ -11,12 +11,41 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'rocc/sematic/typed_symbol'
+require 'rocc/semantic/typed_symbol'
 
 module Rocc::Semantic
 
-  class Function < TypedSymbol
+  class CeFunction < TypedSymbol
 
-  end # class Function
+    def initialize(origin, identifier, hashargs)
+      super
+      @parameters = []
+      @param_list_complete = false
+    end
+
+    def self.default_linkage
+      :extern
+    end
+
+    def variadic?
+      (not @parameters.empty?) and @parameters.last.variadic?
+    end
+
+    def announce_parameter(position, type)
+      raise if  param_list_complete?
+      # assume all parameters are added in their native order
+      raise unless @parameters.count == position - 1
+      # TODO @parameters << CeFunctionParameter.new(self, type)
+    end
+
+    def param_list_complete?
+      @param_list_complete
+    end
+
+    def param_list_finalize
+      @param_list_complete = true
+    end
+    
+  end # class CeFunction
 
 end # module Rocc::Semantic

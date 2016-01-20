@@ -11,7 +11,10 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-#require 'rocc/semantic/specification'
+require 'rocc/semantic/specification'
+require 'rocc/semantic/declaration'
+require 'rocc/semantic/definition'
+#require 'rocc/semantic/typedef'
 
 module Rocc::Semantic::Temporary
 
@@ -27,21 +30,21 @@ module Rocc::Semantic::Temporary
       extend_origin(tokens)
       @symbol_family = nil
       @identifier = nil
-      @linkage = nil
       @storage_class = nil
       @type_qualifiers = []
       @type_specifiers = []
-    end
-
-    private
-    def finish_class
-      CeDeclaration
+      @specification_type = Rocc::Semantic::CeSpecification
     end
 
     public
-    def finish(branch)
-      specification = finish_class.new(origin)
-      symbol = branch.announce_symbol(specification, @symbol_family, @identifier, @linkage, @storage_class, @type_qualifiers, @type_specifiers)
+    def finalize(branch)
+      specification = @specification_type.new(origin)
+      hashargs = {}
+      hashargs[:storage_class] = @storage_class if @storage_class
+      hashargs[:type_qualifiers] = @type_qualifiers unless @type_qualifiers.empty?
+      hashargs[:type_specifiers] = @type_specifiers unless @type_specifiers.empty?
+      symbol = branch.announce_symbol(specification, @symbol_family, @identifier, hashargs)
+      symbol
     end
 
     def extend_origin(tokens)
@@ -62,15 +65,6 @@ module Rocc::Semantic::Temporary
     def identifier=(identifier)
       raise "multiple identifiers" if @identifier
       @identifier = identifier
-    end
-
-    def linkage
-      @linkage || :default
-    end
-
-    def linkage=(linkage)
-      raise "inconsistent linkage" if linkage
-      @linkage = linkage
     end
 
     def namespace
@@ -112,7 +106,7 @@ module Rocc::Semantic::Temporary
           raise "inconsistent type specifiers" if @type_specifiers.includes?(:signed)
         when :char, :short, :int, :long
           # do nothing
-        when :void, :float, :double, :bool, CeTypedef
+        when :void, :float, :double, :bool, Rocc::Semantic::CeTypedef
           raise "inconsistent type specifiers" unless @type_specifiers.empty?
         else
           raise "invalid type specifier: `#{type_specifier}'"
@@ -124,6 +118,48 @@ module Rocc::Semantic::Temporary
       
     end # add_type_specifier
 
+    def mark_as_definition
+      specification_type = Rocc::Semantic::CeDefinition
+    end
+
+    def mark_as_declaration
+      specification_type = Rocc::Semantic::CeDeclaration
+    end
+
+    private
+
+    def specification_type=(st_arg)
+      raise if @specification_type and not st_arg < @specification_type
+      @specification_type = st_arg
+    end
+
+    public
+    
+    def is_definition?
+      case @specification_type
+      when CeDefinition
+        true
+      when CeDeclaration
+        false
+      when CeSpecification
+        nil
+      else
+        raise "programming error"
+      end
+    end
+
+    def is_declaration?
+      case @specification_type
+      when CeDefinition
+        false
+      when CeDeclaration
+        true
+      when CeSpecification
+        nil
+      else
+        raise "programming error"
+      end
+    end
     
   end # class ArisingSpecification
 

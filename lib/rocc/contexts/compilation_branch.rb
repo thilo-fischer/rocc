@@ -11,8 +11,12 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/code_elements/code_element'
+
 require 'rocc/semantic/symbol_index'
 require 'rocc/semantic/conditions'
+
+require 'rocc/semantic/function'
 
 module Rocc::Contexts
 
@@ -86,6 +90,7 @@ module Rocc::Contexts
     end
 
     def enter_scope(scope)
+      warn "enter scope: #{"  " * (@scope_stack.count - 0)}#{scope_name_dbg(scope)}"
       @scope_stack << scope
     end
 
@@ -94,7 +99,36 @@ module Rocc::Contexts
     end
 
     def leave_scope
-      @scope_stack.pop
+      warn "enter scope: #{"  " * (@scope_stack.count - 1)}#{scope_name_dbg(@scope_stack.last)}"
+      @most_recent_scope = @scope_stack.pop
+    end
+
+    attr_reader :most_recent_scope
+
+    def find_scope(family)
+      idx = @scope_stack.rindex {|s| s.is_a?(family)}
+      @scope_stack[idx] if idx
+    end
+
+    private
+    def scope_name_dbg(scope)
+      case scope
+      when Rocc::CodeElements::CodeElement
+        scope.name_dbg
+      else
+        scope.inspect
+      end
+    end
+
+    public
+    
+    # for debugging
+    def scope_stack_trace
+      result = "scope_stack of compilation branch #{id}:\n"
+      @scope_stack.reverse_each do |frame|
+        result += "\t#{scope_name_dbg(frame)}\n"
+      end
+      result
     end
 
     def arising=(arising)
@@ -107,11 +141,62 @@ module Rocc::Contexts
     def arising
       @arising
     end
+   
+    def has_arising?
+      arising != nil
+    end
 
     def finalize_arising
-      arising = @arising
+      symbol = @arising.finalize(self)
       @arising = nil
-      arising
+      symbol
+    end
+
+    def announce_symbol(specification, symbol_family, identifier, hashargs)
+
+      warn "announce_symbol: #{specification.inspect}, #{symbol_family.inspect}, #{identifier.inspect}, #{hashargs.inspect}"
+      warn scope_stack_trace
+
+      linkage = nil
+      
+      if find_scope(Rocc::Semantic::CeFunction)
+        linkage = :none
+      elsif hashargs.key?(:storage_class)
+        case hashargs[:storage_class]
+        when :typedef
+          raise "not yet supported" # FIXME
+        when :static
+          linkage = :intern
+        when :extern
+          linkage = :extern # XXX what about function local symbols declared with storage class specifier extern ?
+        end
+      else
+        linkage = symbol_family.default_linkage # XXX necessary to query symbol_familiy or is it always :extern anyways?
+      end
+
+      raise "programming error" unless linkage
+      hashargs[:linkage] = linkage
+
+      symbols = find_symbols(identifier, symbol_family)
+
+      if symbols.empty?
+
+        # symbol detected for the first time
+        symbol = symbol_family.new(specification, identifier, hashargs)
+
+      else
+        
+        raise if symbols.count > 1 # XXX
+        symbol = symbols.first
+
+        # FIXME compare linkage, storage_class, type_qualifiers and type_specifiers of the annonced and the indexed symbol => must be compatible
+        raise "inconsistend declarations" if false # symbol.type_qualifiers != type_qualifiers or symbol.type_specifiers != type_specifiers
+
+      end
+
+      symbol.add_adducer(specification)
+
+      symbol
     end
 
     def find_symbols(identifier, *varargs)

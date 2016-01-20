@@ -11,11 +11,18 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'rocc/sematic/symbol'
+require 'rocc/semantic/symbol'
 
 module Rocc::Semantic
 
   class TypedSymbol < Symbol
+
+    attr_reader :linkage
+    
+    def initialize(origin, identifier, hashargs)
+      @linkage = pick_from_hashargs(hashargs, :linkage)
+      super # XXX defensive progamming => replace some day with # super(origin, identifier)
+    end
 
     def namespace
       :ordinary

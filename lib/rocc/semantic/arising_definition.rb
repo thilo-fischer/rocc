@@ -11,6 +11,10 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+
+raise DEPRECATED
+
+
 require 'rocc/semantic/arising_specification'
 
 module Rocc::Semantic::Temporary

@@ -30,16 +30,13 @@ module Rocc::Semantic
       false
     end
     
-    private
-    attr_writer :adducer
-
   end # class Statement
 
   class CompoundStatement < Statement
     attr_reader :statements
     # adducer is opening brace token
     def initialize(origin, adducer)
-      super(origin, adducer)
+      super(origin, [adducer])
       @statements = []
     end
     def complete?
@@ -47,7 +44,7 @@ module Rocc::Semantic
     end
     # add closing brace token, adducer will be array with two elements
     def close(token)
-      adducer = [adducer, token]
+      adducer << token
     end
     def opening
       adducer.first
@@ -119,7 +116,7 @@ module Rocc::Semantic
 
   class ElseStatement < Statement
     include SubstatementMixin
-    attr_reader if_statement
+    attr_reader :if_statement
     def initialize(origin, adducer, if_statement)
       super(origin, adducer)
       @if_statement = if_statement
@@ -219,7 +216,7 @@ module Rocc::Semantic
     end
   end
 
-  KEYWORD_TO_ORDINARY_STATEMENT_MAP = (
+  KEYWORD_TO_ORDINARY_STATEMENT_MAP = {
     :return => nil,
     :if => IfStatement,
     :else => nil,
@@ -232,7 +229,7 @@ module Rocc::Semantic
     :case => CaseStatement,
     :default => DefaultStatement,
     :goto => GotoStatement
-  )
+  }
 
 
 end # module Rocc::Semantic

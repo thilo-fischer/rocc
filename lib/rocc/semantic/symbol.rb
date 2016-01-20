@@ -17,14 +17,31 @@ module Rocc::Semantic
 
   class Symbol < Rocc::CodeElements::CodeElement
 
-    def initialize(origin, identifier, linkage = nil)
-      
-      origin = [ origin ] unless origin.is_a? Array
+    attr_reader :adducers
+
+    # origin is the unit the symbol lives in, e.g. the translation
+    # unit it belongs to.  identifier is the symbols name.
+    def initialize(origin, identifier, hashargs)
+      raise unless hashargs.empty? # XXX defensive progamming => remove some day
       super(origin)
-      
       @identifier = identifier
-      @linkage = linkage
-      
+      @adducers = []
+    end # initialize
+
+    # adducers are the specifications that announce the symbol
+    def add_adducer(a)
+      @adducers << a
+    end
+
+    alias adducer adducers
+
+    private
+
+    def pick_from_hashargs(hashargs, key_symbol)
+      raise unless hashargs.key? key_symbol # XXX defensive progamming => remove some day
+      value = hashargs[key_symbol]
+      hashargs.delete(key_symbol) # XXX defensive progamming => remove some day
+      value
     end
 
   end # class Symbol
