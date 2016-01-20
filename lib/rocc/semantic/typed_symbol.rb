@@ -15,7 +15,7 @@ require 'rocc/semantic/symbol'
 
 module Rocc::Semantic
 
-  class TypedSymbol < Symbol
+  class TypedSymbol < CeSymbol
 
     attr_reader :linkage
     
@@ -28,6 +28,25 @@ module Rocc::Semantic
       :ordinary
     end
 
+    def match(criteria)
+      return false unless super
+      return true if criteria.empty? # shortcut to maybe safe performance. XXX remove?
+
+      linkage = criteria.delete(:linkage)
+      case linkage
+      when nil
+        # nothing to test then
+      when Symbol # note: ruby's Symbol class, not Rocc::Semantic::CeSymbol
+        return false unless @linkage == linkage
+      when Array
+        return false unless linkage.find {|l| @linkage == l}
+      else
+        raise "invalid argument: :linkage => #{linkage.inspect}"
+      end
+
+      true
+    end # def match(criteria)
+    
   end # class TypedSymbol
 
 end # module Rocc::Semantic

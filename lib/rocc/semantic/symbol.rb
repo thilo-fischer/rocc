@@ -15,7 +15,7 @@ require 'rocc/code_elements/code_element'
 
 module Rocc::Semantic
 
-  class Symbol < Rocc::CodeElements::CodeElement
+  class CeSymbol < Rocc::CodeElements::CodeElement
 
     attr_reader :adducers
 
@@ -35,6 +35,48 @@ module Rocc::Semantic
 
     alias adducer adducers
 
+    def match(criteria)
+      return true if criteria.empty? # shortcut to maybe safe performance. XXX remove?
+      
+      family = criteria.delete(:symbol_family)
+      case family
+      when nil
+        # nothing to test then
+      when CeSymbol
+         return false unless self.is_a?(family)
+      when Array
+        return false unless family.find {|f| self.is_a?(f)}
+      else
+        raise "invalid argument: :symbol_family => #{family.inspect}"
+      end
+
+      identifier = criteria.delete(:identifier)
+      case identifier
+      when nil
+        # nothing to test then
+      when String
+        return false unless @identifier == identifier
+      when Regexp
+        return false unless @identifier =~ identifier
+      else
+        raise "invalid argument: :identifier => #{identifier.inspect}"
+      end
+
+      origin = criteria.delete(:origin)
+      case origin
+      when nil
+        # nothing to test then
+      when CodeElement
+        return false unless @origin == origin
+      when Class
+        return false unless @origin.is_a? origin
+      else
+        raise "invalid argument: :origin => #{origin.inspect}"
+      end
+
+      true
+    end # def match(criteria)
+
     private
 
     def pick_from_hashargs(hashargs, key_symbol)
@@ -44,6 +86,6 @@ module Rocc::Semantic
       value
     end
 
-  end # class Symbol
+  end # class CeSymbol
 
 end # module Rocc::Semantic

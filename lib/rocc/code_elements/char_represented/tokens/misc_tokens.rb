@@ -38,7 +38,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
     end # pick!
     
     def pursue_branch(compilation_context, branch)
-      @symbols = branch.find_symbols(@text)
+      @symbols = branch.find_symbols(:identifier => @text)
       @symbols.each do |s|
         case s.family
         when CeMacro
@@ -245,11 +245,18 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
       when "{"
         raise if branch.has_pending?
-        
+        raise if branch.has_arising?
         raise unless branch.current_scope # XXX correct? Or may '{' be used  at "translation unit scope"?
 
+        # actions to be taken on the element at the top of the scope stack
+        case branch.current_scope
+        when Rocc::Semantic::CeFunction
+          # mark most recent specification of function as definition
+          branch.current_scope.adducer.last.mark_as_definition # FIXME smells
+        end
+
+        # determine origin of to-be-created CompoundStatement
         origin = nil
-        
         case branch.current_scope
         when Rocc::Semantic::CeFunction
           origin = branch.current_scope
@@ -257,26 +264,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
           raise "todo"
         end
 
+        # create CompoundStatement and enter its scope
         # XXX differentiate between "blocks" (like function boby, switch block, ...) and "regular" compound statements where braces are not mandatory, but only to group several statements ..?
         cs = Rocc::Semantic::CompoundStatement.new(origin, self)
-
-        if branch.has_arising?
-          case branch.arising
-          when Rocc::Semantic::Temporary::ArisingSpecification # remember: ArisingDefinition < ArisingSpecification
-            case branch.arising.symbol_family
-            when CeFunction
-              branch.arising.mark_as_definition
-              function = branch.finalize_arising
-            else
-              raise
-            end
-            
-          else
-            raise
-          end
-        end
-
-        branch.enter_scope(function)
         branch.enter_scope(cs)
 
       when "}"

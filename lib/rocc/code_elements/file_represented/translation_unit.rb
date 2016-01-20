@@ -65,19 +65,13 @@ module Rocc::CodeElements::FileRepresented
     # Includes updating the translation unit's symbol table if symbol
     # table has not yet been created or is outdated (due to
     # translation unit's files having been changed).
-    def symbols(filter = nil)
+    def symbols(criteria = {})
       # update symbols if not yet populated or outdated (lazy loading -- sort of ...)
       unless @symbol_idx and up_to_date?
         populate
       end
       
-      if filter
-        # TODO Take filter into account.
-        # TODO Make filter an optional block and use select method?
-        raise "Not yet supported" # TODO
-      else
-        @symbol_idx
-      end
+      @symbol_idx.find_symbols(criteria)
     end
 
     ##

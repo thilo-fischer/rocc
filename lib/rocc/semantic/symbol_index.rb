@@ -27,6 +27,11 @@ module Rocc::Semantic
       end
     end
 
+    def announce_symbols(other_idx)
+      # XXX room for improvement ...
+      other_idx.find_symbols({}).each {|s| announce_symbol(s)}
+    end
+
     # Returns an array of all symbols found in this index that match
     # the given critaria. Returns an empty array if no such symbol
     # found. family specifies whether the
@@ -36,16 +41,23 @@ module Rocc::Semantic
     # the symbol if applicable (elements from some families don't have
     # any linkage). conditions specifies the conditions to be assumed
     # for preprocessor conditionals.
-    def find_symbols(identifier, family = nil, linkage = nil, conditions = nil)
-      #FIXME apply filters for familiy, linkage etc.
-      case identifier
+    def find_symbols(criteria)
+      identifier = criteria.delete(:identifier)
+
+      result = case identifier
+      when nil
+        @symbols.values
       when String
         @symbols[identifier] || []
-      when RegExp
+      when Regexp
         @symbols.values.select {|s| s.identifier =~ identifier}
       else
         raise
-      end
+      end.select {|s| s.match(criteria)}
+
+      raise "unhandled criteria (not yet supported?): #{criteria.inspect}" if not result.empty? and not criteria.empty?
+
+      result
     end
 
     #--

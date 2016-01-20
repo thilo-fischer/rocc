@@ -90,7 +90,8 @@ module Rocc::Contexts
     end
 
     def enter_scope(scope)
-      warn "enter scope: #{"  " * (@scope_stack.count - 0)}#{scope_name_dbg(scope)}"
+      warn "enter scope: #{"  " * (@scope_stack.count - 0)}> #{scope_name_dbg(scope)}"
+      raise if scope == nil
       @scope_stack << scope
     end
 
@@ -99,7 +100,7 @@ module Rocc::Contexts
     end
 
     def leave_scope
-      warn "enter scope: #{"  " * (@scope_stack.count - 1)}#{scope_name_dbg(@scope_stack.last)}"
+      warn "leave scope: #{"  " * (@scope_stack.count - 1)}< #{scope_name_dbg(@scope_stack.last)}"
       @most_recent_scope = @scope_stack.pop
     end
 
@@ -177,7 +178,7 @@ module Rocc::Contexts
       raise "programming error" unless linkage
       hashargs[:linkage] = linkage
 
-      symbols = find_symbols(identifier, symbol_family)
+      symbols = find_symbols(:identifier => identifier, :symbol_family => symbol_family)
 
       if symbols.empty?
 
@@ -199,10 +200,12 @@ module Rocc::Contexts
       symbol
     end
 
-    def find_symbols(identifier, *varargs)
+    def find_symbols(criteria)
       result = []
-      result += @symbol_idx.find_symbols(identifier, *varargs)
-      result += @parent.find_symbols(identifier, *varargs) if not root?
+      c = criteria.clone
+      result += @symbol_idx.find_symbols(c)
+      c = criteria.clone
+      result += @parent.find_symbols(c) if not root?
       result
     end
 
@@ -213,7 +216,7 @@ module Rocc::Contexts
         return
       end
       @children.each {|c| c.terminate }
-      @parent.announce_symbols(@symbols)
+      @parent.announce_symbols(@symbol_idx)
       deactivate
     end
 
