@@ -21,6 +21,7 @@ module Rocc::Semantic
     
     def initialize(origin, identifier, hashargs)
       @linkage = pick_from_hashargs(hashargs, :linkage)
+      @type_specifiers = pick_from_hashargs(hashargs, :type_specifiers) # FIXME not yet processed
       super # XXX defensive progamming => replace some day with # super(origin, identifier)
     end
 

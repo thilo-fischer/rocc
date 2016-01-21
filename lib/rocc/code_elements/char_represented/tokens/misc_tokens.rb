@@ -68,15 +68,12 @@ module Rocc::CodeElements::CharRepresented::Tokens
     
     def pursue_branch(compilation_context, branch)
 
-      case branch.current_scope
-      when Rocc::Semantic::Temporary::ArisingSpecification
-        branch.current_scope.identifier = @text
-      else
-        arising = Rocc::Semantic::Temporary::ArisingSpecification.new(self)
-        arising.identifier = @text
+      unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
+        arising = Rocc::Semantic::Temporary::ArisingSpecification.new
         branch.enter_scope(arising)
       end
-      
+        
+      branch.current_scope.set_identifier(self)
     end
     
     def name_dbg
@@ -306,7 +303,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
           when Rocc::Semantic::Temporary::ArisingSpecification
             if branch.current_scope.identifier
               branch.current_scope.symbol_family = Rocc::Semantic::CeFunction
-              function = branch.create_symbol
+              function = branch.current_scope.create_symbol(branch)
               branch.enter_scope(function)
               func_sig = Rocc::Semantic::CeFunctionSignature.new(function, self)
               branch.enter_scope(func_sig)

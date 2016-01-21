@@ -22,7 +22,7 @@ module Rocc::Semantic
     # origin is the unit the symbol lives in, e.g. the translation
     # unit it belongs to.  identifier is the symbols name.
     def initialize(origin, identifier, hashargs)
-      raise unless hashargs.empty? # XXX defensive progamming => remove some day
+      raise "unprocessed hashargs: #{hashargs.inspect}" unless hashargs.empty? # XXX defensive progamming => remove some day
       super(origin)
       @identifier = identifier
       @adducers = []

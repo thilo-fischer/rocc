@@ -61,13 +61,14 @@ module Rocc::Semantic::Temporary
       create_symbol(specification)
     end
 
-    def create_symbol(specification = self)
+    def create_symbol(branch, specification = self)
+      raise "Already created symbol from this #{self.class}!" if @symbol
       hashargs = {}
       hashargs[:storage_class] = @storage_class if @storage_class
       hashargs[:type_qualifiers] = @type_qualifiers unless @type_qualifiers.empty?
       hashargs[:type_specifiers] = @type_specifiers unless @type_specifiers.empty?
-      symbol = branch.announce_symbol(specification, @symbol_family, @identifier, hashargs)
-      symbol
+      @symbol = branch.announce_symbol(specification, @symbol_family, @identifier, hashargs)
+      @symbol
     end
 
     private
@@ -87,14 +88,14 @@ module Rocc::Semantic::Temporary
       @symbol_family = symbol_family     
     end
 
-    def identifier=(token)
+    def set_identifier(token)
       raise "multiple identifiers" if @identifier
-      @origin.private << token
+      @origin_private << token
       @identifier = token.text
-      @type_qualifiers = [:implicit] if @type_qualifiers.empty?
+      @type_specifiers = [:implicit] if @type_specifiers.empty?
     end
 
-    def storage_class=(token)
+    def set_storage_class(token)
       raise "multiple storage class specifiers" if storage_class
       raise "storage class specifier cannot occur after identifier" if @identifier
       @origin_shared << token
@@ -188,7 +189,7 @@ module Rocc::Semantic::Temporary
     end
 
     def name_dbg
-      "ArisingSpec[#{self.inspect}]"
+      "ASpec[#{@identifier}]"
     end
     
   end # class ArisingSpecification

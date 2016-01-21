@@ -128,24 +128,12 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @PICKING_REGEXP = Regexp.union %w(void char short int long float double signed unsigned bool)
 
       def pursue_branch(compilation_context, branch)
-        invalid_ptkn = branch.pending_tokens.find do |ptkn|
-          case ptkn
-          when TknKwTypeQualifier, TknKwStorageClassSpecifier
-            false
-          when TknKwTypeSpecifier
-            (text =~ Regexp.union('char', 'short', 'int', 'long')) and # XXX %w(char short int long)) and
-            (ptkn.text == "signed" or ptkn.text == "unsigned")
-          else
-            true
-          end
-        end
-        if invalid_ptkn
-          branch.fail{"Syntax error: #{name_dbg} `#{text}' following #{invalid_ptkn.name_dbg} `#{invalid_ptkn.text}' (`#{branch.pending_to_s}#{text}')."}
-        else          
-          arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.pending_tokens)
+        raise if branch.has_pending?
+        unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
+          arising = Rocc::Semantic::Temporary::ArisingSpecification.new
           branch.enter_scope(arising)
-          super
         end
+        branch.current_scope.add_type_specifier(self)
       end # pursue_branch
       
       def name_dbg
@@ -161,9 +149,20 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     class TknKwTypeQualifier < TknKeyword
       @PICKING_REGEXP = Regexp.union %w(volatile const restrict)
+      
       def pursue_branch(compilation_context, branch)
-        raise "TODO"
+        raise if branch.has_pending?
+        unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
+          arising = Rocc::Semantic::Temporary::ArisingSpecification.new
+          branch.enter_scope(arising)
+        end
+        branch.current_scope.add_type_qualifier(self)
+      end # pursue_branch
+      
+      def name_dbg
+        "TknTQual[#{@text}]"
       end
+
       def type_qualifier_symbol
         @text.to_sym
       end
@@ -174,16 +173,18 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @PICKING_REGEXP = Regexp.union %w(typedef static extern auto register)
 
       def pursue_branch(compilation_context, branch)
-
+        raise if branch.has_pending?
+        
         # TODO typedef needs special treatment
 
         unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
-          arising = Rocc::Semantic::Temporary::ArisingSpecification.new(self)
+          arising = Rocc::Semantic::Temporary::ArisingSpecification.new
           branch.enter_scope(arising)
         end
+        branch.current_scope.set_storage_class(self)
         
-        storage_class = @text.to_sym
-        branch.current_scope.storage_class = storage_class
+        # alias for shorter code lines
+        storage_class = branch.current_scope.storage_class
 
         if branch.find_scope(CeFunction)
           if branch.find_scope(CeFunctionSignature)
