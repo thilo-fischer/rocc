@@ -1,0 +1,20 @@
+ M | MAX_STRLEN : int
+ M | UPPERCASE_H : char[1]
+ M | LOWERCASE_H : char[1]
+ M | HELLO_H_SUFFIX : char[4]
+ V | SPACE : char
+ V | WORLD : char[5]
+vV | hello : char[256]
+ V | counting : xxxx
+   +--------------------------
+ M | HELLO(uppercase) : char[]
+ M | PUNCTUATION(continue) : char
+fF | print_char(c : char) : void
+ F | new_line() : void
+ F | print_n_chars(string : char*, n : size_t) : void
+fF | print_all_chars(string : char*) : void
+ F | main(argc : int, argv : char**) : int
+   +------------------------------
+
+sS | counting_s
+ T | counting_t

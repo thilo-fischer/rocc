@@ -1,0 +1,21 @@
+#define MAX_STRLEN
+#define UPPERCASE_H
+#define LOWERCASE_H
+#define HELLO_H_SUFFIX
+#define HELLO(uppercase)
+#define PUNCTUATION(continue)
+struct counting_s;
+extern char hello[];
+static void print_char(char);
+void print_all_chars(const char*);
+struct counting_s {};
+typedef counting_t;
+const char SPACE;
+const char *WORLD;
+char hello[];
+static counting_t counting;
+static void print_char(char) {}
+static void new_line(void) {}
+void print_n_chars(const char*, size_t) {}
+void print_all_chars(const char*) {}
+int main(int, char **) {}
