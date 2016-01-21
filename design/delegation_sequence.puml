@@ -1,9 +1,6 @@
 @startuml
 
-'participant main
-
 legend center
-'note left of main
   Copyright (C) 2014-2016  Thilo Fischer.
   
   This diagram is part of the developer documentation of rocc.
@@ -16,8 +13,12 @@ legend center
   approach. See LICENSE.txt from the top-level directory for details.
  
   The same applies to this document.
+
+  --
+
+  The rocc architecture is work in progress.  Deviations of the diagram
+  from the actual source code (or vice versa) must be expected.
 endlegend
-'end note
 
 skinparam monochrome true
 

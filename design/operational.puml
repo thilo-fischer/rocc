@@ -18,15 +18,15 @@ end note
 skinparam monochrome true
 
 note as N1
-  This diagram does not depict the current
-  implemention, but the planned rework of it.
+  The rocc architecture is work in progress.
+  Deviations of the diagram from the actual
+  source code (or vice versa) must be expected.
 end note
 
 class Session {
   ' All the main_files of the translation units that make up the modules
   input_files() : File
 }
-note right: formally known as Environment
 Logger "1" -- "1" Session : logger <
 ' From the Elements UML diagram
 Element "1" <-- "0..1" Session : cursor <
@@ -79,7 +79,7 @@ PpDirCond "0..1" <-- "0..1" CompilationBranch : conditions >
 
 Token "0..1" <-- CompilationBranch : cursor
 
-' Which namespace, class, function, compound statement, etc. are we in at the current position in source code (formally known as expansion_stack)
+' Which namespace (C++), class (C++), function, compound statement, etc. are we in at the current position in source code
 Element "1..n" <-- CompilationBranch : scope_stack <
 
 class TranslationUnit {

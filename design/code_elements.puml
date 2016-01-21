@@ -18,8 +18,9 @@ end note
 skinparam monochrome true
 
 note as N1
-  This diagram does not depict the current
-  implemention, but the planned rework of it.
+  The rocc architecture is work in progress.
+  Deviations of the diagram from the actual
+  source code (or vice versa) must be expected.
 end note
 
 '      =============
@@ -47,7 +48,6 @@ note top: Base class of all classes in this diagram.
 class AtomicElement {
   
 }
-note right: formally known as CodeObject
 AtomicElement --|>  Element
 
 class CollectionElement {
