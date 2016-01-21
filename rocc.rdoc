@@ -1,0 +1,5 @@
+= rocc
+
+Generate this with
+    rocc rdoc
+After you have described your command line interface

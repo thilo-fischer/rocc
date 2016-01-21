@@ -1,0 +1,43 @@
+type prefix
+===========
+
+Prefix consists of 3 characters.
+
+1st character -- storage class specifier
+'-' -> no storage class specifier
+'a' -> auto
+'r' -> register
+'.' -> static
+'x' -> extern
+
+2nd character -- type qualifier
+'-' -> no type qualifier
+'c' -> const
+'v' -> volatile
+'<' -> const volatile
+'r' -> restrict
+'R' -> const restrict (contradictory)
+'u' -> volatile restrict
+'w' -> const volatile restrict (contradictory)
+
+
+3rd character -- type of symbol
+i   include with <chevrons>
+I   include with "double quotes"
+M   macro definition (#define directive)
+T   type definition
+e/E enum declaration/definition
+s/S struct declaration/definition
+u/U union declaration/definition
+f/F function declaration/definition
+v/V variable declaration/definition
+c/C class declaration/definition (C++ only)
+
+parameter suffix
+================
+ for parameterized macro defintions and function declarations and definitions
+(n)    n parameters
+(n+)   variadic with at least n parameters (n parameters before ellipsis)
+(m..n) m mandatory and (n-m) optional parameters (functions with default parameters, C++ only)
+(i+k)  alternate form for (m..n) with m==i and (n-m)==k
+

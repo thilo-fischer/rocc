@@ -1,12 +1,31 @@
 @startuml
 
-' Copyright (C) 2014-2015  Thilo Fischer.
-' Free for non-commercial and most commercial use. See LICENSE.txt for details.
+note as copyright_note
+  Copyright (C) 2014-2016  Thilo Fischer.
+  
+  This diagram is part of the developer documentation of rocc.
+ 
+  rocc is free software with a multi-license approach: you can
+  redistribute it and/or modify it as if it was under the terms of the
+  GNU General Public License as long as the things you publish to
+  satisfy the GPL's copyleft still can be integrated into the rocc
+  project's main codebase without restricting the multi-license
+  approach. See LICENSE.txt from the top-level directory for details.
+ 
+  The same applies to this document.
+end note
+
+skinparam monochrome true
 
 note as N1
-  This diagram does not depict the current
-  implemention, but the planned rework of it.
+  The rocc architecture is work in progress.
+  Deviations of the diagram from the actual
+  source code (or vice versa) must be expected.
 end note
+
+'      =============
+package BaseClasses <<Frame>> #EEEEEE {
+'      =============
 
 class Element {
   + initialize(origin :Element)
@@ -29,7 +48,6 @@ note top: Base class of all classes in this diagram.
 class AtomicElement {
   
 }
-note right: formally known as CodeObject
 AtomicElement --|>  Element
 
 class CollectionElement {
@@ -48,22 +66,35 @@ class ElementList {
 }
 ElementList --|> CollectionElement
 
+'       =============
+' endpkg BaseClasses
+'       =============
+}
 
+'      =================
+package FileRepresented <<Frame>> #EEEEEE {
+'      =================
 
 class Module {
   type : Executable, DynamicLib, StaticLib
+  + symbols(filter = nil) : { Identifier => Symbol }
+  + linker_options : String[]
+  + external_libs : String[]
 }
+Module "0..n" --> "0..n" Module : depends_on >
 
 class TranslationUnit {
+  + symbols(filter = nil) : { Identifier => Symbol }
 }
 Module "0..n" -- "1..n" TranslationUnit : origin >
 
 class FilesystemElement {
   ' Relative path of this FilesystemElement wrt its base_directory
   + rel_path()  : String
-
-  + abs_path()  : String
-  + real_path() : String
+  ' absolute path to this FilesystemElement
+  + abs_path() : String
+  ' path as specified by build setup and/or source code
+  + path()  : String
 }
 
 class File {
@@ -76,8 +107,9 @@ class File {
   + mod_date : Date
   ' Checksum on the file content, will be used for sound file modification check
   + checksum : String
-  ' From where did the analysis lead ooccur to this file? Can be multiple sources.
+  ' From where did the analysis lead rocc to this file? Can be multiple sources.
   + adducer alias origin : File(s), Command Line Args, ...
+  + symbols(filter = nil) : { Identifier => Symbol }
 }
 FilesystemElement <|-- File
 TranslationUnit   "0..n"  -- "1" File : origin alias main_file >
@@ -93,8 +125,17 @@ class BaseDirectory {
   + path : String
 }
 Directory <|-- BaseDirectory
-' A BaseDirectory's base_directory is the object itself.
-FilesystemElement "0..n" --> "1" BaseDirectory : base_directory
+'' A BaseDirectory's base_directory is the object itself.
+'FilesystemElement "0..n" --> "1" BaseDirectory : base_directory
+
+'       =================
+' endpkg FileRepresented
+'       =================
+}
+
+'      =================
+package CharRepresented <<Frame>> #EEEEEE {
+'      =================
 
 class PhysicalLine {
   line_number
@@ -113,19 +154,18 @@ class Token {
   + whitespace_after : String
 }
 LogicalLine "1..n" -- "0..n" Token : content alias tokens >
-' xxxxxxxxxxxxxxxxx
 ' The directly previous/next Token, may be any Token in this file
 ' Multiplicity 0 only allowed at the very beginning/end of a file
-Token "0..1" <--> "0..1" Token : direct_predecessor >
+Token "0..1" <--> "0..1" Token : direct_predecessor/direct_successor
 ' The previous/next Token that is not a comment or part of a preprocessor directive, might be a Token from another file
 ' Multiplicity 0 only allowed at the very beginning/end of a translation unit
-Token "0..1" <--> "0..1" Token : effective_predecessor >
+Token "0..1" <--> "0..1" Token : effective_predecessor/effective_successor
 
 Token  <|-- TknComment
-note on link : Comments are handled as Tokens in ooccor.
+note on link : Comments are handled as Tokens in rocc.
 
 Token  <|-- TknPreprocessor
-note on link : Preprocessor directives are handled as Tokens in ooccor.
+note on link : Preprocessor directives are handled as Tokens in rocc.
 
 Token  <|-- TknWord
 TknWord <|-- TknKeyword
@@ -137,8 +177,19 @@ Token <|-- Tkn3Char
 Token <|-- Tkn2Char
 Token <|-- Tkn1Char
 
+'       =================
+' endpkg CharRepresented
+'       =================
+}
 
-class Specification {
+
+'      =============
+package Semantics <<Frame>> #EEEEEE {
+'      =============
+
+' The will be no Specification objects, each Specification is either a Declaration or a Definition
+abstract class Specification {
+  + storage_class : StorageClassSpecifier
 }
 Token "1..n" -- "0..1" Specification : origin <
 
@@ -152,41 +203,130 @@ Specification <|-- Definition
 
 
 class Symbol {
-  + name : String
+  + identifier : String
+  + namespace() : Namespace
+  + linkage : Linkage
   # add_origin(spec : Specification)
 }
 note top
   Anything in the source code which can be
-  ssociated with something like a name:
+  associated with something like a name:
   Anything called a symbol by the linker
   (varibles, functions), classes/structs/unions/enums,
   also types and macros.
 end note
+Symbol "0..n" <-- "1..n" File : symbols <
 PpDirConditional "0..n" -- "0..n" Symbol : conditions <
+' All specifications and all usages of a Symbol is a reference to it.
+TknIdentifier "1..n" <-- "0..n" Symbol : reference <
 
 Specification "1..n" -- "1..n" Symbol : origin <
 
+enum Namespace {
+  :ordinary
+  :member
+  :tag
+  :label
+  :macro
+}
+
+enum Linkage {
+  :external
+  :internal
+  :none
+}
+
+
 class TypedSymbol {
-  + type : String
+  + namespace() -> :ordinary
 }
 Symbol <|-- TypedSymbol
+Type "1" <-- "0..n" TypedSymbol : type <
+
+Type <|-- TypeNative
+class TypeNative {
+  + name : String
+}
+note bottom
+void char short
+int long float
+double signed
+unsigned ...
+end note
+
+'Type <|-- TypeCompound
+'TypeCompound "0..n" -- "1" SymbolCompound
+'Type <|-- TypeEnum
+'TypeEnum "0..n" -- "1" Enum
+Type <|-- TypeTagged
+TypeTagged "0..n" -- "0..1" SymbolCompound
+TypeTagged "0..n" -- "0..1" Enum
+
+Type <|-- TypePointer
+TypePointer "0..1/n" --> "1" Type : + base_type >
+
+Type <|-- TypeDefined
+TypeDefined "1" --> "1" Typedef
+
+'Type <|-- TypeWithStorageClass
+'TypeWithStorageClass "0..n" --> "1" Type : + base_type >
+'class TypeWithStorageClass {
+'  + storage_class : StorageClassSpecifier
+'}
+enum StorageClassSpecifier {
+  :auto
+  :register
+  :static
+  :extern
+  :typedef ???
+}
+
+Type <|-- TypeWithQualifier
+TypeWithQualifier "0..n" --> "1" Type : + base_type >
+class TypeWithQualifier {
+  + qualifier : TypeQualifier
+}
+enum TypeQualifier {
+  :const
+  :volatile
+}
+
+class TypeFunction {
+  + variadic?
+}
+Type <|-- TypeFunction
+TypeFunction "0..n" --> "1" Type : return_type >
+TypeFunction "0..n" --> "0..n" FunctionParameter : parameter_types >
+
+class FunctionParameter {
+  + linkage() -> :none
+  ' name used in implementation (if available), name used in specification (if unique), nil otherwise
+  + name()
+  ' same name used in all the function's specifications?
+  + name_consistent?()
+}
+Type "1" <-- "0..n" FunctionParameter : type
 
 TypedSymbol <|-- Typedef
+class Typedef {
+  + linkage() -> :none
+}
 TypedSymbol <|-- Variable
 
 class Function {
-  + arguments?()
-  + arg_count()
-  + arguments() : Map<String name, String type>
-  + arg_types() : String[]
-  + arg_names() : String[]
+  ' if param_count > 0
+  + parameters?()
+  + param_count()
+  ' implementation found?
   + implementation?()
 }
 TypedSymbol <|-- Function
 Function "0..1" -- "1..n" BlockStatement : implementation >
+Function "0..n" --> "1" TypeFunction : type >
+
 
 class FunctionSignature {
-  + arguments : Map<String name, String type>
+  + param_names : String[]
 }
 ' Only if it is a function's specification.
 Specification "1" -- "0..1" FunctionSignature
@@ -194,22 +334,37 @@ Function "1" -- "1..n" FunctionSignature
 ' FIXME How to handle multiple different but consistent signatures?
 
 class SymbolCompound {
-  + elements?()
-  + elem_count
-  + elements : Map<String name, String type>
+  + members?()
++ member_count : Integer
+  + namespace() -> :tag
 }
 Symbol <|-- SymbolCompound
 Struct --|> SymbolCompound
 Union  --|> SymbolCompound
 
-class Enum {
-  + elements?()
-  + elem_count
-  + elements : Map<String name, Integer value>
+class Member {
+  + namespace() -> :member
 }
-Symbol <|-- Enum
+TypedSymbol <|-- Member
+SymbolCompound "1" -- "0..n" Member : members >
+
+' Naming the class Enum confuses plantuml => CeEnum
+class CeEnum {
+  + constants?()
+  + constants_count() : int
+  + namespace() -> :tag
+}
+Symbol <|-- CeEnum
+
+class EnumConstant {
+  + linkage() -> :none
+  + value : Integer
+}
+Symbol <|-- EnumConstant
+CeEnum "1" -- "0..n" EnumConstant : constants >
 
 class Macro {
+  + namespace() -> :macro
 }
 Symbol <|-- Macro
 
@@ -235,222 +390,30 @@ AtomicExpression --|> Expression
 CompoundExpression --|> Expression
 CompoundExpression "0..1" -- "0..n" Expression : content >
 
+Literal --|> AtomicExpression
+IntegerLitaral --|> Literal
+FloatLitaral --|> Literal
+CharLitaral --|> Literal
+StringLitaral --|> Literal
+
+class Reference {
+}
+Symbol "1" -- "0..n" Reference : references >
+
+Invokation <|-- Reference
+MacroExpansion <|-- Invokation
+FunctionInvokation <|-- Invokation
+
+LvalueRef <|-- Reference
+ArgumentRef <|-- Reference
+ConstArgref <|-- ArgumentRef
+
+ArgumentRef "0..n" -- "1" FunctionInvokation
+
+
+'       ===========
+' endpkg Semantics
+'       ===========
+}
+
 @enduml
-
-'' fixme: replace "static" for class members and "const" by according uml notation
-'
-'class CodeObject {
-'  String where/get_location()
-'  String what/get_text()
-'  static leaf?()
-'  static REG_EXP
-'  PpConditional[] when()
-'  static void register()
-'  static CodeObject[] get_all()           ' get all "is_a?"
-'  static CodeObject[] get_all_instances() ' get all "instance_of?"
-'  CodeObject parent
-'}
-'
-'note as NoteCodeObject
-'  All classes in this diagram
-'  shall be (direct or indirect)
-'  subclasses of CodeObject.
-'end note
-'NoteCodeObject .. CodeObject
-'
-'File <|-- Sourcefile
-'File <|-- Headerfile
-'File "*" *-- "1" PhysicLine
-'
-'class File {
-'  String rel_path
-'  String abs_path
-'  int lines
-'  bool valid?/exists?
-'  void update()
-'}
-'
-'PhysicLine "*" *-- "1" LogicLine
-'
-'class PhysicLine {
-'  int char_length
-'  int real_line_number       # 'ordinary' line number
-'  int specified_line_number  # line number wrt #line preprocessor directive
-'}
-'
-''note as NoteLogicLine
-''  Comments have already
-''  been removed from what
-''  we call LogicLines here.
-''end note
-''NoteLogicLine .. LogicLine
-''=> deprecated: comments are still part of logical lines
-'
-'LogicLine "1" *-- "1" PpDirective
-'PpDirective <|-- PpDefine
-'PpDirective <|-- PpUndef
-'PpDirective <|-- PpPragma
-'PpDirective <|-- PpLine
-'PpDirective <|-- PpError
-'PpDirective <|-- PpInclude
-'PpInclude "1" o-- "1" File
-'PpDirective <|-- PpConditional
-'PpConditional "*" o-- "1" PhysicLine
-'PpConditional <|-- PpCondIf
-'PpConditional <|-- PpCondElif
-'PpConditional <|-- PpCondElse
-'PpConditional <|-- PpCondEndif
-'PpCondIf "1" *-- "1" PpCondElse
-'PpCondIf "*" *-- "1" PpCondElif
-'PpCondIf "1" *-- "1" PpCondEndif
-'
-'LogicLine "*" -- "*" Statement
-'
-'Statement <|-- CompoundStatement
-'CompoundStatement "*" o-- "1" Statement
-'
-'Statement <|-- StmntMDefinition
-'Statement <|-- StmntMDeclaration
-'
-'Statement <|-- StmntMControl
-'StmntMControl <|-- IfStatement
-'IfStatement "1" o-- "1" KwIf
-'IfStatement "0..1" o-- "1" KwElse
-'IfStatement "1..2" -- "1" Statement
-'IfStatement "1" -- "1" BoolExpression
-'StmntMControl <|-- SwitchStatement
-'SwitchStatement "1" o-- "1" KwSwitch
-'SwitchStatement "*" o-- "1" SwitchStatementCase
-'SwitchStatement "1" o-- "1" SwitchStatementDefault
-'StmntMControl <|-- SwitchStatementCase
-'SwitchStatementCase "*" o-- "1" KwMCrtlSwitch
-'SwitchStatementCase "*" -- "1" Statement
-'SwitchStatementCase <|-- SwitchStatementDefault
-'StmntMControl <|-- DoWhileStatement
-'DoWhileStatement "1" -- "1" Statement
-'DoWhileStatement "1" -- "1" BoolExpression
-'StmntMControl <|-- WhileStatement
-'WhileStatement "1" -- "1" Statement
-'WhileStatement "1" -- "1" BoolExpression
-'StmntMControl <|-- ForStatement
-'ForStatement "1" -- "1" Statement
-'ForStatement "1" -- "1" BoolExpression
-'
-'Identifier <|-- Function
-'Identifier <|-- Variable
-'
-'Identifier "*" -- "1" IdentifierDeclaration
-'
-''Identifier "1" -- "1" IdentifierDefinition
-'
-'IdentifierDefinition  "1" -- "1" IdentifierSignature
-'IdentifierDeclaration "1" -- "1" IdentifierSignature
-'
-'IdentifierDefinition <|-- FunctionDefinition
-'IdentifierDefinition <|-- VariableDefinition
-'
-'IdentifierDeclaration <|-- VariableDeclaration
-'
-'Function -- FunctionDefinition
-'FunctionDefinition "1" -- "1" CompoundStatement
-'
-'Variable -- VariableDefinition
-'VariableDefinition "1" -- "1" Expression : init_value
-'
-'StmntMDefinition <|-- StmntTypedef
-'StmntMDefinition <|-- IdentifierDefinition
-'StmntMDefinition <|-- TagDefinition
-'StmntMDefinition <|-- LabelDefinition
-'
-'TagDefinition "*" -- "1" VariableDeclaration
-'
-'StmntMDeclaration <|-- IdentifierDeclaration
-'StmntMDeclaration <|-- TagDeclaration
-'
-'
-'Token <|-- TkWord
-'TkWord <|-- Keyword
-'TkWord <|-- Identifier
-'Identifier <|-- IdOrdinary
-'Identifier <|-- IdTag
-'Identifier <|-- IdLabel
-'Identifier <|-- IdMember
-'
-'Token <|-- Stringliteral
-'Token <|-- TkNumber
-'TkNumber <|-- IntLiteral
-'TkNumber <|-- FloatLiteral
-'
-'Token <|-- Symbol
-'
-'class Symbol {
-'  String text
-'  static leaf?() = true
-'}
-'
-'Token <|-- Expression
-'
-'Expression <|-- BoolExpression
-'
-'
-'Whitespace <|-- Comment
-'Comment "*" -- "*" PhysicLine
-'
-'class Keyword {
-'  static const String TEXT
-'  static leaf?() = true
-'}
-'
-'Keyword <|-- KwMStdType
-'KwMStdType <|-- Kw_Bool
-'KwMStdType <|-- KwChar
-'KwMStdType <|-- KwDouble
-'KwMStdType <|-- KwFloat
-'KwMStdType <|-- KwInt
-'KwMStdType <|-- KwVoid
-'
-'Keyword <|-- KwMTypeVariant
-'KwMTypeVariant <|-- KwLong
-'KwMTypeVariant <|-- KwShort
-'KwMTypeVariant <|-- KwSigned
-'KwMTypeVariant <|-- KwUnsigned
-'
-'Keyword <|-- KwMTypedef
-'KwMTypedef <|-- KwEnum
-'KwMTypedef <|-- KwStruct
-'KwMTypedef <|-- KwTypedef
-'KwMTypedef <|-- KwUnion
-'
-'Keyword <|-- KwMTypeQualifier
-'KwMTypeQualifier <|-- KwMonst
-'KwMTypeQualifier <|-- KwRestrict
-'KwMTypeQualifier <|-- KwVolatile
-'
-'Keyword <|-- KwMStorageQualifier
-'KwMStorageQualifier <|-- KwAuto
-'KwMStorageQualifier <|-- KwExtern
-'KwMStorageQualifier <|-- KwRegister
-'KwMStorageQualifier <|-- KwStatic
-'
-'Keyword <|-- KwMControl
-'KwMControl <|-- KwBreak
-'KwMControl <|-- KwContinue
-'KwMControl <|-- KwDo
-'KwMControl <|-- KwElse
-'KwMControl <|-- KwFor
-'KwMControl <|-- KwGoto
-'KwMControl <|-- KwIf
-'KwMControl <|-- KwReturn
-'KwMControl <|-- KwSwitch
-'KwMControl <|-- KwWhile 
-'KwMControl <|-- KwMCrtlSwitch
-'KwMCrtlSwitch <|-- KwCase
-'KwMCrtlSwitch <|-- KwDefault
-'
-'Keyword <|-- KwMMisc
-'KwMMisc <|-- Kw_Complex
-'KwMMisc <|-- Kw_Imaginary
-'
-'Keyword <|-- KwInline
-'Keyword <|-- KwSizeof
-

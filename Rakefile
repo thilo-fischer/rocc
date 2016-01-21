@@ -8,10 +8,10 @@ require 'cucumber/rake/task'
 Rake::RDocTask.new do |rd|
   rd.main = "README.rdoc"
   rd.rdoc_files.include("README.rdoc","lib/**/*.rb","bin/**/*")
-  rd.title = 'ooccor'
+  rd.title = 'rocc'
 end
 
-spec = eval(File.read('ooccor.gemspec'))
+spec = eval(File.read('rocc.gemspec'))
 
 Gem::PackageTask.new(spec) do |pkg|
 end

@@ -1,0 +1,96 @@
+@startuml
+
+legend center
+  Copyright (C) 2014-2016  Thilo Fischer.
+  
+  This diagram is part of the developer documentation of rocc.
+ 
+  rocc is free software with a multi-license approach: you can
+  redistribute it and/or modify it as if it was under the terms of the
+  GNU General Public License as long as the things you publish to
+  satisfy the GPL's copyleft still can be integrated into the rocc
+  project's main codebase without restricting the multi-license
+  approach. See LICENSE.txt from the top-level directory for details.
+ 
+  The same applies to this document.
+
+  --
+
+  The rocc architecture is work in progress.  Deviations of the diagram
+  from the actual source code (or vice versa) must be expected.
+endlegend
+
+skinparam monochrome true
+
+[-> main
+activate main
+
+create session
+main -> session: new
+session -> session: parse command line arguments
+main -> session: run
+activate session
+session -> session: parse_input
+activate session
+
+loop each input file
+
+participant "translation_unit as CeTranslationUnit" as translation_unit
+create translation_unit
+session -> translation_unit: new
+
+...
+
+[-> translation_unit: populate
+
+participant "ctx : ParsingContext" as ParsingContext
+
+create ParsingContext
+translation_unit -> ParsingContext : new
+
+participant "main_file : CeFile" as main_file
+translation_unit -> main_file : pursue(ctx)
+
+loop each physical line
+
+main_file -> physical_line : pursue(ctx)
+
+alt logical line completed
+
+physical_line -> logical_line : pursue(ctx)
+
+logical_line -> logical_line : tokenize
+
+loop each token
+
+logical_line -> token : pursue(ctx)
+
+alt semantical entity completed
+
+token -> ParsingContext : add(entity)
+
+end 'alt semantical entity completed
+
+end 'loop each token
+
+end 'alt logical line completed
+
+end 'loop each physical line
+
+...
+
+end 'loop each input file
+
+session --> session
+deactivate session
+
+session -> session: run interactive shell or process script or commands
+
+session --> main
+deactivate session
+
+[<-- main 
+deactivate main
+
+@enduml
+

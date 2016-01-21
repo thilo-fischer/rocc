@@ -1,18 +1,32 @@
 @startuml
 
-' Copyright (C) 2014-2015  Thilo Fischer.
-' Free for non-commercial and most commercial use. See LICENSE.txt for details.
+note as copyright_note
+  Copyright (C) 2014-2016  Thilo Fischer.
+  
+  This diagram is part of the developer documentation of rocc.
+ 
+  rocc is free software with a multi-license approach: you can
+  redistribute it and/or modify it as if it was under the terms of the
+  GNU General Public License as long as the things you publish to
+  satisfy the GPL's copyleft still can be integrated into the rocc
+  project's main codebase without restricting the multi-license
+  approach. See LICENSE.txt from the top-level directory for details.
+ 
+  The same applies to this document.
+end note
+
+skinparam monochrome true
 
 note as N1
-  This diagram does not depict the current
-  implemention, but the planned rework of it.
+  The rocc architecture is work in progress.
+  Deviations of the diagram from the actual
+  source code (or vice versa) must be expected.
 end note
 
 class Session {
   ' All the main_files of the translation units that make up the modules
   input_files() : File
 }
-note right: formally known as Environment
 Logger "1" -- "1" Session : logger <
 ' From the Elements UML diagram
 Element "1" <-- "0..1" Session : cursor <
@@ -36,52 +50,60 @@ Compiler "0..1" <-- "0..n" Options : compiler (private) <
 class Cache {
   + root_dir : String
 }
-' No cache only for on-the-fly invokations
+' Normally it is 1--1, but cache multiplicity may be 0 for on-the-fly invokations
 Session "1" -- "0..1" Cache : cache >
 
-
-
 class ParsingContext {
-
 }
-note right: formally known as Environment
 
-class ContextBranch {
-}
-ParsingContext -- ContextBranch
+ParsingContext --> LinereadContext
+PhysicalLine "0..n" <-- LinereadContext : ongoing_lines
 
-class PretokenizationContext {
-}
-ParsingContext "1" --> "1" PretokenizationContext : pretkn_context >
-PhysicalLine "0..n" <-- ParsingContext : ongoing_line
-
-class TokenizationContext {
-  ' remaining charactres of current line to tokenize
-  + remainder : String
-}
-ParsingContext "1" --> "1" TokenizationContext : tkn_context >
-' most recently generated token, shold be 0 only at the very beginning of translation unit
-Token "0..1" <-- ParsingContext : cursor
+ParsingContext --> CommentContext
 ' Refers to a comment if the comment's beginning has already been parsed, but the comment's ending has not yet been found (e.g. block comments that span several lines)
-Comment "0..1" <-- ParsingContext : ongoing_comment
+CommentContext "1" --> "0..1" MultilineComment : ongoing_comment
 
-class PreprocessingContext {
-}
-ParsingContext "1" --> "1" PreprocessingContext : pp_context >
-' map from macro identifiers to their definitions
-Macro "0..n" <-- PreprocessingContext : macros
-' array of all preprocessing conditional branches chosen
-PpDirCond "0..n" <-- PreprocessingContext : conditional_stack <
-' most recent preprocessor line directive
-PpDirLine "0..1" <-- PreprocessingContext : recent_line_directive <
-
+ParsingContext --> CompilationContext
 class CompilationContext {
 }
-ParsingContext "1" --> "1" CompilationContext : cc_context >
-' Which namespace, class, function, compound statement, etc. are we in at the current position in source code (formally known as expansion_stack)
-Element "1..n" <-- CompilationContext : scope_stack <
-' map from type identifiers to their definitions
-Typedef "0..n" <-- CompilationContext : typedefs
+CompilationContext "1" <--> "1..n" CompilationBranch : branches
 
+class TokenizationContext {
+' remaining charactres of current line to tokenize
++ remainder : String
+}
+CommentContext "1" <-- "0..n" TokenizationContext : comment_context >
+
+' array of all preprocessing conditional branches chosen
+PpDirCond "0..1" <-- "0..1" CompilationBranch : conditions >
+
+Token "0..1" <-- CompilationBranch : cursor
+
+' Which namespace (C++), class (C++), function, compound statement, etc. are we in at the current position in source code
+Element "1..n" <-- CompilationBranch : scope_stack <
+
+class TranslationUnit {
+  + announce_pp_dir_line(pp_line_directive)
+  + pp_line_number(line, conditions) : int
+  + announce_symbol(symbol)
+  + announce_reference(reference)
+}
+CompilationContext "1" --> "1" TranslationUnit : translation_unit >
+PpDirLine "0..n" <-- TranslationUnit : line_directives <
+
+class SymbolIndex {
++ announce_symbol(symbol)
++ find_symbols(identifier :String, namespace = nil, class = nil, linkage = none, conditions = nil) : Symbol[]
++ find_innermost_symbol(identifier :String, namespace = nil, class = nil, linkage = none) : Symbol
++ find_function(identifier, linkage = external) alias find_innermost_symbol(identifier, :ordinary, Function, linkage) : Function
++ find_variable(identifier, linkage = external) alias find_innermost_symbol(identifier, :ordinary, Variable, linkage) : Variable
++ find_macro(identifier) alias find_innermost_symbol(identifier, :macros, Macro, nil/internal) : Macro
++ ...
+}
+TranslationUnit "1" --> "1" SymbolIndex : symbols >
+SymbolIndex "1" --> "0..n" Symbol : map
+
+TranslationUnit "1" --> "1" ReferenceIndex : symbols >
+ReferenceIndex "1" --> "0..n" Reference : map
 
 @enduml
