@@ -56,6 +56,13 @@ module Rocc::Semantic
       "Fkt[#{@identifier}]"
     end
 
+    # FIXME? define constant instead of function?
+    def self.family_character
+      'F'
+    end
+    def self.family_name
+      'function'
+    end
   end # class CeFunction
 
 end # module Rocc::Semantic
