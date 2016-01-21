@@ -68,20 +68,21 @@ module Rocc::CodeElements::CharRepresented::Tokens
     
     def pursue_branch(compilation_context, branch)
 
-      if branch.has_arising?
-        raise unless branch.arising.is_a? Rocc::Semantic::Temporary::ArisingSpecification
+      case branch.current_scope
+      when Rocc::Semantic::Temporary::ArisingSpecification
+        branch.current_scope.identifier = @text
       else
-        branch.arising = Rocc::Semantic::Temporary::ArisingSpecification.new(self)
+        arising = Rocc::Semantic::Temporary::ArisingSpecification.new(self)
+        arising.identifier = @text
+        branch.enter_scope(arising)
       end
-
-      branch.arising.identifier = @text
       
     end
     
     def name_dbg
       "TknIdent[#{@text}]"
     end
-    
+
  end # class TknIdentifier
 
   class TknLiteral < CeToken
@@ -186,48 +187,38 @@ module Rocc::CodeElements::CharRepresented::Tokens
       case @text
          
       when ";"
-        warn branch.scope_stack_trace
+        #warn branch.scope_stack_trace
         raise "still pending: `#{branch.pending_to_s}'" if branch.has_pending?
-        
-        if branch.arising
-          case branch.arising
-          when Rocc::Semantic::Temporary::ArisingSpecification
-            branch.arising.mark_as_declaration unless branch.arising.is_definition
-            branch.finalize_arising
-          else
-            raise
-          end
+
+        case branch.current_scope
+        when Rocc::Semantic::Temporary::ArisingSpecification
+            branch.current_scope.mark_as_declaration unless branch.current_scope.is_definition
+            branch.finish_current_scope
         else
           if branch.current_scope.complete?
             branch.leave_scope
           else
-            raise
+            warn branch.scope_stack_trace
+            raise "found `;', but #{branch.current_scope.name_dbg} is not yet complete"
           end
         end
         
       when ","
-        case branch.arising
-            
-        when nil
-        # ...
+        case branch.current_scope
+        when Rocc::Semantic::Temporary::ArisingSpecification
+
+          prev_arising = branch.current_scope
           
-        when Rocc::Semantic::Temporary::ArisingSpecification # remember: ArisingDefinition < ArisingSpecification
-            
-            next_specification = Rocc::Semantic::Temporary::ArisingSpecification.new([])
-            next_specification.linkage = branch.arising.linkage
-            next_specification.storage_class = branch.arising.storage_class
-            next_specification.type_qualifiers = branch.arising.type_qualifiers
-            next_specification.type_specifiers = branch.arising.type_specifiers
+          next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new([prev_arising.origin_shared])
+          next_arising.storage_class = prev_arising.storage_class
+          next_arising.type_qualifiers = prev_arising.type_qualifiers
+          next_arising.type_specifiers = prev_arising.type_specifiers
 
-            branch.finalize_arising
+          branch.finish_current_scope
+          branch.enter_scope(next_arising)
 
-            branch.set_arising(next_specification)
-
-        when FunctionParameter
-            branch.finalize_arising
-          
         else
-          raise "programming error"
+          raise "unexpected `,'"
         end
 
       when "."
@@ -245,14 +236,21 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
       when "{"
         raise if branch.has_pending?
-        raise if branch.has_arising?
         raise unless branch.current_scope # XXX correct? Or may '{' be used  at "translation unit scope"?
 
         # actions to be taken on the element at the top of the scope stack
         case branch.current_scope
-        when Rocc::Semantic::CeFunction
-          # mark most recent specification of function as definition
-          branch.current_scope.adducer.last.mark_as_definition # FIXME smells
+        when Rocc::Semantic::Temporary::ArisingSpecification
+          case branch.current_scope.symbol_family
+          when Rocc::Semantic::CeFunction
+            branch.current_scope.mark_as_definition
+            function = branch.finish_current_scope
+            branch.enter_scope(function)
+          else
+            raise
+          end
+        else
+          raise
         end
 
         # determine origin of to-be-created CompoundStatement
@@ -261,21 +259,26 @@ module Rocc::CodeElements::CharRepresented::Tokens
         when Rocc::Semantic::CeFunction
           origin = branch.current_scope
         else
-          raise "todo"
+          raise
         end
 
         # create CompoundStatement and enter its scope
-        # XXX differentiate between "blocks" (like function boby, switch block, ...) and "regular" compound statements where braces are not mandatory, but only to group several statements ..?
+        # XXX? differentiate between "blocks" (like function boby, switch block, ...) and "regular" compound statements where braces are not mandatory, but only to group several statements ?
         cs = Rocc::Semantic::CompoundStatement.new(origin, self)
         branch.enter_scope(cs)
 
       when "}"
         raise if branch.has_pending?
-        raise if branch.has_arising?
         raise "invalid current scope -- #{branch.scope_stack_trace}" unless branch.current_scope.is_a? Rocc::Semantic::CompoundStatement
         branch.current_scope.close(self)
         branch.leave_scope
-        branch.leave_scope if branch.current_scope.is_a? Rocc::Semantic::CeFunction
+
+        case branch.current_scope
+        when Rocc::Semantic::CeFunction
+          branch.leave_scope
+        when Rocc::Semantic::Statement
+          branch.leave_scope if branch.current_scope.is_complete? 
+        end
 
       when "("
         if branch.has_pending?
@@ -286,30 +289,29 @@ module Rocc::CodeElements::CharRepresented::Tokens
           
           super
 
-          #ArisingParentheses.new(self)
+        #ArisingParentheses.new(self)
           
-          #case branch.pending_tokens.last
-          #when TknIdentifier
-          #else
-          #  raise
-          #end
+        #case branch.pending_tokens.last
+        #when TknIdentifier
+        #else
+        #  raise
+        #end
           
         else # no pending
           
-          if branch.has_arising?
-            case branch.arising
-            when Rocc::Semantic::Temporary::ArisingSpecification
-              if (branch.arising.identifier)
-                branch.arising.symbol_family = Rocc::Semantic::CeFunction
-                function = branch.finalize_arising
-                branch.enter_scope(function)
-                func_sig = Rocc::Semantic::CeFunctionSignature.new(function, self)
-                branch.enter_scope(func_sig)
-              else
-                raise "not yet supported (#{branch.arising.inspect})"
-              end
+          case branch.current_scope
+          when nil
+            raise "not yet supported"
+            
+          when Rocc::Semantic::Temporary::ArisingSpecification
+            if branch.current_scope.identifier
+              branch.current_scope.symbol_family = Rocc::Semantic::CeFunction
+              function = branch.create_symbol
+              branch.enter_scope(function)
+              func_sig = Rocc::Semantic::CeFunctionSignature.new(function, self)
+              branch.enter_scope(func_sig)
             else
-              raise
+              raise "not yet supported (#{branch.arising.inspect})"
             end
           else
             expr = CompoundExpression.new(self)
@@ -320,7 +322,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
       when ")"
         raise if branch.has_pending?
-        raise if branch.has_arising?
 
         case branch.current_scope
         when Rocc::Semantic::CompoundExpression, Rocc::Semantic::CeFunctionSignature

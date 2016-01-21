@@ -37,6 +37,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
       def pursue_branch(compilation_context, branch)
         if branch.has_pending?
+          # FIXME exception
           branch.fail{"Syntax error: #{name_dbg} `#{text}' following `#{branch.pending_to_s}'."}
         else
 
@@ -104,18 +105,19 @@ module Rocc::CodeElements::CharRepresented::Tokens
         if invalid_ptkn
           branch.fail{"Syntax error: #{name_dbg} `#{text}' following #{invalid_ptkn.name_dbg} `#{invalid_ptkn.text}' (`#{branch.pending_to_s}#{text}')."}
         else
-          arisig = case @text
-                   when "enum"
-                     CeEnum
-                   when "struct"
-                     CeStruct
-                   when "union"
-                     CeUnion
-                   else
-                     raise "programming error"
-                   end
-          branch.arising = arising
-          super
+          # FIXME handle pending tokens
+          arisig = ArisingSpecification.new(self)
+          arising.symbol_family = case @text
+                                  when "enum"
+                                    CeEnum
+                                  when "struct"
+                                    CeStruct
+                                  when "union"
+                                    CeUnion
+                                  else
+                                    raise "programming error"
+                                  end
+          branch.enter_scope(arising)
         end
       end # pursue_branch
       
@@ -139,14 +141,19 @@ module Rocc::CodeElements::CharRepresented::Tokens
         end
         if invalid_ptkn
           branch.fail{"Syntax error: #{name_dbg} `#{text}' following #{invalid_ptkn.name_dbg} `#{invalid_ptkn.text}' (`#{branch.pending_to_s}#{text}')."}
-        else
-          branch.arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.pending_tokens)
+        else          
+          arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.pending_tokens)
+          branch.enter_scope(arising)
           super
         end
       end # pursue_branch
       
       def name_dbg
         "TknType[#{@text}]"
+      end
+
+      def type_specifier_symbol
+        @text.to_sym
       end
     
     end # class TknKwTypeSpecifier
@@ -156,6 +163,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @PICKING_REGEXP = Regexp.union %w(volatile const restrict)
       def pursue_branch(compilation_context, branch)
         raise "TODO"
+      end
+      def type_qualifier_symbol
+        @text.to_sym
       end
    end
 
@@ -167,35 +177,39 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
         # TODO typedef needs special treatment
 
-        if branch.has_arising?
-          raise unless branch.arising.is_a? Rocc::Semantic::Temporary::ArisingSpecification
-        else
-          branch.arising = Rocc::Semantic::Temporary::ArisingSpecification.new(self)
+        unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
+          arising = Rocc::Semantic::Temporary::ArisingSpecification.new(self)
+          branch.enter_scope(arising)
         end
         
-        branch.arising.storage_class = @text.to_sym
+        storage_class = @text.to_sym
+        branch.current_scope.storage_class = storage_class
 
         if branch.find_scope(CeFunction)
           if branch.find_scope(CeFunctionSignature)
-            raise "register is the only storage class specifier allowed for function parameters" unless branch.arising.storage_class == :register
+            raise "register is the only storage class specifier allowed for function parameters" unless storage_class == :register
           else
             # XXX all storage class specifiers allowed in function body? (=> typedef?)
-            #raise if [].includes?(branch.arising.storage_class)
+            #raise if [].includes?(storage_class)
           end
         else
-          raise "auto not allowed outside of function body" if [:auto].includes?(branch.arising.storage_class)
+          raise "auto not allowed outside of function body" if [:auto].includes?(storage_class)
         end
         
-        case branch.arising.storage_class
+        case storage_class
         when :extern
-          branch.arising.linkage = :extern
+          branch.current_scope.linkage = :extern
         when :static
-          branch.arising.linkage = :intern
+          branch.current_scope.linkage = :intern
         end
         
       end
 
-    end # class TknKwStorageClassSpecifier
+      def storage_class_specifier_symbol
+        @text.to_sym
+      end
+       
+   end # class TknKwStorageClassSpecifier
 
 
     class TknKwSpecifier < TknKeyword

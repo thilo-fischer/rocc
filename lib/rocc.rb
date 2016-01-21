@@ -47,6 +47,13 @@
 #
 # XXX marks nice to have issues that should be fixed some day.
 #
+# If one of the keywords is followed by a question mark (e.g. +XXX?+),
+# the comment does not describe an action that should be taken, but
+# rather an action that should be considered and requires additional
+# investigation and consideration to determine whether it is a good
+# idea that should be done or a bad idea that should be forgotten
+# after removing the comment.
+#
 # Most todo comments are located at those code sections they apply
 # to. Some comments with general scope or affecting multiple code
 # sections are placed in the central todo list below.

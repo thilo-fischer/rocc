@@ -52,8 +52,6 @@ module Rocc::Contexts
 
       @scope_stack = []
 
-      @arising = nil
-
       @children = []
       @next_child_id = 0
     end
@@ -99,6 +97,13 @@ module Rocc::Contexts
       @scope_stack.last
     end
 
+    def finish_current_scope
+      raise unless current_scope.is_a? ArisingSpecification
+      symbol = current_scope.finalize(self)
+      leave_scope
+      symbol
+    end
+
     def leave_scope
       warn "leave scope: #{"  " * (@scope_stack.count - 1)}< #{scope_name_dbg(@scope_stack.last)}"
       @most_recent_scope = @scope_stack.pop
@@ -132,27 +137,6 @@ module Rocc::Contexts
       result
     end
 
-    def arising=(arising)
-      if @arising and not arising < @arising
-        raise "inconsistent arisings detected"
-      end
-      @arising = arising
-    end
-
-    def arising
-      @arising
-    end
-   
-    def has_arising?
-      arising != nil
-    end
-
-    def finalize_arising
-      symbol = @arising.finalize(self)
-      @arising = nil
-      symbol
-    end
-
     def announce_symbol(specification, symbol_family, identifier, hashargs)
 
       warn "announce_symbol: #{specification.inspect}, #{symbol_family.inspect}, #{identifier.inspect}, #{hashargs.inspect}"
@@ -173,7 +157,7 @@ module Rocc::Contexts
         end
       else
         linkage = symbol_family.default_linkage # XXX necessary to query symbol_familiy or is it always :extern anyways?
-      end
+      end # find_scope(Rocc::Semantic::CeFunction)
 
       raise "programming error" unless linkage
       hashargs[:linkage] = linkage
@@ -193,12 +177,12 @@ module Rocc::Contexts
         # FIXME compare linkage, storage_class, type_qualifiers and type_specifiers of the annonced and the indexed symbol => must be compatible
         raise "inconsistend declarations" if false # symbol.type_qualifiers != type_qualifiers or symbol.type_specifiers != type_specifiers
 
-      end
+      end # symbols.empty?
 
       symbol.add_adducer(specification)
 
       symbol
-    end
+    end # announce_symbol
 
     def find_symbols(criteria)
       result = []
@@ -237,7 +221,7 @@ module Rocc::Contexts
           end
       end
       $log.info "Conditions of failed branch: #{@conditions.dbg_name}"
-    end
+    end # def fail
 
     def active?
       @active
