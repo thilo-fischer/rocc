@@ -66,7 +66,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
     ##
     # string to represent this element in messages from rocc
     def name
-      "`#{@text} token"
+      "`#{@text}' token"
     end
 
     ##

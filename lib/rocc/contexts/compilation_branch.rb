@@ -30,7 +30,9 @@ module Rocc::Contexts
     # branch derives from for usual branches, it is the current
     # CompilationContext for the initial branch. +conditional+ refers
     # to a +CePpConditional+ object, it is nil for the initial branch.
-    def initialize(parent, conditions, id)
+    #--
+    # FIXME smells to pass scope stack as parameter -> recurse parents' scope stacks?
+    def initialize(parent, conditions, id, scope_stack = [])
       @parent = parent
       @conditions = Rocc::Semantic::Conditions.new(conditions)
       @id = id
@@ -50,7 +52,7 @@ module Rocc::Contexts
 
       @pending_tokens = []
 
-      @scope_stack = []
+      @scope_stack = scope_stack
 
       @children = []
       @next_child_id = 0
@@ -60,7 +62,7 @@ module Rocc::Contexts
     # Derive a new branch from this branch that processes the
     # compilation done when +condition+ applies.
     def fork(condition)
-      b = new(self, @conditions + condition, @id + ".#{@next_child_id}")
+      b = new(self, @conditions + condition, @id + ".#{@next_child_id}", @scope_stack.clone) # FIXME need deep copy of scope stack as ArisingSpecification elements (and some other elements, like CeFunction elements that don't yet have a announcement or block) in stack may alter
       @children << b
       @next_child_id += 1
     end
@@ -105,7 +107,7 @@ module Rocc::Contexts
     end
 
     def enter_scope(scope)
-      warn "enter scope: #{"  " * (@scope_stack.count - 0)}> #{scope_name_dbg(scope)}"
+      #warn "enter scope: #{"  " * (@scope_stack.count - 0)}> #{scope_name_dbg(scope)}"
       raise if scope == nil
       @scope_stack << scope
     end
@@ -130,7 +132,7 @@ module Rocc::Contexts
     end
 
     def finish_current_scope
-      warn scope_stack_trace
+      #warn "finish_current_scope -> #{scope_stack_trace}"
       raise unless current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
       symbol = current_scope.finalize(self)
       leave_scope
@@ -138,7 +140,7 @@ module Rocc::Contexts
     end
 
     def leave_scope
-      warn "leave scope: #{"  " * (@scope_stack.count - 1)}< #{scope_name_dbg(@scope_stack.last)}"
+      #warn "leave scope: #{"  " * (@scope_stack.count - 1)}< #{scope_name_dbg(@scope_stack.last)}"
       @most_recent_scope = @scope_stack.pop
     end
 
@@ -160,7 +162,7 @@ module Rocc::Contexts
     end
 
     def closest_symbol_origin_scope
-      find_scope([Rocc::CodeElements::FileRepresented::CeTranslationUnit, Rocc::Semantic::CompoundStatement])
+      result = find_scope([Rocc::CodeElements::FileRepresented::CeTranslationUnit, Rocc::Semantic::CompoundStatement])
     end
 
     private
@@ -186,8 +188,9 @@ module Rocc::Contexts
 
     def announce_symbol(origin, symbol_family, identifier, hashargs)
 
-      warn "announce_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"
-      warn scope_stack_trace
+      warn "#{name_dbg}.announce_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"
+      #warn caller
+      #warn scope_stack_trace
 
       linkage = nil
       
@@ -215,6 +218,7 @@ module Rocc::Contexts
 
         # symbol detected for the first time
         symbol = symbol_family.new(origin, identifier, hashargs)
+        @symbol_idx.announce_symbol(symbol)
 
       else
         
@@ -308,6 +312,10 @@ module Rocc::Contexts
 
     def conditions
       
+    end
+
+    def name_dbg
+      "CcBr[#{@id}]"
     end
     
   end # class CompilationBranch

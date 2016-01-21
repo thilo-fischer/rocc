@@ -60,6 +60,7 @@
 #
 # == Central TODO list
 #
+# * TODO replace +env+ with +session+ or +applctx+ (=> ack --ignore-dir=outdated --ruby '\benv\b)
 # * XXX can we simplify some of the "Rocc::CodeElements::FileRepresented::" paths ?! => ack --ruby 'Rocc::'
 # * test suite
 #   * XXX more tests
@@ -80,6 +81,39 @@
 #   * FIXME top-level exception handling to prevent program crashes
 #   * FIXME raise "not yet implemented"/raise "not yet supported"
 # * review module hierarchy and file structure
+#
+# = Abbreviations used in the sourc code and documentation
+#
+# == Bibliography
+#
+# [TRPL] The Ruby Programming Language
+#        By David Flanagan, Yukihiro Matsumoto
+#        1st edition, January 2008
+#        Publisher: O'Reilly Media
+# [TCPL] The C Programming Language
+#        By: Brian W. Kernighan, Dennis M. Ritchie (Author)
+#        2nd edition, April 1, 1988
+#        Publisher: Prentice Hall
+#        https://hassanolity.files.wordpress.com/2013/11/the_c_programming_language_2.pdf
+#        http://www.ime.usp.br/~pf/Kernighan-Ritchie/C-Programming-Ebook.pdf
+# [CNS1] C in a Nutshell, German Edition
+#        By Peter Prinz, Tony Crawford
+#        1st Edition, 2006
+#        Publisher: O'Reilly Verlag GmbH & Co. KG
+# [CNS2] C in a Nutshell
+#        By Peter Prinz, Tony Crawford
+#        2nd Edition, December 2015
+#        Publisher: O'Reilly Media
+# [CPPX] The C++ Programming Language, "Special Edition"
+#        By Bjarne Stroustrup
+#        "Special Edition", 2000
+#        Publisher: Addison-Wesley Professional
+# [CPP4] The C++ Programming Language, 4th Edition
+#        By Bjarne Stroustrup
+#        4th edition, May 9, 2013
+#        Publisher: Addison-Wesley Professional
+#        
+#        
 
 
 module Rocc

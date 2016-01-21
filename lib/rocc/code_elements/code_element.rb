@@ -71,7 +71,7 @@ module Rocc::CodeElements
     ##
     # string to represent this element in rocc debugging and internal error messages
     def name_dbg
-      class_s = self.class.to_s
+      class_s = self.class.to_s.split('::').last
       disp = name
       if (class_s == name)
         name
@@ -83,7 +83,7 @@ module Rocc::CodeElements
     ##
     # string to represent this element in messages from rocc
     def name
-      self.class.to_s
+      self.class.to_s.split('::').last
     end
 
     ##

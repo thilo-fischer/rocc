@@ -90,14 +90,14 @@ module Rocc::Commands
     end # option_parser
 
 
-    def self.run(env, args, options)
+    def self.run(applctx, args, options)
       
-      if env.cursor == Dir then
+      if applctx.cursor == Dir then
         puts `ls #{args.join(" ")}`
       elsif args.empty?
-        dbg " *** #{env.obj_cursor.objects.inspect}"
-        env.logger.debug { "Listing of `#{env.obj_cursor}'" }
-        env.obj_cursor.list(STDOUT, options)
+        #warn "cursor: #{applctx.cursor}"
+        #warn "symbols: #{applctx.cursor.find_symbols}"
+        applctx.cursor.find_symbols.each {|s| puts s.name}
       else
         args.each { |o| o.list(STDOUT, options) }
       end

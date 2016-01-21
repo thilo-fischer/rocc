@@ -11,20 +11,21 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-##
-# Things related to the currently running program instance.
-#--
-# XXX use Singleton mixin? (TRPL 7.4.5)
-module Rocc::Session
-
   require 'logger'
 
   require 'rocc/session/options'
+  require 'rocc/session/application_context'
   require 'rocc/ui/cmdlineparser'
   require 'rocc/code_elements/file_represented/base_dir'
   require 'rocc/code_elements/file_represented/translation_unit'
   require 'rocc/code_elements/file_represented/module'
   require 'rocc/code_elements/file_represented/file'
+
+##
+# Things related to the currently running program instance.
+#--
+# XXX use Singleton mixin? (TRPL 7.4.5)
+module Rocc::Session
 
   class Session
 
@@ -70,6 +71,16 @@ module Rocc::Session
     def run
       parse_input
 
+      initial_cursor = @modules
+      if initial_cursor.count == 1
+        initial_cursor = initial_cursor.first
+        if initial_cursor.translation_units.count == 1
+          initial_cursor = initial_cursor.translation_units.first
+        end
+      end
+
+      @application_context = ApplicationContext.new(initial_cursor)
+
       if @run == :interactive
         # Todo: When starting interactive session:
         #  <program>  Copyright (C) <year>  <name of author>
@@ -78,7 +89,7 @@ module Rocc::Session
         #  under certain conditions; type `show c' for details.
         raise "Not yet supported" # TODO
       else
-        Rocc::Commands::Command::invoke(self, @run)
+        Rocc::Commands::Command::invoke(@application_context, @run)
       end
 
     end # run
@@ -126,7 +137,6 @@ module Rocc::Session
         case
         when File::file?(f)
           tu = Rocc::CodeElements::FileRepresented::CeTranslationUnit.new(ce_file(f, base_directories))
-          tu.populate
           translation_units << tu
         when File::directory?(f)
           # TODO find all source code files in f and its subdirectories and add as translation units to mdl

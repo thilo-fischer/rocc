@@ -17,7 +17,7 @@ module Rocc::Semantic
 
   class CeSymbol < Rocc::CodeElements::CodeElement
 
-    attr_reader :adducers
+    attr_reader :identifier, :adducers
 
     # origin is the unit the symbol lives in, e.g. the translation
     # unit it belongs to.  identifier is the symbols name.
@@ -36,6 +36,8 @@ module Rocc::Semantic
     alias adducer adducers
 
     def match(criteria)
+      #warn "#{name_dbg} -> match: #{criteria}"
+      
       return true if criteria.empty? # shortcut to maybe safe performance. XXX remove?
       
       family = criteria.delete(:symbol_family)
@@ -74,8 +76,17 @@ module Rocc::Semantic
         raise "invalid argument: :origin => #{origin.inspect}"
       end
 
+      #warn "#{name_dbg} -> match: #{criteria} => true"
       true
     end # def match(criteria)
+
+    def name
+      "symbol `#{@identifier}'"
+    end
+    
+    def name_dbg
+      "Sym[#{@identifier}]"
+    end
 
     private
 

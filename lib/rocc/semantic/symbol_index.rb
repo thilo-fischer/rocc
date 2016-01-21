@@ -20,6 +20,7 @@ module Rocc::Semantic
     end
     
     def announce_symbol(symbol)
+      #warn "SymbolIndex::announce_symbol: #{symbol.name_dbg}"
       if @symbols.key?(symbol.identifier)
         @symbols[symbol.identifier] << symbol
       else
@@ -44,16 +45,32 @@ module Rocc::Semantic
     def find_symbols(criteria)
       identifier = criteria.delete(:identifier)
 
-      result = case identifier
-      when nil
-        @symbols.values
-      when String
-        @symbols[identifier] || []
-      when Regexp
-        @symbols.values.select {|s| s.identifier =~ identifier}
-      else
-        raise
-      end.select {|s| s.match(criteria)}
+      #@symbols.values.each {|s| warn "\tsymbol #{s.name_dbg}"}
+
+      symbols_matching_id = case identifier
+                            when nil
+                              @symbols.values.flatten
+                            when String
+                              @symbols[identifier] || []
+                            when Regexp
+                              @symbols.select {|key, value| key =~ identifier}.values.flatten
+                            else
+                              raise
+                            end
+
+      #warn "id.count: #{symbols_matching_id.count}"
+      #unless symbols_matching_id.empty?
+      #  #warn "symbols_matching_id.first #{symbols_matching_id.first}"
+      #  warn "symbols_matching_id.first.count #{symbols_matching_id.first.count}"
+      #  unless symbols_matching_id.first.empty?
+      #    warn "symbols_matching_id.first.first #{symbols_matching_id.first.first.name_dbg}"
+      #  end
+      #end
+
+      result = symbols_matching_id.select do |s|
+        #warn "symbols with according identifier: #{s.name_dbg}"
+        s.match(criteria)
+      end
 
       raise "unhandled criteria (not yet supported?): #{criteria.inspect}" if not result.empty? and not criteria.empty?
 

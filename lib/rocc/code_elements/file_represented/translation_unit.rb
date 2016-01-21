@@ -40,8 +40,13 @@ module Rocc::CodeElements::FileRepresented
       main_file.basename + ".o"
     end
 
-    def announce_symbols(symbols)
-      @symbol_idx.announce_symbols(symbols)
+    def find_symbols(criteria = {})
+      @symbol_idx.find_symbols(criteria)
+    end
+
+    def announce_symbols(symbol_idx)
+      warn "#{name_dbg} -> announce_symbols: #{symbol_idx.find_symbols({}).map{|s| s.name_dbg}.join(", ")}"
+      @symbol_idx.announce_symbols(symbol_idx)
     end
 
     ##
@@ -52,6 +57,8 @@ module Rocc::CodeElements::FileRepresented
     # Will do the parsing no matter if the symbol table is already
     # available and up to date. Test with +up_to_date?+ 
     def populate
+      #warn "== #{name_dbg} -> populate =="
+      #warn caller
       @symbol_idx = Rocc::Semantic::SymbolIndex.new
       ctx = Rocc::Contexts::ParsingContext.new(self)
       main_file.pursue(ctx)

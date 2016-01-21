@@ -23,7 +23,7 @@ module Rocc::Contexts
 
     def initialize(translation_unit)
       @translation_unit = translation_unit
-      @main_branch = CompilationBranch.new(self, nil, "*")
+      @main_branch = CompilationBranch.new(self, nil, "*", [@translation_unit])
       @active_branches = [ @main_branch ].to_set
     end
 

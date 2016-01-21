@@ -17,6 +17,8 @@ module Rocc::Semantic
 
   class CeFunction < TypedSymbol
 
+    attr_reader :parameters
+
     def initialize(origin, identifier, hashargs)
       super
       @parameters = []
@@ -46,6 +48,14 @@ module Rocc::Semantic
       @param_list_complete = true
     end
     
+    def name
+      "function `#{@identifier}'"
+    end
+    
+    def name_dbg
+      "Fkt[#{@identifier}]"
+    end
+
   end # class CeFunction
 
 end # module Rocc::Semantic
