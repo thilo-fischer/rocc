@@ -25,8 +25,8 @@ module Rocc::Contexts
     attr_reader :parent, :conditional, :id, :tkn_cursor, :symbols, :pending_tokens, :scope_stack, :children
 
     ##
-    # New branch that branches from +parent+ and is active when the
-    # given +conditional+ applies. +parent+ is the branch the new
+    # New branch that branches out from +parent+ and is active when
+    # the given +conditional+ applies. +parent+ is the branch the new
     # branch derives from for usual branches, it is the current
     # CompilationContext for the initial branch. +conditional+ refers
     # to a +CePpConditional+ object, it is nil for the initial branch.
@@ -56,8 +56,10 @@ module Rocc::Contexts
       @next_child_id = 0
     end
 
-    # FIXME rename branch_out -> fork
-    def branch_out(condition)
+    ##
+    # Derive a new branch from this branch that processes the
+    # compilation done when +condition+ applies.
+    def fork(condition)
       b = new(self, @conditions + condition, @id + ".#{@next_child_id}")
       @children << b
       @next_child_id += 1
@@ -66,23 +68,38 @@ module Rocc::Contexts
     def has_children?
       not children.empty?
     end
-    
+
+    ##
+    # Is this the main branch directly initiated from the CompilationContext?
     def root?
       @parent.is_a? CompilationContext
     end
 
+    ##
+    # Add one more token to the list of successively parsed tokens
+    # for which no semantics could be assigned yet.
     def push_pending(token)
       @pending_tokens << token
     end
 
+    ##
+    # Clear the list of successively parsed tokens
+    # for which no semantics could be assigned yet.
     def clear_pending
       @pending_tokens = []
     end
 
+    ##
+    # Any recently parsed tokens for which no semantics could be
+    # assigned yet?
     def has_pending?
       not @pending_tokens.empty?
     end
 
+    ##
+    # For debugging and user messages: Textual representation of the
+    # recently parsed tokens for which no semantics could be assigned
+    # yet.
     def pending_to_s
       @pending_tokens.inject("") {|str, tkn| str + tkn.text + tkn.whitespace_after }
     end
@@ -97,8 +114,24 @@ module Rocc::Contexts
       @scope_stack.last
     end
 
+    ##
+    # Return the object marking a scope somewhere deeper in the scope
+    # stack. +depth+ devines how many levels to descend.
+    #
+    # +surrounding_scope(1)+ (which is the default if no +depth+
+    # argement is given) returns the scope directly enclosing
+    # +current_scope+. +surrounding_scope(0)+ is equivallent to
+    # +current_scope+.
+    # 
+    def surrounding_scope(depth = 1)
+      raise "invalid argument: #{depth}" if depth < 0
+      depth = -1 - depth
+      @scope_stack[depth]
+    end
+
     def finish_current_scope
-      raise unless current_scope.is_a? ArisingSpecification
+      warn scope_stack_trace
+      raise unless current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
       symbol = current_scope.finalize(self)
       leave_scope
       symbol
@@ -111,15 +144,29 @@ module Rocc::Contexts
 
     attr_reader :most_recent_scope
 
-    def find_scope(family)
-      idx = @scope_stack.rindex {|s| s.is_a?(family)}
+    def find_scope(symbol_family)
+      idx = nil
+      case symbol_family
+      when Class
+        idx = @scope_stack.rindex {|s| s.is_a?(symbol_family)}
+      when Array
+        idx = @scope_stack.rindex do |s|
+          symbol_family.find {|f| s.is_a?(f)}
+        end
+      else
+        raise "invalid argument"
+      end
       @scope_stack[idx] if idx
+    end
+
+    def closest_symbol_origin_scope
+      find_scope([Rocc::CodeElements::FileRepresented::CeTranslationUnit, Rocc::Semantic::CompoundStatement])
     end
 
     private
     def scope_name_dbg(scope)
       case scope
-      when Rocc::CodeElements::CodeElement
+      when Rocc::CodeElements::CodeElement, Rocc::Semantic::Temporary::ArisingSpecification
         scope.name_dbg
       else
         scope.inspect
@@ -137,9 +184,9 @@ module Rocc::Contexts
       result
     end
 
-    def announce_symbol(specification, symbol_family, identifier, hashargs)
+    def announce_symbol(origin, symbol_family, identifier, hashargs)
 
-      warn "announce_symbol: #{specification.inspect}, #{symbol_family.inspect}, #{identifier.inspect}, #{hashargs.inspect}"
+      warn "announce_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"
       warn scope_stack_trace
 
       linkage = nil
@@ -167,7 +214,7 @@ module Rocc::Contexts
       if symbols.empty?
 
         # symbol detected for the first time
-        symbol = symbol_family.new(specification, identifier, hashargs)
+        symbol = symbol_family.new(origin, identifier, hashargs)
 
       else
         
@@ -178,8 +225,6 @@ module Rocc::Contexts
         raise "inconsistend declarations" if false # symbol.type_qualifiers != type_qualifiers or symbol.type_specifiers != type_specifiers
 
       end # symbols.empty?
-
-      symbol.add_adducer(specification)
 
       symbol
     end # announce_symbol

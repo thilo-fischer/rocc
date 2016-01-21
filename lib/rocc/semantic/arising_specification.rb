@@ -58,16 +58,18 @@ module Rocc::Semantic::Temporary
     def finalize(branch)
       raise "CeSpecification is abstract class" if @specification_type == Rocc::Semantic::CeSpecification # FIXME rework @specification_type
       specification = @specification_type.new(origin)
-      create_symbol(specification)
+      @symbol = create_symbol(specification) unless @symbol
+      @symbol.add_adducer(specification)
+      @symbol
     end
 
-    def create_symbol(branch, specification = self)
+    def create_symbol(branch)
       raise "Already created symbol from this #{self.class}!" if @symbol
       hashargs = {}
       hashargs[:storage_class] = @storage_class if @storage_class
       hashargs[:type_qualifiers] = @type_qualifiers unless @type_qualifiers.empty?
       hashargs[:type_specifiers] = @type_specifiers unless @type_specifiers.empty?
-      @symbol = branch.announce_symbol(specification, @symbol_family, @identifier, hashargs)
+      @symbol = branch.announce_symbol(branch.closest_symbol_origin_scope, @symbol_family, @identifier, hashargs)
       @symbol
     end
 
@@ -146,11 +148,11 @@ module Rocc::Semantic::Temporary
     end # add_type_specifier
 
     def mark_as_definition
-      specification_type = Rocc::Semantic::CeDefinition
+      @specification_type = Rocc::Semantic::CeDefinition
     end
 
     def mark_as_declaration
-      specification_type = Rocc::Semantic::CeDeclaration
+      @specification_type = Rocc::Semantic::CeDeclaration
     end
 
     private

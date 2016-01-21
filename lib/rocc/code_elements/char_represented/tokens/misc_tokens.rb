@@ -221,6 +221,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       when "."
         if branch.has_pending?
           if branch.pending.last.is_a? TknIdentifier
+            branch.push_pending(self)
             raise "TODO"
           else
             raise "error"
@@ -235,21 +236,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
         raise if branch.has_pending?
         raise unless branch.current_scope # XXX correct? Or may '{' be used  at "translation unit scope"?
 
-        # actions to be taken on the element at the top of the scope stack
-        case branch.current_scope
-        when Rocc::Semantic::Temporary::ArisingSpecification
-          case branch.current_scope.symbol_family
-          when Rocc::Semantic::CeFunction
-            branch.current_scope.mark_as_definition
-            function = branch.finish_current_scope
-            branch.enter_scope(function)
-          else
-            raise
-          end
-        else
-          raise
-        end
-
         # determine origin of to-be-created CompoundStatement
         origin = nil
         case branch.current_scope
@@ -262,6 +248,21 @@ module Rocc::CodeElements::CharRepresented::Tokens
         # create CompoundStatement and enter its scope
         # XXX? differentiate between "blocks" (like function boby, switch block, ...) and "regular" compound statements where braces are not mandatory, but only to group several statements ?
         cs = Rocc::Semantic::CompoundStatement.new(origin, self)
+
+        # actions to be taken on the element at the top of the scope stack
+        case branch.current_scope
+        when Rocc::Semantic::CeFunction
+          function = branch.leave_scope
+          raise unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
+          branch.current_scope.mark_as_definition
+          branch.finish_current_scope
+          branch.enter_scope(function)
+          #function.block = cs # FIXME
+        else
+          warn branch.scope_stack_trace
+          raise "not yet supported"
+        end
+
         branch.enter_scope(cs)
 
       when "}"
