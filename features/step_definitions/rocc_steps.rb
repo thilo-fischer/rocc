@@ -14,10 +14,10 @@ Then /^the output should look as specified by "([^"]*)"$/ do |basepath|
 
   @basepath = File.join(TESTDATA_DIR, 'expect', basepath)
 
-  filename_out = basepath + '.stdout'
+  filename_out = @basepath + '.stdout'
   @expect_out = IO.read(filename_out) 
   
-  filename_err = basepath + '.stderr'
+  filename_err = @basepath + '.stderr'
   if File.exist?(filename_err)
     @expect_err = IO.read(filename_err)
   else
