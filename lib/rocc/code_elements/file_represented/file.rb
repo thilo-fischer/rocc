@@ -22,24 +22,38 @@ module Rocc::CodeElements::FileRepresented
   # Represet a source code file.
   class CeFile < CeFilesystemElement
 
-    attr_reader :adducer, :basename, :extension
+    # Filename extension (including the introductory '.' character)
+    attr_reader :extension
+    # Array of all the "causes" for this file to be visited.
+    attr_reader :adducer
 
-    def initialize(parent_dir, adducer, basename, extension)
-      super(parent_dir, basename)
-      @adducer = adducer
-      @extension = extension
+    ##
+    # +origin+ is the CeDirectory element representing directory the
+    # file resides in.
+    #
+    # +adducer+: The "cause" for this file to be visited.
+    #
+    # +name+: Filename including extension, without any directory
+    # prefix.
+    def initialize(origin, adducer, name)
+      super(origin, name)
+      if adducer.is_a? Array
+        @adducer = adducer
+      else
+        @adducer = [ adducer ]
+      end
+      @extension  = File::extname(name)
       @mod_time = nil
       @checksum = nil
     end
 
-    alias basename name
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
+    def name_dbg
+      "File[#{name}]"
+    end
 
-    def name
-      if @extension
-        basename + @extension
-      else
-        basename
-      end
+    def basename
+      File::basename(name, @extension)
     end
    
 #    def symbols(filter = nil)
@@ -50,17 +64,20 @@ module Rocc::CodeElements::FileRepresented
 #      end
 #    end
     
-
+    ##
+    # Array of Strings representing the lines contained in this file.
     def lines
       unless @lines and up_to_date?
         update_changedetection
-        File.open(abs_path, "r") do |file|
+        File.open(path_full, "r") do |file|
           @lines = file.readlines.map(&:chomp!)
         end
       end
       @lines
     end # lines
 
+    ##
+    # Array of CePhysicLine objects representing the contained lines.
     def content
       unless @content and up_to_date?
         @content = []
@@ -135,14 +152,15 @@ module Rocc::CodeElements::FileRepresented
     # Get the file's current modification date. Read from file system,
     # do not return any eventually buffered values.
     def volatile_mod_time
-      File.mtime(abs_path)
+      warn path_dbg
+      File.mtime(path_full)
     end
     
     ##
     # Get the file's current SHA1 checksum. Read from file system,
     # do not return any eventually buffered values.
     def volatile_checksum
-      Digest::SHA1.hexdigest(IO.read(abs_path))
+      Digest::SHA1.hexdigest(IO.read(path_full))
     end
 
     def change_detection_mtime?

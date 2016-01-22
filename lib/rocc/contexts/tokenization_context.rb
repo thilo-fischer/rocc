@@ -16,9 +16,13 @@ require 'rocc/helpers'
 module Rocc::Contexts
 
   ##
-  # ...
+  # Encapsulates all information relevant during the process of
+  # splitting a logical line up into tokens. A new TokenizationContext
+  # is intantiatted for each logical line.
   #
-  # Not contained in ParsingContext as this context is recreated at each new tokenization method invokation and thus does not need to be ... over multiple method invokations.
+  # Not contained in ParsingContext as this context is recreated at
+  # each new tokenization method invokation and thus does not need to
+  # be passed on over multiple method invokations.
   class TokenizationContext
 
     attr_reader :line, :tokens, :remainder, :charpos
@@ -32,7 +36,8 @@ module Rocc::Contexts
     end
 
     ##
-    # return true if all tokens have been picked from the context's line, false otherwise
+    # Return true if all tokens have been picked from the context's
+    # line (tokenization reached end of logic line), false otherwise.
     def finished?
       #$log.debug{ "TokenizationContext.finished? => #{@remainder.empty?}, remainder: `#{@remainder}'" }
       #$log.debug{ Rocc::Helpers.backtrace(8) }
@@ -56,11 +61,6 @@ module Rocc::Contexts
       whitespace
     end
 
-#    def strip
-#      lstrip
-#      @remainder.rstrip!
-#    end
-
     def pick_comments
       while Rocc::CodeElements::CharRepresented::Tokens::TknComment.pick!(self); end
     end
@@ -70,7 +70,7 @@ module Rocc::Contexts
       pick_comments
       if @remainder[0] == "#" then
         @remainder[0] = ""
-        lstrip
+        lstrip!
         pick_comments
         @remainder.prepend "#"
       end

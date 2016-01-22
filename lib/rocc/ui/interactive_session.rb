@@ -11,12 +11,15 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-##
-# User Interface Implementations
+module Rocc::Ui::Interactive
 
-module Rocc::Ui
+  class Session
 
-  require 'rocc/ui/cmdlineparser'
-  require 'rocc/ui/interactive'
+    def start
+      puts COPYRIGHT_NOTE
+      raise "Interactive session not yet implemented" # XXX
+    end
 
-end # module Rocc::Ui
+  end # class Session
+
+end

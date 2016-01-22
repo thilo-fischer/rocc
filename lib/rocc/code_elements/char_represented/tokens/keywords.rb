@@ -128,7 +128,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @PICKING_REGEXP = Regexp.union %w(void char short int long float double signed unsigned bool)
 
       def pursue_branch(compilation_context, branch)
-        raise if branch.has_pending?
+        raise "unexpected pending tokens: `#{branch.pending_to_s}'" if branch.has_pending?
         unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
           arising = Rocc::Semantic::Temporary::ArisingSpecification.new
           branch.enter_scope(arising)

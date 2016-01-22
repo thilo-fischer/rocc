@@ -26,21 +26,20 @@ module Rocc::CodeElements::FileRepresented
       @content = []
     end
 
-    def add_fs_element(filesystem_element)
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
+    def name_dbg
+      "Dir[#{name}]"
+    end
+
+    def add_child(filesystem_element)
       @content << filesystem_element
     end
 
     def adducer
-      # XXX return array of all files in this dir and its subdirectories?
+      # XXX? return array of all files in this dir and its subdirectories?
       @content
     end
     
-#    protected
-#    # to be used from CeBaseDirectory::initialize
-#    def initialize(origin)
-#      super
-#    end
-
   end # class CeDirectory
 
 end # module Rocc::CodeElements::FileRepresented

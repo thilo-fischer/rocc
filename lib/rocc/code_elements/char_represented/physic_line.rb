@@ -16,24 +16,54 @@ require 'rocc/code_elements/char_represented/logic_line'
 
 module Rocc::CodeElements::CharRepresented
 
+  ##
+  # A CePhysicLine represents a line in a source file while ignoring
+  # any escaped line endings (i.e. line endings preceeded with
+  # '\'). Several successive continued (i.e. with escaped line ending)
+  # physic lines will be concatenated to a single logic line
+  # represented by a CeLogicLine object.
+  # 
+  # Line numbers always refer to physic lines.
   class CePhysicLine < Rocc::CodeElements::CodeElement
 
-    ##
-    # index of this element in the origin's array of lines
     attr_reader :index, :text
- 
+
+    ##
+    # +origin+ is the CeFile this line is part of.
+    # +text+ is the string that makes up this line
+    # +index+ is the index of this line in the origin's array of lines
     def initialize(origin, text, index) #, ppdir_line_list = nil)
-      super origin
+      super(origin)
       @index = index
       @text = text
       #@ppdir_line_list = ppdir_line_list
     end
 
-    def announce
-      # Don't want to register lines, they can be referenced from the content of CeFile.
-      nil
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
+    def name_dbg
+      "PhLn[#{line_number}]"
     end
 
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name
+    def name
+      line_number.to_s
+    end
+
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#path_separator
+    def path_separator
+      ":"
+    end
+    private :path_separator
+
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#location
+    #--
+    # XXX aliases not listed in rdoc ?!
+    # alias location path
+    def location; path; end
+
+    ##
+    # Number of this line in file when ignoring any +#line+ directives
+    # of the preprocessor.
     def line_number
       index + 1
     end
@@ -56,10 +86,6 @@ module Rocc::CodeElements::CharRepresented
       else
         physical_line_number
       end
-    end
-
-    def name
-      line_number.to_s
     end
 
     ##
@@ -124,15 +150,7 @@ module Rocc::CodeElements::CharRepresented
         
       end
 
-     end # pursue
-
-    protected
-
-#    @ORIGIN_CLASS = CeFile
-
-    def path_separator
-      ":"
-    end
+    end # pursue
 
   end # class CePhysicLine
 

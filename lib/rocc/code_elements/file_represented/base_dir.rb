@@ -19,33 +19,25 @@ module Rocc::CodeElements::FileRepresented
   # Represet the root directory of a source tree that is part of the current target source code.
   class CeBaseDirectory < CeDirectory
 
-    attr_reader :path, :abs_path
+    attr_reader :path_full, :path_abs
 
     ##
     #--
-    # FIXME adducer sensible?
+    # FIXME track adducers
     def initialize(adducer, path)
       name = File::basename(path)
       super(nil, name)
-      @path = path
-      @abs_path = File::expand_path(path)
+      @path_full = path
+      @path_abs = File::expand_path(path)
     end
 
-    # Overwrite the CeFilesystemElement's implementation of parent_dir, return always nil.
-    def parent_dir
-      nil
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
+    def name_dbg
+      "BaseDir[#{name}]"
     end
 
-    def has_parent_dir?
-      false
-    end
-    
-    def is_base_dir?
-      true
-    end
-    
-    def rel_path
-      '+/' + name # use '+' as symbol for base directories ..?
+    def path
+      '.../' + name
     end
 
   end # class CeBaseDirectory

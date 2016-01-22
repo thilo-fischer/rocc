@@ -17,42 +17,93 @@ require 'rocc/contexts/tokenization_context'
   
 module Rocc::CodeElements::CharRepresented
 
+  ##
+  # A CeLogicLine represents a line in a source file after all line
+  # endings preceeded with '\' (backslash character) have been
+  # removed. A logic line corresponds to one or several successive
+  # continued physic lines.
+  # 
+  # Line numbers always refer to physic lines.
   class CeLogicLine < Rocc::CodeElements::CodeElement
+
     attr_reader :indentation
 
+    ##
+    # Origin is the CePhysicLine or the range of continued
+    # CePhysicLines that form this logic line.
     def initialize(origin)
       super(origin)
       @tokens = nil
       @indentation = nil
     end # initialize
 
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
+    def name_dbg
+      "LgLn[#{name}]"
+    end
+
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name
+    def name
+      if origin.is_a? Range
+        "#{origin.begin.line_number}..#{origin.end.line_number}"
+      else
+        origin.line_number.to_s
+      end
+    end
+
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#path_separator
+    def path_separator
+      ":"
+    end
+    private :path_separator
+
+    # Skip direct origin (CePhysicLine or Range of) in path. See
+    # rdoc-ref:Rocc::CodeElements::CodeElement#path
+    def path
+      physic_line = origin
+      physic_line.begin if physic_line.is_a? Range
+      physic_line.origin.path + path_separator + name
+    end
+
+    # Skip direct origin (CePhysicLine or Range of) in path. See
+    # rdoc-ref:Rocc::CodeElements::CodeElement#path_full
+    def path_full
+      physic_line = origin
+      physic_line.begin if physic_line.is_a? Range
+      physic_line.origin.path_full + path_separator + name
+    end
+
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#location
+    #--
+    # XXX aliases not listed in rdoc ?!
+    # alias location path
+    def location; path; end
+
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#pursue
+    def pursue(lineread_context)
+      cmt_ctx = lineread_context.comment_context
+      tokenize(cmt_ctx)
+      super(cmt_ctx.compilation_context)
+    end
+
+    ##
+    # The string that makes up this logic line.
     def text
-      if origin.class == Range
+      if origin.is_a?(Range)
         raise "TODO"
-#        # merge physical lines
-#        if env.remainders.include? self.class
-#          text = env.remainders[self.class].map {|ln| ln.text.sub(/\\$/,"")}.join + text
-#          origin = env.remainders[self.class][0] .. self
-#          env.remainders.delete self.class
-#        end
+      ## merge physical lines
+      #if env.remainders.include? self.class
+      #  text = env.remainders[self.class].map {|ln| ln.text.sub(/\\$/,"")}.join + text
+      #  origin = env.remainders[self.class][0] .. self
+      #  env.remainders.delete self.class
+      #end
       else
         origin.text
       end
     end
 
-    def announce
-      # Don't want to register lines, they can be referenced from the content of ... are they? (fixme)
-      nil
-    end
-
-    def pursue(lineread_context)
-      comment_context = lineread_context.comment_context
-      tokens = tokenize(comment_context)
-
-      compilation_context = comment_context.compilation_context
-      tokens.map {|t| t.pursue(compilation_context)}
-    end
-
+    ##
+    # The tokens contained in this logic line.
     def tokens
       raise "#{to_s} has not yet been tokenized." unless @tokens
       @tokens
@@ -79,9 +130,8 @@ module Rocc::CodeElements::CharRepresented
       tokenization_context.pick_pp_directives
 
       until tokenization_context.finished? do
-        unless Tokens::PICKING_ORDER.find {|c| c.pick!(tokenization_context)}
-          raise "Could not dertermine next token in `#{remainder}'"
-        end
+        picked = Tokens::PICKING_ORDER.find {|c| c.pick!(tokenization_context)}
+        raise "Could not dertermine next token in `#{remainder}'" unless picked
       end
 
       # FIXME enter multiline comment when parsing `/*'

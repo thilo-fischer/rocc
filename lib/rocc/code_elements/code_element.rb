@@ -20,45 +20,32 @@ module Rocc::CodeElements
   # XXX consider making CodeElement a module instead of a class and use it as mixin
   class CodeElement
 
-    def initialize(origin = nil)
+    ##
+    # Each CodeElement shall have an origin which refers to the object
+    # it is a part of. The origin can be of various kind depending on
+    # the class derived from the CodeElement class. The origin of a
+    # CodeElement A shall be the CodeElement where you would expect to
+    # go when doing a +cd ..+, and where you would expect to find A
+    # listed when doing a +ls -A+. FIXME This is not yet consistently
+    # implemented in all CodeElements. Force through!
+    #
+    # Classes deriving from CodeElement shall use the term +origin+ in
+    # their source code to mark the object they use as their
+    # origin. They may define aliases to give a more meaningful name
+    # to it. For example:
+    # - The origin of a file is the directory the file is located in.
+    #   It defines an alias +parent_dir+ for +origin+.
+    # - The origin of a variable is either the enclosing block it is
+    #   defined in or the translation unit if not enclosed by a block.
+    #   It defines an alias +scope+ for +origin+.
+    def initialize(origin)
       @origin = origin
-      #announce
     end
 
-#    # rrr
-#    # register the object at its origin
-#    def announce
-#      @origin.register(self) if @origin
-#    end
-#
-#    ##
-#    # The code element this element originates form, i.e. the element
-#    # at the previous level in the full path.
-#    # rrr
+    ##
+    # The CodeElement this element originates form, i.e. the element
+    # at the previous level in the full path.
     attr_reader :origin
-##    def origin(depth = 1)
-##      case depth
-##      when Integer
-##        if depth == 0
-##          self
-##        elsif depth > 0
-##          @origin.origin(depth - 1)
-##        else
-##          raise
-##        end
-##      when Class
-##        raise "Programmin error :(" unless depth < CodeElement
-##        if self.is_a? depth then
-##          self
-##        elsif self.is_a? CoProgram
-##          nil
-##        else
-##          @origin.origin(depth)
-##        end
-##      else
-##        raise
-##      end
-##    end # origin
 
     ##
     # The object that represents the reason for this code element to
@@ -69,7 +56,10 @@ module Rocc::CodeElements
     alias adducer origin
 
     ##
-    # string to represent this element in rocc debugging and internal error messages
+    # String to represent this element in rocc debugging and internal
+    # error messages. Shall include an indication of the element's
+    # nature (i.e. the CodeElement's subclass the element is an
+    # instance of).
     def name_dbg
       class_s = self.class.to_s.split('::').last
       disp = name
@@ -81,19 +71,26 @@ module Rocc::CodeElements
     end
 
     ##
-    # string to represent this element in messages from rocc
+    # String to represent this element in messages from rocc.  May be
+    # just the identifier associated with the element, the element's
+    # nature shall become clear from the context where +name+ is being
+    # used.
     def name
       self.class.to_s.split('::').last
     end
 
     ##
-    # character(s) to use to separate this element from its origin in path information
+    # Character(s) to use to separate this element from its origin in
+    # path information.
     def path_separator
       " > "
     end
+    private :path_separator
     
     ##
-    # path to file and to scope in file in which the element is defined
+    # Path to file and to scope in file where this element
+    # resides. Might skip some elements from the origin-chain which
+    # are usually not of interest for rocc applications.
     def path
       if @origin
         @origin.path + path_separator + name
@@ -103,8 +100,8 @@ module Rocc::CodeElements
     end
 
     ##
-    # path to file and to scope in file in which the element is defined
-    # listing all elements actually in the origin-chain
+    # Path to file and to scope in file where this element resides
+    # listing all elements actually in the origin-chain.
     def path_full
       if @origin
         @origin.path_full + path_separator + name
@@ -114,7 +111,8 @@ module Rocc::CodeElements
     end
 
     ##
-    # path to the element to be used in rocc debugging and internal error messages
+    # Path to the element to be used in rocc debugging and internal
+    # error messages.
     def path_dbg
       if @origin
         @origin.path_dbg + path_separator + name_dbg
@@ -126,52 +124,79 @@ module Rocc::CodeElements
     alias to_s path_dbg
 
     ##
-    # like path, but discard any file information, i.e. start the path only
-    # inside the translation unit
-    alias scope path
+    # Like path, but discard any file information, i.e. start the path only
+    # inside the translation unit.
+    #
+    # XXX? Question of best practise in Ruby code: Provide dummy
+    # implementation at parent class (possibly not working for various
+    # child classes and possibly throwing an exception) and override
+    # in subclasses or use duck typing and define in according child
+    # classes only?
+    def scope
+      raise "Invalid operation for #{name_dbg} (or not yet implemented)."
+    end
 
     ##
-    # like path, but discard scope information, i.e. only give file path and line number
-    alias location path
-
-#    # rrr
-#    def string_representation(options = {})
-#      if options.key?(:format)
-#        case options[:format]
-#        when :short
-#          name
-#        when :long
-#          path
-#        when :code
-#          text
-#        else
-#          raise
-#        end
-#      else
-#        name
-#      end
-#    end
-#
-#    # rrr
-#    def list(io, options = {})
-#      io.puts string_representation(options)
-#    end
+    # Like path, but discard scope information, i.e. only give file
+    # path and line number.
+    #
+    # XXX? Question of best practise in Ruby code: Provide dummy
+    # implementation at parent class (possibly not working for various
+    # child classes and possibly throwing an exception) and override
+    # in subclasses or use duck typing and define in according child
+    # classes only?
+    def location
+      raise "Invalid operation for #{name_dbg} (or not yet implemented)."
+    end
 
     ##
-    # process this code element and update the given context accordingly
+    # Find the origin's origin, or the origin's origin's origin, or
+    # ... If +depth+ is a non-negative integer number, descend this
+    # many steps, where a +descend_origin(1)+ is equivalent to +self+
+    # and +descend_origin(1)+ is equivalent to +origin+. If +depth+ is
+    # a +Class+ (that is a subclass of +CodeElement+), descend until
+    # an origin is found that +is_a?+ +depth+.
+    def descend_origin(depth = 1)
+      case depth
+      when Integer
+        if depth == 0
+          self
+        elsif depth > 0
+          @origin.descend_origin(depth - 1)
+        else
+          raise "Programmin error :("
+        end
+      when Class
+        raise "Programmin error :(" unless depth < CodeElement
+        if self.is_a? depth then
+          self
+        elsif @origin
+          @origin.descend_origin(depth)
+        else
+          nil
+        end
+      else
+        raise "Invalid argument"
+      end
+    end # origin
+
+    ##
+    # Process this code element and update the given context
+    # accordingly. To be overridden by those subclasses that support
+    # according operations.
+    #
+    # XXX? Question of best practise in Ruby code: Provide dummy
+    # implementation at parent class (possibly not working for various
+    # child classes and possibly throwing an exception) and override
+    # in subclasses or use duck typing and define in according child
+    # classes only?
+    #
+    # E.g. CeFile and CeLogicLine define +content+ and invoke this
+    # implementation.
     def pursue(context)
-      content.map {|c| c.pursue(context) }
+      content.map {|c| c.pursue(context)}
     end
     
-#    # take in objects that originate from this object
-#    # rrr
-#    def register(obj, key = obj.class)
-#      dbg self.to_s
-#      @origin.register(obj, key)
-#    end
-#
-#    # fixme
-#    # rrr
 #    def <=>(other)
 #      if @origin == other.origin
 #        if self.respond_to?(:origin_offset)
@@ -182,28 +207,6 @@ module Rocc::CodeElements
 #      else
 #        return @origin <=> other.origin
 #      end
-#    end
-
-    protected
-
-#    @ORIGIN_CLASS = CodeElement
-#    class << self
-#      attr_reader :ORIGIN_CLASS
-#    end
-#
-#    def type_error(object)
-#      if object
-#        TypeError.new("`#{object}' is of wrong type `#{object.class}'")
-#      else
-#        TypeError.new("Object of certain type expected, but got nil.")
-#      end  
-#    end
-
-    private
-    
-#    def validate_origin(origin)
-#      raise type_error(origin) unless origin.is_a?(self.class.ORIGIN_CLASS)
-#      origin
 #    end
 
   end # class CodeElement

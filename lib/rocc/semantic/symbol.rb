@@ -126,6 +126,9 @@ module Rocc::Semantic
     # style macros only. Will be an in empty string for any other symbols.
     # [%0P] number of parameters
     # [%>P] number of parameters if at least one parameter, empty string otherwise
+    # [%(P] TODO number of parameters in parenthesis
+    # [%)P] TODO number of parameters in parenthesis if if at least one parameter,
+    #       empty parenthesis otherwise
     # [%,P] comma-separated list of parameter types (includes one
     #       space character after each comma)
     # [%.p] The . may be any character or sequence of characters. This character
@@ -140,61 +143,60 @@ module Rocc::Semantic
       format = format.split('%')
       format.inject do |result, part|
         directive = part.slice!(/[^A-Za-z]*[A-Za-z]/)
-        subst = nil
-       subst = case directive
-        when 'n'
-          '\n'
-        when 't'
-          '\t'
-        when '%'
-          '%'
-        when 'i'
-          identifier
-        when 'f'
-          self.class.family_character
-        when 'f'
-          self.class.family_name
-        when 'y'
-          raise "not yet implemented" # FIXME
-          type_string
-        when 'Y'
-          raise "not yet implemented" # FIXME
-          imposed_type_string
-        when '0P'
-          if self.respond_to? :parameters
-            parameters.count
-          else
-            ''
-          end
-        when '>P'
-          if self.respond_to? :parameters and not parameters.empty?
-            parameters.count
-          else
-            ''
-          end
-        when ',P'
-          if self.respond_to? :parameters
-            raise "not yet implemented" # FIXME
-            parameters.map {|p| p.type_string}.join(', ')
-          else
-            ''
-          end
-        when /.*?p/
-          if self.respond_to? :parameters
-            directive.chop
-          else
-            ''
-          end
-        when /\d+C/
-          targetlen = directive.chop.to_i
-          if targetlen > result.length
-            (targetlen - result.length) * ' '
-          else
-            ''
-          end
-        else
-          raise "invalid strf directive: `%#{directive}'"
-        end
+        subst = case directive
+                when 'n'
+                  '\n'
+                when 't'
+                  '\t'
+                when '%'
+                  '%'
+                when 'i'
+                  identifier
+                when 'f'
+                  self.class.family_character
+                when 'f'
+                  self.class.family_name
+                when 'y'
+                  raise "not yet implemented" # FIXME
+                  type_string
+                when 'Y'
+                  raise "not yet implemented" # FIXME
+                  imposed_type_string
+                when '0P'
+                  if self.respond_to? :parameters
+                    parameters.count
+                  else
+                    ''
+                  end
+                when '>P'
+                  if self.respond_to? :parameters and not parameters.empty?
+                    parameters.count
+                  else
+                    ''
+                  end
+                when ',P'
+                  if self.respond_to? :parameters
+                    raise "not yet implemented" # FIXME
+                    parameters.map {|p| p.type_string}.join(', ')
+                  else
+                    ''
+                  end
+                when /.*?p/
+                  if self.respond_to? :parameters
+                    directive.chop
+                  else
+                    ''
+                  end
+                when /\d+C/
+                  targetlen = directive.chop.to_i
+                  if targetlen > result.length
+                    (targetlen - result.length) * ' '
+                  else
+                    ''
+                  end
+                else
+                  raise "invalid strf directive: `%#{directive}'"
+                end
         result + subst + part
       end
     end

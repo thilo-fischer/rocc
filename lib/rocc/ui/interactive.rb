@@ -11,12 +11,15 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-##
-# User Interface Implementations
+require 'rocc/ui/interactive_session.rb'
 
-module Rocc::Ui
+module Rocc::Ui::Interactive
 
-  require 'rocc/ui/cmdlineparser'
-  require 'rocc/ui/interactive'
+  COPYRIGHT_NOTE =
+    "rocc - C Code Operations in Ruby\n" \
+    "Copyright (C) 2014-2016 Thilo Fischer\n" \
+    "This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.\n" \
+    "This is free software, and you are welcome to redistribute it\n" \
+    "under certain conditions; type `show c' for details.\n"
 
-end # module Rocc::Ui
+end

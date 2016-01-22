@@ -40,9 +40,23 @@ module Rocc::CodeElements::CharRepresented::Tokens
   PICKING_ORDER = [ TknWord, TknStringLiteral, TknCharLiteral, TknIntegerLiteral, TknFloatLiteral, TknComment, Tkn3Char, Tkn2Char, Tkn1Char ]
 
   class CeToken < Rocc::CodeElements::CodeElement
+    
     attr_reader :text, :charpos, :direct_predecessor, :direct_successor, :whitespace_after
 
-    def initialize(origin, text, charpos, whitespace_after = "", direct_predecessor = nil)
+    ##
+    # +origin+ is the logic line this token is located in.
+    #
+    # +text+ is the string representing this token.
+    #
+    # +charpos+ is the index of the first character of the token in
+    # +origin.text+.
+    # 
+    # +whitespace_after+ is the whitespace found after this token that
+    # splits this token from the successive token.
+    #
+    # +direct_predecessor+ is the token that is directly before this
+    # token.
+    def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
       super(origin)
       @text = text
       @charpos = charpos
@@ -51,48 +65,28 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @direct_predecessor.direct_successor = self if @direct_predecessor
     end # initialize
 
-    # FIXME annonce is defined in CodeElement, but is repeatedly being overloaded with no-operation implementations. Consider removing announce from CodeElement base class.
-    def announce
-      # Don't want to register tokens, they can be referenced from the content of CoLogicLine.
-      nil
-    end
-
-    ##
-    # string to represent this element in rocc debugging and internal error messages
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
     def name_dbg
       "Tkn[#{@text}]"
     end
 
-    ##
-    # string to represent this element in messages from rocc
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name
     def name
-      "`#{@text}' token"
+      @text
     end
 
-    ##
-    # character(s) to use to separate this element from its origin in path information
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#path_separator
     def path_separator
       ":#{@charpos} > "
     end
-
-    ##
-    # 
-    def self.at_front?(str)
-      raise "Programming error: This method must be overloaded by deriving classes."
-    end
     
-    ##
-    # Test if the to be tokenized string in tokenization_context
-    # begins with a token of this class. If so, return the according
-    # section of that string which represents the token; else, return
-    # nil.
-    def self.peek(tokenization_context)
-      at_front?(tokenization_context.remainder)
-    end
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#location
+    #--
+    # XXX aliases not listed in rdoc ?!
+    # alias location path
+    def location; path; end
 
     
-    
-
     ##
     # If the to be tokenized string in tokenization_context begins with a token of this
     # class, return the according section of that string which
@@ -102,7 +96,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
       # return part of string matching regexp 
       str = tokenization_context.remainder.slice(@PICKING_REGEXP)
     end # pick_string
-
 
     ##
     # If the to be tokenized string in tokenization_context begins with a token of this
@@ -134,7 +127,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
         raise "deprecated" # XXX handle whitespace_after
         create(tokenization_context, str, whitespace_after)
       end
-
     end # pick
 
     ##
@@ -145,7 +137,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
     def self.pick!(tokenization_context)
       str = self.pick_string!(tokenization_context)
       if str
-        whitespace_after = tokenization_context.lstrip!
+        whitespace_after = tokenization_context.lstrip! || ''
+        whitespace_after += "\n" if tokenization_context.finished?
         $log.debug{ "pick! `#{str}' + `#{whitespace_after}', remainder: `#{tokenization_context.remainder}'" }
         create(tokenization_context, str, whitespace_after)
       end
@@ -153,7 +146,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     ##
     # Create token of this class from and within the given context.
-    def self.create(tokenization_context, text, whitespace_after = "")
+    def self.create(tokenization_context, text, whitespace_after = '')
       pred = tokenization_context.recent_token
       new_tkn = new(tokenization_context.line, text, tokenization_context.charpos, whitespace_after, pred)
       tokenization_context.add_token(new_tkn)
@@ -177,6 +170,27 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # Concrete token classes shall override this method when possible.
     def pursue_branch(compilation_context, branch)
       branch.push_pending(self)
+    end
+
+    ##
+    # Test if +str+ begins with a token of this class. If so, return
+    # the according section of that string which represents the token;
+    # else, return nil.
+    #
+    # XXX seems not in use => deprecated?
+    def self.at_front?(str)
+      raise "Programming error: This method must be overloaded by deriving classes."
+    end
+    
+    ##
+    # Test if the to be tokenized string in tokenization_context
+    # begins with a token of this class. If so, return the according
+    # section of that string which represents the token; else, return
+    # nil.
+    #
+    # XXX seems not in use => deprecated?
+    def self.peek(tokenization_context)
+      at_front?(tokenization_context.remainder)
     end
 
     protected

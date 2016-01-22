@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/session/session'
+
 ##
 # Things related to the application of the currently running
 # session. Part of the session that is more dynamic and is being
@@ -22,8 +24,16 @@ module Rocc::Session
 
     attr_accessor :cursor
 
-    def initialize(cursor)
-      @cursor = cursor
+    def initialize
+
+      @cursor = Session.current_session.modules
+      if @cursor.count == 1
+        @cursor = @cursor.first
+        if @cursor.translation_units.count == 1
+          @cursor = @cursor.translation_units.first
+        end
+      end
+
     end
     
   end # class ApplicationContext

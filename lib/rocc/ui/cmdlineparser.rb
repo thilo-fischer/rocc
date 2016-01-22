@@ -25,12 +25,12 @@ module Rocc::Ui
   
   class CommandLineParser
 
-    attr_reader :input_files, :run
+    attr_reader :input_files, :action
 
     def initialize
       @options = {}
       @input_files = nil
-      @run = :interactive
+      @action = :interactive
     end
     
 
@@ -43,7 +43,7 @@ module Rocc::Ui
         opts.on("-e 'command'",
                 "--expression",
                 "Run expression instead of starting an interactive sessios.") do |arg|
-          @run = arg
+          @action = arg
         end
 
         opts.on("-c compiler",

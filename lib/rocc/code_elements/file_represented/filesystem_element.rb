@@ -23,37 +23,40 @@ module Rocc::CodeElements::FileRepresented
     attr_reader :name
 
     ##
-    # origin is the CeDirectory element representing the objects
-    # parent direcotery (or nil or a symbol representing the adducer
+    # For all CeFilesystemElements (except for CeBaseDirectories),
+    # origin represents the parent directory.
+    alias parent_dir origin
+
+    ##
+    # +origin+ is the CeDirectory element representing the objects
+    # parent direcotery (or a symbol representing the adducer or nil
     # for base directories).
     #
-    # name is the file name as a string.
+    # +name+ is the element's base name as a string.
     def initialize(origin, name)
       super(origin)
       @name = name
     end
 
-    # For all CeFilesystemElements except for CeBaseDirectories, origin represents the parent directory.
-    alias parent_dir origin
-    alias has_parent_dir? origin
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
+    def name_dbg
+      "FsE[#{name}]"
+    end
+
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#path_separator
+    def path_separator
+      "/"
+    end
+    private :path_separator
+
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#location
+    #--
+    # XXX aliases not listed in rdoc ?!
+    # alias location path
+    def location; path; end
 
     def is_base_dir?
-      false
-    end
-    
-    # Relative path of this element wrt its base directory.
-    def rel_path
-      parent_dir.rel_path + '/' + name
-    end
-
-    # Absolute path of this element.
-    def abs_path
-      parent_dir.abs_path + '/' + name
-    end
-
-    # Path of this element as specified from build setup and source code.
-    def path
-      parent_dir.path + '/' + name
+      self.class.is_a? CeBaseDirectiory
     end
 
   end # class CeFilesystemElement

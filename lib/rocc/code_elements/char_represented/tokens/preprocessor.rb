@@ -50,6 +50,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
       end
     end # pick!
 
+    # override Token's default implementation and throw exception (no pp directive shall be added to list of pending tokens)
+    def pursue_branch(compilation_context, branch)
+      raise 'not yet implemented'
+    end
+    
   end # class TknPpDirective
 
 
@@ -84,15 +89,22 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     end # pick
 
-    def expand(env)
+    def pursue_branch(compilation_context, branch)
 
-      # todo !
-      # ...
+      session = Session.current_session 
+      tu = compilation_context.translation_unit
+      
+      path = session.find_include_file(@file, branch.current_dir)
 
-      env.preprocessing.freeze
-      env.preprocessing = env.preprocessing.dup
+      ce_file = session.ce_file(path)
 
-    end # expand
+      pctx = Rocc::Contexts::ParsingContext.new(compilation_context, branch)
+      ce_file.pursue(pctx)
+      
+      tu.add_include_file(ce_file)
+      
+      raise 'not yet implemented'
+    end
 
     # fixme: make protected
     attr_writer :file
