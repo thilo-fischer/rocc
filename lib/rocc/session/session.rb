@@ -11,16 +11,16 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-  require 'logger'
+require 'logger'
 
-  require 'rocc/session/options'
-  require 'rocc/session/application_context'
-  require 'rocc/ui/cmdlineparser'
-  require 'rocc/ui/interactive'
-  require 'rocc/code_elements/file_represented/base_dir'
-  require 'rocc/code_elements/file_represented/translation_unit'
-  require 'rocc/code_elements/file_represented/module'
-  require 'rocc/code_elements/file_represented/file'
+require 'rocc/session/options'
+require 'rocc/session/application_context'
+require 'rocc/contexts/parsing_context' # XXX? make paring context a subcontext of application context?
+require 'rocc/ui/cmdlineparser'
+require 'rocc/ui/interactive'
+require 'rocc/code_elements/file_represented/translation_unit'
+require 'rocc/code_elements/file_represented/module'
+require 'rocc/code_elements/file_represented/file'
 
 ##
 # Things related to the currently running program instance.
@@ -29,6 +29,8 @@
 module Rocc::Session
 
   class Session
+
+    attr_reader :input_files, :include_dirs, :action, :working_dir, :options
 
     @@session = nil
     
@@ -61,6 +63,7 @@ module Rocc::Session
       cmdlineparser.set_options(@options)
 
       @action = cmdlineparser.action
+      @include_dirs = cmdlineparser.include_dirs
       @input_files = cmdlineparser.input_files
 
       # Knowledge of current working directory will be necessary to be
@@ -81,6 +84,8 @@ module Rocc::Session
     end
 
     def run
+      
+      
       parse_input
 
       @application_context = ApplicationContext.new
@@ -128,7 +133,8 @@ module Rocc::Session
 
     def parse_input
 
-      base_directories = [ Rocc::CodeElements::FileRepresented::CeBaseDirectory.new(:working_dir, '.') ]
+      pars_ctx = Rocc::Contexts::ParsingContext.new
+
       translation_units = []
 
       @input_files.each do |path|
@@ -138,8 +144,8 @@ module Rocc::Session
         else
           raise "No such file or directory: `#{path}'" unless File::exist?(path)
           if File::file?(path)
-            f = ce_file(path, base_directories)
-            tu = Rocc::CodeElements::FileRepresented::CeTranslationUnit.new(f)
+            file = pars_ctx.fs_elem_idx.announce_element(Rocc::CodeElements::FileRepresented::CeFile, path, :input_file)
+            tu = Rocc::CodeElements::FileRepresented::CeTranslationUnit.new(file)
             translation_units << tu
           elsif File::directory?(path)
             # TODO find all source code files in path and its
@@ -155,54 +161,10 @@ module Rocc::Session
       # TODO set up according to linker options if such are supplied
       mdl = Rocc::CodeElements::FileRepresented::CeModule.new(translation_units, "a.out")
       @modules = [ mdl ]
-      @modules.each {|m| m.populate}
+      @modules.each {|m| m.populate(pars_ctx)}
 
     end # parse_input
 
-
-    def ce_file(path, base_directories)
-      # TODO do not create a new instance of CeFile if a CeFile
-      # instance for the same file has been created previously.
-      
-      # XXX For all newly created FilesystemElements: check if two
-      # FilesystemElements (previously existing and newly created)
-      # refer to the same directory structure or file, use real_path
-      # to resolve symlinks.
-
-      path = File::expand_path(path)
-
-      # find the base_dir this file falls into
-      base_dir = base_directories.find do |b|
-        File::fnmatch(b.path_abs + "**", path, File::FNM_PATHNAME)
-      end
-
-      # if not found, add according base_dir
-      unless base_dir
-        base_dir = Rocc::CodeElements::FileRepresented::CeBaseDirectory.new(:command_line_argument, File::dirname(path))
-        # TODO if base_dir is parent directory of another dir already
-        # included in base_directories, remove that other base
-        # directory from base_directories and substitute its
-        # references to base_dir's according child dircetories
-        base_directories << base_dir
-      end
-
-      direntryname = File::basename(path)
-      dirname  = File::dirname(path)
-
-      raise "Programming error :(" unless dirname.start_with?(base_dir.path_abs)
-      dirname.slice!(base_dir.path_abs)
-      dirname.gsub!(File::ALT_SEPARATOR, File::SEPARATOR) if File::ALT_SEPARATOR
-      dirs = dirname.split(File::SEPARATOR)
-
-      parent_dir = dirs.inject(base_dir) do |parent_dir, dirname|
-        child_dir = Rocc::CodeElements::FileRepresented::CeDirectory.new(parent_dir, dirname)
-        parent_dir.add_child(child_dir)
-        child_dir
-      end
-      
-      result = Rocc::CodeElements::FileRepresented::CeFile.new(  parent_dir, { :command_line_argument => [ path ] }, direntryname )
-    end # ce_file
-    
   end # class Session
 
 end # Rocc::Session

@@ -59,6 +59,21 @@ module Rocc::CodeElements::FileRepresented
       self.class.is_a? CeBaseDirectiory
     end
 
+    ##
+    # Return CeFilesystemElement representing the element referred to
+    # by +path+. If such elements already exists, return that element;
+    # otherwise, a new element will be created
+    # accordingly. CeFilesystemElements for the directory the element
+    # is in, for that directory's parent directory and so on (until
+    # one of the base_directories or the file system's root dir) will
+    # be created as well.
+    def self.from_path(path, base_directories)
+      raise "TODO"
+      # adapt implementation from Session#ce_file
+    end
+    
+
+    
   end # class CeFilesystemElement
 
 end # module Rocc::CodeElements::FileRepresented

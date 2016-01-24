@@ -30,8 +30,8 @@ module Rocc::CodeElements::FileRepresented
 
     alias translation_units origin
     
-    def populate
-      translation_units.each { |t| t.populate }
+    def populate(ctx)
+      translation_units.each {|t| t.populate(ctx)}
     end
 
   end # class CeModule

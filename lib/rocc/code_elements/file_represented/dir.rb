@@ -19,11 +19,9 @@ module Rocc::CodeElements::FileRepresented
   # Represet a directory where source files reside in.
   class CeDirectory < CeFilesystemElement
 
-    attr_reader :content
-
     def initialize(origin, name)
       super
-      @content = []
+      @elements = {}
     end
 
     # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
@@ -32,12 +30,22 @@ module Rocc::CodeElements::FileRepresented
     end
 
     def add_child(filesystem_element)
-      @content << filesystem_element
+      @elements[filesystem_element.name] = filesystem_element
     end
 
-    def adducer
-      # XXX? return array of all files in this dir and its subdirectories?
-      @content
+    def find_child(name)
+      @elements[name]
+    end
+
+    def content
+      @elements.values
+    end
+    
+    alias adducer content
+
+    def self.from_path(path)
+      raise "TODO"
+      # adapt implementation from Session#ce_file
     end
     
   end # class CeDirectory

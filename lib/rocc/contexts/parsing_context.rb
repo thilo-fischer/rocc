@@ -15,7 +15,9 @@ require 'rocc/contexts/lineread_context'
 require 'rocc/contexts/comment_context'
 require 'rocc/contexts/compilation_context'
 
-module Rocc::Contexts
+require 'rocc/code_elements/file_represented/fs_elem_index'
+
+module Rocc::Contexts # XXX rename Contexts => Context
 
   ##
   # All-embracing context class holding the contexts used for passing
@@ -33,7 +35,7 @@ module Rocc::Contexts
   #
   #--
   #
-  # XXX resolve the unintuitive issue of the very important
+  # XXX? resolve the unintuitive issue of the very important
   # CompilationContext being "just one part" of the rather unimportant
   # CommentContext by holding all context references in the
   # ParsingContext and having references from each specific context
@@ -41,13 +43,22 @@ module Rocc::Contexts
   # context?
   class ParsingContext
 
-    attr_reader :lineread_context
+    attr_reader :lineread_context, :fs_elem_idx
 
-    def initialize(translation_unit)
-      @lineread_context = LinereadContext.new(CommentContext.new(CompilationContext.new(translation_unit)))
+    def initialize
+      @fs_elem_idx = Rocc::CodeElements::FileRepresented::FilesystemElementIndex.new
+      Rocc::Session::Session.current_session.include_dirs.each {|bd| @fs_elem_idx.announce_element(CeBaseDirectory, bd, :include_dir)}
+    end
+    
+    ##
+    # Setup fresh sub contexts for parseing one translation unit.
+    def start_tu(translation_unit)
+      @lineread_context = LinereadContext.new(CommentContext.new(CompilationContext.new(translation_unit, @fs_elem_idx)))
     end
 
-    def terminate # FIXME! getting called at end of translation_unit?
+    ##
+    # Terminate all sub contexts associated with parsing a single translation unit.
+    def terminate_tu # FIXME! Is this really getting called at end of translation_unit?
       @lineread_context.comment_context.compilation_context.terminate
       @lineread_context.comment_context.terminate
       @lineread_context.terminate

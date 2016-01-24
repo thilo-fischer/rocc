@@ -31,11 +31,11 @@ module Rocc::CodeElements::FileRepresented
     # +origin+ is the CeDirectory element representing directory the
     # file resides in.
     #
-    # +adducer+: The "cause" for this file to be visited.
-    #
     # +name+: Filename including extension, without any directory
     # prefix.
-    def initialize(origin, adducer, name)
+    #
+    # +adducer+: The "cause" for this file to be visited.
+    def initialize(origin, name, adducer)
       super(origin, name)
       if adducer.is_a? Array
         @adducer = adducer

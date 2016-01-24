@@ -25,12 +25,13 @@ module Rocc::Ui
   
   class CommandLineParser
 
-    attr_reader :input_files, :action
+    attr_reader :input_files, :action, :include_dirs
 
     def initialize
       @options = {}
       @input_files = nil
       @action = :interactive
+      @include_dirs = []
     end
     
 
@@ -76,6 +77,11 @@ module Rocc::Ui
         opts.on("--change-detection 'method'",
                 "Select method how to check if a file changed: mtime (default), sha1 or mtime+sha1.") do |arg|
           @options[:change_detection] = arg
+        end
+
+        opts.on("-I 'dir'",
+                "Add dir to the list of directories to search for header files.") do |arg|
+          @include_dirs << arg
         end
 
       end # OptionParser.new

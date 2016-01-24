@@ -19,12 +19,13 @@ module Rocc::Contexts
 
     # XXX implement active_branches as method returning an iterator that recursively iterates the branches tree (performance improvement?)
     
-    attr_reader :active_branches
+    attr_reader :active_branches, :fs_element_index
 
-    def initialize(translation_unit)
+    def initialize(translation_unit, fs_element_index)
       @translation_unit = translation_unit
       @main_branch = CompilationBranch.new(self, nil, "*", [@translation_unit])
       @active_branches = [ @main_branch ].to_set
+      @fs_element_index = fs_element_index
     end
 
     def activate_branch(branch)

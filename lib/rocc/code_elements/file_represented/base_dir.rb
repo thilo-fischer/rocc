@@ -21,12 +21,10 @@ module Rocc::CodeElements::FileRepresented
 
     attr_reader :path_full, :path_abs
 
-    ##
-    #--
-    # FIXME track adducers
-    def initialize(adducer, path)
+    def initialize(path, adducer = nil)
       name = File::basename(path)
       super(nil, name)
+      @adducer = adducer
       @path_full = path
       @path_abs = File::expand_path(path)
     end
@@ -38,6 +36,10 @@ module Rocc::CodeElements::FileRepresented
 
     def path
       '.../' + name
+    end
+
+    def adducer
+      @adducer || super
     end
 
   end # class CeBaseDirectory

@@ -56,13 +56,13 @@ module Rocc::CodeElements::FileRepresented
     #
     # Will do the parsing no matter if the symbol table is already
     # available and up to date. Test with +up_to_date?+ 
-    def populate
+    def populate(ctx)
       #warn "== #{name_dbg} -> populate =="
       #warn caller
       @symbol_idx = Rocc::Semantic::SymbolIndex.new
-      ctx = Rocc::Contexts::ParsingContext.new(self)
+      ctx.start_tu(self)
       main_file.pursue(ctx)
-      ctx.terminate
+      ctx.terminate_tu
     end
 
     ##
