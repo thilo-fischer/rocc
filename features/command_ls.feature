@@ -14,15 +14,19 @@ Feature: Command `ls'
 
   Scenarios: minimal
     | code                                  | expect                                |
-    | trivial/minimal/main.c                | trivial/minimal/ls                    |
-#    | trivial/hello-world/hello-world.c     | trivial/hello-world/ls                |
-#    | simple_01/main_00.c                                                            |
-#    | simple_01/main_01.c                                                            |
-#    | simple_01/main_02.c                                                            |
-#    | simple_01/main_03.c                                                            |
-#    | simple_01/main_04.c                                                            |
-#    | simple_01/main_05.c                                                            |
-#    | hello_world/hello_world.c                                                      |
+    | trivial/minimal/00_main.c             | trivial/minimal/00_main_ls            |
+#    | trivial/minimal/01_comment.c          | trivial/minimal/01_comment_ls         |
+#    | trivial/minimal/02_argc_argv.c        | trivial/minimal/02_argc_argv_ls       |
+#    | trivial/minimal/03_global_var_decl.c  | trivial/minimal/03_global_var_decl_ls |
+#    | trivial/minimal/04_local_var_decl.c   | trivial/minimal/04_local_var_decl_ls  |
+#    | trivial/minimal/05_var_def.c          | trivial/minimal/05_var_def_ls         |
+#    | trivial/minimal/06_var_ref.c          | trivial/minimal/06_var_ref_ls         |
+#    | trivial/minimal/07_func_decl.c        | trivial/minimal/07_func_decl_ls       |
+#    | trivial/minimal/08_func_def.c         | trivial/minimal/08_func_def_ls        |
+#    | trivial/minimal/09_macro.c            | trivial/minimal/09_macro_ls           |
+#    | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls         |
+#    | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls          |
+#    | trivial/hello-world/hello-world.c    | trivial/hello-world/ls                |
 #    | indented_hello_world/indented_hello_world_00.c                                 |
 #    | indented_hello_world/indented_hello_world_01.c                                 |
 
