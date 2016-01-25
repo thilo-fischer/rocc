@@ -36,8 +36,10 @@ module Rocc::CodeElements::FileRepresented
       # base directroies need special treatment
       if element_class <= CeBaseDirectory
         basedir = @base_directories[path_abs]
-        unless basedir
-          basedir = CeBaseDirectory.new(path)
+        if basedir
+          basedir.add_adducer(adducer) if adducer
+        else
+          basedir = CeBaseDirectory.new(path, adducer)
           @base_directories[path_abs] = basedir
           # TODO if basedir is parent directory of another dir already
           # included in base_directories, remove that other base
@@ -49,8 +51,11 @@ module Rocc::CodeElements::FileRepresented
         
         # if element already exists, return that instance
         element = @elements[path_abs]
-        return element if element
-
+        if element
+          element.add_adducer(adducer) if adducer
+          return element
+        end
+        
         # find the base dir this element falls into
         basedir = @base_directories.keys.find do |b|
           File.fnmatch(b.path_abs + "**", path_abs, File::FNM_PATHNAME)
@@ -85,7 +90,7 @@ module Rocc::CodeElements::FileRepresented
       end
       
     end # def announce_element
-    
+
   end # class FilesystemElementIndex
 
 end # module Rocc::CodeElements::FileRepresented

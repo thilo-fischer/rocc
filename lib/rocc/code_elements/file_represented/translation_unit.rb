@@ -61,7 +61,7 @@ module Rocc::CodeElements::FileRepresented
       #warn caller
       @symbol_idx = Rocc::Semantic::SymbolIndex.new
       ctx.start_tu(self)
-      main_file.pursue(ctx)
+      main_file.pursue(ctx.lineread_context)
       ctx.terminate_tu
     end
 

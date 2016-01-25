@@ -89,25 +89,54 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     end # pick
 
+    def path
+      @file[1..-2]
+    end
+
+    def quote
+      if @file.first == '"'
+        :doublequote
+      else
+        :anglebracket
+      end
+    end
+
     def pursue_branch(compilation_context, branch)
 
-      session = Session.current_session 
-      tu = compilation_context.translation_unit
-      
-      path = session.find_include_file(@file, branch.current_dir)
+      path_abs = find_include_file(path, branch.current_dir)
+            
+      file = compilation_context.fs_elem_idx.announce_element(Rocc::CodeElements::FileRepresented::CeFile, path_abs, self)
+      compilation_context.translation_unit.add_include_file(file)
 
-      ce_file = session.ce_file(path)
-
-      pctx = Rocc::Contexts::ParsingContext.new(compilation_context, branch)
-      ce_file.pursue(pctx)
-      
-      tu.add_include_file(ce_file)
+      lineread_context = LinereadContext.new(CommentContext.new(CompilationContext.new(compilation_context.translation_unit, compilation_context.fs_elem_idx, branch))) # FIXME
+      current_dir = branch.current_dir
+      branch.current_dir = file.path_abs
+      file.pursue(lineread_context)
+      branch.current_dir = current_dir
       
       raise 'not yet implemented'
     end
 
-    # fixme: make protected
-    attr_writer :file
+    # TODO move to another, more appropriate class
+    def find_include_file(path, current_dir)
+
+      if path == File.absolute_path(path)
+        # include directive gives absolute pathname
+        path_abs = path
+      else
+        if quote == :doublequote and File.exist?(File.absolute_path(path, current_dir))
+          path_abs = File.absolute_path(path, current_dir)
+        else
+          session = Session.current_session
+          dir = session.include_dirs.find {|d| File.exist?(File.absolute_path(path, d))}
+          raise "Cannot find file included from #{self}: #{path}" unless dir
+          path_abs = File.absolute_path(path, dir)
+        end
+      end
+
+      path_abs
+    end
+    private :find_include_file
 
   end # class TknPpInclude
 

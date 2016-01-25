@@ -125,7 +125,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
 
     class TknKwTypeSpecifier < TknKeyword
-      @PICKING_REGEXP = Regexp.union %w(void char short int long float double signed unsigned bool)
+      @PICKING_REGEXP = Regexp.union %w(void char short int long float double signed unsigned bool) # XXX C99 featrue bool required #include <stdbool.h>
 
       def pursue_branch(compilation_context, branch)
         raise "unexpected pending tokens: `#{branch.pending_to_s}'" if branch.has_pending?

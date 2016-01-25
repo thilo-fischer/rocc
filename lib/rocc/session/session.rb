@@ -98,7 +98,7 @@ module Rocc::Session
       end
 
     end # run
-    
+
     private
 
     # XXX options: a string representing the desired log level.
