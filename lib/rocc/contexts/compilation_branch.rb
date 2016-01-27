@@ -103,7 +103,7 @@ module Rocc::Contexts
     # recently parsed tokens for which no semantics could be assigned
     # yet.
     def pending_to_s
-      @pending_tokens.inject("") {|str, tkn| str + tkn.text + tkn.whitespace_after}.gsub("\n", "\u2424")
+      Rocc::Helpers::String::no_lbreak(@pending_tokens.inject("") {|str, tkn| str + tkn.text + tkn.whitespace_after})
     end
 
     def enter_scope(scope)

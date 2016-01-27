@@ -11,6 +11,7 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/helpers'
 require 'rocc/code_elements/code_element'
 
 # forward declaration (sort of ...)
@@ -65,9 +66,13 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @direct_predecessor.direct_successor = self if @direct_predecessor
     end # initialize
 
+    def family_abbrev
+      'Tkn'
+    end
+    
     # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
     def name_dbg
-      "Tkn[#{@text}]"
+      "#{family_abbrev}[#{Rocc::Helpers::String::abbrev(Rocc::Helpers::String::no_lbreak(@text))}]"
     end
 
     # See rdoc-ref:Rocc::CodeElements::CodeElement#name
@@ -111,12 +116,18 @@ module Rocc::CodeElements::CharRepresented::Tokens
     def self.pick!(tokenization_context)
       str = self.pick_string!(tokenization_context)
       if str
-        whitespace_after = tokenization_context.lstrip! || ''
-        whitespace_after += "\n" if tokenization_context.finished?
-        $log.debug{ "pick! `#{str}' + `#{whitespace_after.sub("\n", '\n')}', remainder: `#{tokenization_context.remainder}'" }
+        whitespace_after = pick_whitespace!(tokenization_context)
+        $log.debug{ "pick! `#{str}' + `#{Rocc::Helpers::String::no_lbreak(whitespace_after)}', remainder: `#{tokenization_context.remainder}'" }
         create(tokenization_context, str, whitespace_after)
       end
     end # pick!
+
+    def self.pick_whitespace!(tokenization_context)
+      whitespace = tokenization_context.lstrip! || ''
+      whitespace += "\n" if tokenization_context.finished?
+      whitespace
+    end
+    # XXX private :pick_whitespace!
 
     ##
     # Create token of this class from and within the given context.

@@ -19,5 +19,27 @@ module Rocc::Helpers
     stack = caller(skip)[0..(depth>0?depth-1:depth)]
     stack.inject("Backtrace:\n") {|result, element| result + "\t#{element}\n" }
   end # def backtrace
+
+  module String
   
+  ##
+  # replace all line breaks in string with unicode character "symbol
+  # for newline"
+  def self.no_lbreak(str)
+    str.gsub("\n", "\u2424")
+  end
+
+  ##
+  # If +str+ is less than +length+ long, return string. Return an
+  # abbreviated +str+ representation otherwise: the first +length - 1+
+  # plus unicode character `horizontal ellipsis' otherwise.
+  def self.abbrev(str, length = 12)
+    if str.length > length
+      str[0..(length-2)] + "\u2026"
+    else
+      str
+    end
+  end
+
+  end # module String
 end # module Rocc::Helpers

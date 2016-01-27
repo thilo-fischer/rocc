@@ -59,8 +59,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
       end
     end # pursue_branch
 
-    def name_dbg
-      "TknWord[#{@text}]"
+    def family_abbrev
+      "TknWord"
     end
     
   end # class TknWord
@@ -78,8 +78,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
       branch.current_scope.set_identifier(self)
     end
     
-    def name_dbg
-      "TknIdent[#{@text}]"
+    def family_abbrev
+      "TknIdent"
     end
 
  end # class TknIdentifier
@@ -105,8 +105,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
       #branch.announce_symbol(self)
     end # pursue_branch
     
-    def name_dbg
-      "TknInt[#{@text}]"
+    def family_abbrev
+      "TknInt"
     end
     
   end # class TknIntegerLiteral
@@ -120,8 +120,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
       #branch.announce_symbol(self)
     end # pursue_branch
     
-    def name_dbg
-      "TknFloat[#{@text}]"
+    def family_abbrev
+      "TknFloat"
     end
     
   end # class TknFloatLiteral
@@ -134,8 +134,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
       #branch.announce_symbol(self)
     end # pursue_branch
     
-    def name_dbg
-      "TknChar[#{@text}]"
+    def family_abbrev
+      "TknChar"
     end
     
   end # class TknCharLiteral
@@ -154,8 +154,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
       #branch.announce_symbol(self)
     end # pursue_branch
     
-    def name_dbg
-      "TknStr[#{@text}]"
+    def family_abbrev
+      "TknStr"
     end
     
   end # class TknStringLiteral
@@ -164,15 +164,15 @@ module Rocc::CodeElements::CharRepresented::Tokens
   class Tkn3Char < CeToken
     # <<=, >>=, ...
     @PICKING_REGEXP = /^((<<|>>)=|\.\.\.)/
-    def name_dbg
-      "Tkn3Pkt[#{@text}]"
+    def family_abbrev
+      "Tkn3Pkt"
     end
   end
 
   class Tkn2Char < CeToken
     @PICKING_REGEXP = /^([+\-*\/%=!&|<>\^]=|<<|>>|##)/
-    def name_dbg
-      "Tkn2Pkt[#{@text}]"
+    def family_abbrev
+      "Tkn2Pkt"
     end
   end
 
@@ -459,8 +459,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
 #
 #    end # expand_with_context   
     
-    def name_dbg
-      "Tkn1Pkt[#{@text}]"
+    def family_abbrev
+      "Tkn1Pkt"
     end
     
   end # Tkn1Char

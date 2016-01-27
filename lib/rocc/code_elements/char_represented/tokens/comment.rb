@@ -20,24 +20,24 @@ module Rocc::CodeElements::CharRepresented::Tokens
   class TknLineComment < TknComment
     # from // to end of line
     @PICKING_REGEXP = /^\/\/.*$/
-    def name_dbg
-      "TknLCmt[#{text_abbrev}]"
+    def family_abbrev
+      "TknLCmt"
     end
   end # class TknLineComment
   
   class TknBlockComment < TknComment
     # from /* to the next (non-greedy) */
     @PICKING_REGEXP = /^\/\*.*?\*\//
-    def name_dbg
-      "TknBCmt[#{text_abbrev}]"
+    def family_abbrev
+      "TknBCmt"
     end
   end # class TknBlockComment
 
   # XXX unclean. (Not a token => shouldn't be subclass of CeToken.)
   class TknMultiLineBlockCommentEnd < CeToken
     @PICKING_REGEXP = /^.*?\*\//
-    def name_dbg
-      "TknMlCmtEnd[#{text_abbrev}]"
+    def family_abbrev
+      "TknMlCmtEnd"
     end
   end # class TknMultiLineBlockCommentEnd
 
@@ -66,17 +66,16 @@ module Rocc::CodeElements::CharRepresented::Tokens
       if str
         tokenization_context.leave_multiline_comment
         @text += str
-        @whitespace_after = tokenization_context.lstrip! || ''
-        @whitespace_after += "\n" if tokenization_context.finished?
-        $log.debug{ "picked `#{name_dbg}' + `#{@whitespace_after.sub("\n", '\n')}', remainder: `#{tokenization_context.remainder}'" }
+        @whitespace_after = self.class.pick_whitespace!(tokenization_context)
+        $log.debug{ "picked `#{name_dbg}' + `#{Rocc::Helpers::String::no_lbreak(@whitespace_after)}', remainder: `#{tokenization_context.remainder}'" }
       else
         @text += tokenization_context.remainder
         tokenization_context.remainder.clear
       end
     end # pick_more!
 
-    def name_dbg
-      "TknMlCmt[#{text_abbrev}]"
+    def family_abbrev
+      "TknMlCmt"
     end
   end # class TknMultiLineBlockComment
 
@@ -103,8 +102,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
       nil
     end
 
-    def name_dbg
-      "TknCmt[#{text_abbrev}]"
+    def family_abbrev
+      "TknCmt"
     end
 
     def text_abbrev
