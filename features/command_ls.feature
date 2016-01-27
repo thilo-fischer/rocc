@@ -16,7 +16,7 @@ Feature: Command `ls'
     | code                                  | expect                                |
     | trivial/minimal/00_main.c             | trivial/minimal/00_main_ls            |
     | trivial/minimal/01_comment.c          | trivial/minimal/01_comment_ls         |
-#    | trivial/minimal/02_argc_argv.c        | trivial/minimal/02_argc_argv_ls       |
+    | trivial/minimal/02_argc_argv.c        | trivial/minimal/02_argc_argv_ls       |
 #    | trivial/minimal/03_global_var_decl.c  | trivial/minimal/03_global_var_decl_ls |
 #    | trivial/minimal/04_local_var_decl.c   | trivial/minimal/04_local_var_decl_ls  |
 #    | trivial/minimal/05_var_def.c          | trivial/minimal/05_var_def_ls         |

@@ -116,7 +116,7 @@ module Rocc::Semantic::Temporary
       raise "type specifier cannot occur after identifier" if @identifier
       symbol = token.type_specifier_symbol
       if not @type_specifiers.empty?
-        no_prefix = @type_specifiers.find {|s| not [:short, :long, :signed, :unsigned].includes s }
+        no_prefix = @type_specifiers.find {|s| not [:short, :long, :signed, :unsigned].include? s }
         raise "inconsistent type specifiers: #{@type_specifiers.inspect} vs. #{symbol}" if no_prefix
 
         if @type_specifiers.includes?(symbol)

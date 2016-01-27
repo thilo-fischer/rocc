@@ -247,6 +247,10 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
       # XXX test which version of pick! works faster, this or the one commented out below. (adapt TknKwSpecifier.pick! accordingly)
 
+      def self.pick_string!(tokenization_context)
+        str = tokenization_context.remainder.slice!(Regexp.new("^(#{@PICKING_REGEXP.source})")) # FIXME quick and dirty => rebuilding regexp at every pick_string! is a performance issue!
+      end
+
       def self.pick!(env)
         if self != THIS_CLASS
           # allow subclasses to call superclasses method implementation

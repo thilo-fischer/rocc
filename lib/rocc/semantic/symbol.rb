@@ -164,13 +164,13 @@ module Rocc::Semantic
                   imposed_type_string
                 when '0P'
                   if self.respond_to? :parameters
-                    parameters.count
+                    parameters.count.to_s
                   else
                     ''
                   end
                 when '>P'
                   if self.respond_to? :parameters and not parameters.empty?
-                    parameters.count
+                    parameters.count.to_s
                   else
                     ''
                   end

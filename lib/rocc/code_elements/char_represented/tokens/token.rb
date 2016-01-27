@@ -143,7 +143,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # Token's implementation of CodeElements.pursue.
     def pursue(compilation_context)
       compilation_context.active_branches.each do |b|
-        warn "pursue_branch #{b.id} #{name_dbg}" # FIXME loglevel trace ?!
+        warn "pursue_branch #{b.id} #{path_dbg}" # FIXME loglevel trace ?!
         pursue_branch(compilation_context, b)
       end
     end

@@ -115,7 +115,13 @@ module Rocc::CodeElements
     # error messages.
     def path_dbg
       if @origin
-        @origin.path_dbg + path_separator + name_dbg
+        origin_path_dbg = case @origin
+                          when Array
+                            '[' + @origin.map {|o| o.path_dbg}.join(', ') + ']'
+                          else
+                            @origin.path_dbg
+                          end
+        origin_path_dbg + path_separator + name_dbg
       else
         name_dbg
       end

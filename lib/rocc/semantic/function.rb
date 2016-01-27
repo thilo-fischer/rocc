@@ -33,10 +33,11 @@ module Rocc::Semantic
       (not @parameters.empty?) and @parameters.last.variadic?
     end
 
-    def announce_parameter(position, type)
+    def announce_parameter(position, type, storage_class)
       raise if  param_list_complete?
       # assume all parameters are added in their native order
       raise unless @parameters.count == position - 1
+      @parameters << :function_parameter # FIXME
       # TODO @parameters << CeFunctionParameter.new(self, type)
     end
 

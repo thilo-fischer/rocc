@@ -206,16 +206,20 @@ module Rocc::CodeElements::CharRepresented::Tokens
         case branch.current_scope
         when Rocc::Semantic::Temporary::ArisingSpecification
 
-          prev_arising = branch.current_scope
-          
-          next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new([prev_arising.origin_shared])
-          next_arising.storage_class = prev_arising.storage_class
-          next_arising.type_qualifiers = prev_arising.type_qualifiers
-          next_arising.type_specifiers = prev_arising.type_specifiers
-
-          branch.finish_current_scope
-          branch.enter_scope(next_arising)
-
+          case branch.surrounding_scope
+          when Rocc::Semantic::CeFunctionSignature
+            wrapup_function_parameter(branch)
+          else
+            prev_arising = branch.current_scope
+            
+            next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new([prev_arising.origin_shared])
+            next_arising.storage_class = prev_arising.storage_class
+            next_arising.type_qualifiers = prev_arising.type_qualifiers
+            next_arising.type_specifiers = prev_arising.type_specifiers
+            
+            branch.finish_current_scope
+            branch.enter_scope(next_arising)
+          end
         else
           raise "unexpected `,'"
         end
@@ -321,14 +325,30 @@ module Rocc::CodeElements::CharRepresented::Tokens
         end # has_pending?
 
       when ")"
-        raise if branch.has_pending?
+        raise "found #{name_dbg}, but still pending: `#{branch.pending_to_s}'" if branch.has_pending?
 
         case branch.current_scope
+        when Rocc::Semantic::Temporary::ArisingSpecification
+          case branch.surrounding_scope
+          when Rocc::Semantic::CeFunctionSignature
+            wrapup_function_parameter(branch)
+            branch.leave_scope
+          else
+            raise
+          end
         when Rocc::Semantic::CompoundExpression, Rocc::Semantic::CeFunctionSignature
           branch.current_scope.close(self)
           branch.leave_scope
         else
-          raise
+          raise "found #{name_dbg}, but scope is #{branch.scope_stack_trace}"
+        end
+        
+      when "*"
+        case branch.current_scope
+        when Rocc::Semantic::Temporary::ArisingSpecification
+            # FIXME handle asterisk (->pointer) => branch.current_scope. ...
+        else
+          raise "not yet supported: #{name_dbg} outside of specification"
         end
         
       else
@@ -337,6 +357,14 @@ module Rocc::CodeElements::CharRepresented::Tokens
   
     end # pursue_branch 
 
+    private
+    def wrapup_function_parameter(branch)
+      arising = branch.current_scope
+      func_sig = branch.surrounding_scope
+      func_sig.add_param(arising.type_specifiers, arising.identifier, arising.storage_class)
+      branch.leave_scope
+    end
+    
 #    def expand_with_context(env, ctxt)
 #
 #      dbg "#{self}.expand_with_context" # at `#{ctxt.inspect}'"
@@ -459,6 +487,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 #
 #    end # expand_with_context   
     
+    public
     def family_abbrev
       "Tkn1Pkt"
     end
