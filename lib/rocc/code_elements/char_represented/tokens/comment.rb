@@ -15,93 +15,106 @@ require 'rocc/code_elements/char_represented/tokens/token'
 
 module Rocc::CodeElements::CharRepresented::Tokens
 
-  class TknComment < CeToken
-
-    @PICKING_REGEXP = /^(\/\/.*$|\/\*.*?(\*\/|$))/
-
-    def self.pick(env, str = nil)
-      if env.tokenization[:ongoing_comment] then
-        TknMultiLineBlockComment.pick(env)
-      else
-        str ||= pick_string(env)
-        if str then
-          if str.start_with?("/*") then
-            # block comment
-            if str.end_with?("*/") then
-              super(env, str, TknBlockComment)
-            else
-              tkn = super(env, str, TknMultiLineBlockComment)
-              env.tokenization[:ongoing_comment] = tkn
-            end
-          else
-            # line comment
-            super(env, str, TknLineComment)
-          end
-        end
-      end
-    end # pick
-
-    #  def self.pick!(env)
-    #    unless env.tokenization[:ongoing_comment] then
-    #warn "FOO"
-    #      tkn = super
-    #      if tkn and tkn.text.start_with?("/*") and not tkn.text.end_with?("*/") then
-    #        # start of multiline comment
-    #        env.tokenization[:ongoing_comment] = tkn
-    #      end
-    #      tkn
-    #    else
-    #warn "BAR"
-    #      TknMultiLineComment.pick!(env)
-    #    end
-    #  end # pick!
-
-    def expand(env)
-      nil
-    end
-
-    def expand_with_context(env, ctxt)
-      nil
-    end
-
-  end # class TknComment
+  class TknComment < CeToken; end
 
   class TknLineComment < TknComment
+    # from // to end of line
+    @PICKING_REGEXP = /^\/\/.*$/
+    def name_dbg
+      "TknLCmt[#{text_abbrev}]"
+    end
   end # class TknLineComment
   
   class TknBlockComment < TknComment
+    # from /* to the next (non-greedy) */
+    @PICKING_REGEXP = /^\/\*.*?\*\//
+    def name_dbg
+      "TknBCmt[#{text_abbrev}]"
+    end
   end # class TknBlockComment
 
-  # Shall be picked directly only if env.tokenization[:ongoing_comment]. Shall be picked indirectly through TknComment otherwise.
+  # XXX unclean. (Not a token => shouldn't be subclass of CeToken.)
+  class TknMultiLineBlockCommentEnd < CeToken
+    @PICKING_REGEXP = /^.*?\*\//
+    def name_dbg
+      "TknMlCmtEnd[#{text_abbrev}]"
+    end
+  end # class TknMultiLineBlockCommentEnd
+
+  # XXX rename MultiLine => Multiline
   class TknMultiLineBlockComment < TknBlockComment
+    @PICKING_REGEXP = /^\/\*.*$/
 
-    @PICKING_REGEXP = /^.*?(\*\/|$)/
+    def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
+      super([origin], text + whitespace_after, charpos, '', direct_predecessor)
+    end
 
-    def self.pick(env, str = nil)
-      raise "Shall not be picked directly unless env.tokenization[:ongoing_comment]." unless env.tokenization[:ongoing_comment] # fixme: exception message
+    def self.create(tokenization_context, text, whitespace_after = '')
+      cmt = super
+      tokenization_context.announce_multiline_comment(cmt)
+      cmt
+    end
 
-      str ||= self.pick_string(env)
-      tkn = env.tokenization[:ongoing_comment]
-      tkn.add_line(env.expansion_stack.last, str)
-      env.tokenization[:ongoing_comment] = nil if str.end_with?("*/")
-      tkn
-    end # pick
-
-    # fixme: make protected
-    def add_line(line, text)
-
-      @text += "\n" + text
-
-      if @origin.is_a? CeContainer then
-        @origin.append line
+    ##
+    # Same as CeToken.pick!, but not as a class method that creates an
+    # according class instance when token is found, as an instance
+    # method to be invoked on a class instance to extend the instance
+    # with matching code sections.
+    def pick_more!(tokenization_context)
+      @origin << tokenization_context.line
+      str = TknMultiLineBlockCommentEnd.pick_string!(tokenization_context)
+      if str
+        tokenization_context.leave_multiline_comment
+        @text += str
+        @whitespace_after = tokenization_context.lstrip! || ''
+        @whitespace_after += "\n" if tokenization_context.finished?
+        $log.debug{ "picked `#{name_dbg}' + `#{@whitespace_after.sub("\n", '\n')}', remainder: `#{tokenization_context.remainder}'" }
       else
-        @origin = CeContainer.new([@origin, line])
-        # todo (code enhancement): use range instead of array (not yet supported by CeContainer)
-        # --> @origin = CeContainer.new(@origin..line)
+        @text += tokenization_context.remainder
+        tokenization_context.remainder.clear
       end
+    end # pick_more!
 
-    end # add_line
-
+    def name_dbg
+      "TknMlCmt[#{text_abbrev}]"
+    end
   end # class TknMultiLineBlockComment
+
+  class TknComment < CeToken
+
+    THIS_CLASS = TknComment
+    SUBCLASSES = [ TknLineComment, TknBlockComment, TknMultiLineBlockComment ]
+    #@PICKING_REGEXP = /^(\/\/.*$|\/\*.*?(\*\/|$))/
+
+    ABBREV_CHARCNT = 8
+
+    def self.pick!(tokenization_context)
+      if self != THIS_CLASS
+        # allow subclasses to call superclasses method implementation
+        super
+      else
+        tkn = nil
+        SUBCLASSES.find {|c| tkn = c.pick!(tokenization_context)}
+        tkn
+      end
+    end   
+    
+    def pursue_branch(compilation_context, branch)
+      nil
+    end
+
+    def name_dbg
+      "TknCmt[#{text_abbrev}]"
+    end
+
+    def text_abbrev
+      if text.length < ABBREV_CHARCNT + 2
+        @text
+      else
+        @text[0..ABBREV_CHARCNT] + '...'
+      end
+    end
+    
+  end # class TknComment
 
 end # module Rocc::CodeElements::CharRepresented::Tokens

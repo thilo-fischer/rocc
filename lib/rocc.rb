@@ -71,6 +71,9 @@
 #     * https://docs.google.com/presentation/d/1h49gY3TSiayLMXYmRMaAEMl05FaJ-Z6jDOWOz3EsqqQ/edit?pli=1#slide=id.gaf50702c_0123
 #   * use cucumber
 #   * TODO add unit tests
+# * XXX adjust deprecated names and coding styles
+#   * grep for env, replace with according *_context
+#   * force through meaning and usage of origin & adducers
 # * refactor code
 #   * "forward declarations" needed?
 #     * "implemented"-hook ?

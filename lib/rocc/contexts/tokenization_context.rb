@@ -97,6 +97,9 @@ module Rocc::Contexts
       @comment_context.leave_multiline_comment
     end
 
+    def ongoing_multiline_comment
+      @comment_context.multiline_comment
+    end
 
   end # class TokenizationContext
 

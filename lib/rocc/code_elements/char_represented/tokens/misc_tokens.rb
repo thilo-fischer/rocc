@@ -31,9 +31,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
         super
       else
         # FIXME handle macros named like keywords
-        if pick_string(env) then
-          TknKeyword.pick!(env) || TknIdentifier.pick!(env)
-        end
+
+        # XXX performance improvement through picking with TknWord#@PICKING_REGEXP and creating eighter TknKeyword or TknIdentifier form the picked string? (override TknWord#Create?)
+        #if pick_string(env) then
+        TknKeyword.pick!(env) || TknIdentifier.pick!(env)
+        #end
       end
     end # pick!
     

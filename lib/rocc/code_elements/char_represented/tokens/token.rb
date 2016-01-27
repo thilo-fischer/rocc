@@ -88,20 +88,10 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     
     ##
-    # If the to be tokenized string in tokenization_context begins with a token of this
-    # class, return the according section of that string which
-    # represents the token. Else, return nil.
-    def self.pick_string(tokenization_context)
-      # find regexp in string
-      # return part of string matching regexp 
-      str = tokenization_context.remainder.slice(@PICKING_REGEXP)
-    end # pick_string
-
-    ##
-    # If the to be tokenized string in tokenization_context begins with a token of this
-    # class, mark the according section of that string which
-    # represents the token as tokenized and return that section. Else,
-    # return nil.
+    # If the to be tokenized string in tokenization_context begins
+    # with a token of this class, mark the according section of that
+    # string which represents the token as tokenized and return that
+    # section. Else, return nil.
     def self.pick_string!(tokenization_context)
       # find regexp in string
       # remove part of string matching regexp
@@ -112,34 +102,18 @@ module Rocc::CodeElements::CharRepresented::Tokens
       str = tokenization_context.remainder.slice!(@PICKING_REGEXP)
     end # pick_string!
 
-    ##
-    # If the to be tokenized string in tokenization_context begins with a token of this
-    # class, create and return an instance of this class from that
-    # section; does not mark the section as being tokenized.  Else,
-    # return nil.
-    #
-    # If parameter str is given, create and return an instance of this
-    # class from that string (ignoring tokenization_context). # FIXME smells ...
-    def self.pick(tokenization_context, str = nil)
-      str ||= self.pick_string(tokenization_context)
-      if str then
-        $log.debug{ "pick `#{str}' from `#{tokenization_context.remainder}'"  }
-        raise "deprecated" # XXX handle whitespace_after
-        create(tokenization_context, str, whitespace_after)
-      end
-    end # pick
 
     ##
-    # If the to be tokenized string in tokenization_context begins with a token of this
-    # class, mark the according section in string as tokenized and
-    # create and return an instance of this class from that section.
-    # Else, return nil.
+    # If the to be tokenized string in tokenization_context begins
+    # with a token of this class, mark the according section in string
+    # as tokenized and create and return an instance of this class
+    # from that section.  Else, return nil.
     def self.pick!(tokenization_context)
       str = self.pick_string!(tokenization_context)
       if str
         whitespace_after = tokenization_context.lstrip! || ''
         whitespace_after += "\n" if tokenization_context.finished?
-        $log.debug{ "pick! `#{str}' + `#{whitespace_after}', remainder: `#{tokenization_context.remainder}'" }
+        $log.debug{ "pick! `#{str}' + `#{whitespace_after.sub("\n", '\n')}', remainder: `#{tokenization_context.remainder}'" }
         create(tokenization_context, str, whitespace_after)
       end
     end # pick!
@@ -192,7 +166,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
     def self.peek(tokenization_context)
       at_front?(tokenization_context.remainder)
     end
-
+    
     protected
 
     #      @ORIGIN_CLASS = CeLogicLine

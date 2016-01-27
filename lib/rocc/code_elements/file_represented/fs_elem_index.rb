@@ -27,8 +27,8 @@ module Rocc::CodeElements::FileRepresented
     end
 
     def announce_element(element_class, path, adducer = nil)
-      warn " * #{caller[1]} announce: #{element_class} #{path} #{adducer}"
-      raise if path == "/"
+      #warn " * #{caller[1]} announce: #{element_class} #{path} #{adducer}"
+      #raise if path == "/"
         
       # "normalize" path
       path_abs = File.expand_path(path)

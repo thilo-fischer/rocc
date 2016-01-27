@@ -39,7 +39,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         # allow subclasses to call superclasses method implementation
         super
       else
-        if self.pick_string(env) then
+        if env.remainder =~ @PICKING_REGEXP then
           tkn = nil
           if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
             tkn

@@ -120,8 +120,8 @@ module Rocc::CodeElements::CharRepresented
     
       if tokenization_context.in_multiline_comment?
         # handle ongoing multi line comment
-        Tokens::TknMultiLineBlockComment.pick!(tokenization_context)
-        tokenization_context.leave_multiline_comment unless tokenization_context.recent_token.complete? # FIXME leave multiline comment when parsing `*/'
+        cmt = tokenization_context.ongoing_multiline_comment
+        cmt.pick_more!(tokenization_context)
       else
         # remove leading whitespace
         @indentation = tokenization_context.lstrip!
@@ -130,8 +130,10 @@ module Rocc::CodeElements::CharRepresented
       tokenization_context.pick_pp_directives
 
       until tokenization_context.finished? do
-        picked = Tokens::PICKING_ORDER.find {|c| c.pick!(tokenization_context)}
-        raise "Could not dertermine next token in `#{remainder}'" unless picked
+        picked = Tokens::PICKING_ORDER.find do |tkn_class|
+          tkn_class.pick!(tokenization_context)
+        end
+        raise "Could not dertermine next token in `#{tokenization_context.remainder}'" unless picked
       end
 
       # FIXME enter multiline comment when parsing `/*'
