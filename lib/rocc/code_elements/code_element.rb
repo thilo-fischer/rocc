@@ -127,7 +127,13 @@ module Rocc::CodeElements
       end
     end
 
-    alias to_s path_dbg
+    alias original_to_s to_s
+    alias to_s name_dbg
+    alias original_inspect inspect
+    #alias inspect path_dbg
+    def inspect
+      original_to_s.chop + " " + path_dbg + ">"
+    end
 
     ##
     # Like path, but discard any file information, i.e. start the path only

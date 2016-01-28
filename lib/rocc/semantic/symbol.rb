@@ -36,7 +36,7 @@ module Rocc::Semantic
     alias adducer adducers
 
     def match(criteria)
-      #warn "XXXX #{name_dbg} -> match: #{criteria.keys}"
+      #warn "XXXX #{name_dbg} -> match: #{criteria}"
       
       return true if criteria.empty? # shortcut to maybe safe performance. XXX remove?
       
