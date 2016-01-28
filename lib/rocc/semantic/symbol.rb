@@ -41,12 +41,12 @@ module Rocc::Semantic
       return true if criteria.empty? # shortcut to maybe safe performance. XXX remove?
       
       family = criteria.delete(:symbol_family)
-      case family
-      when nil
+      case
+      when family == nil
         # nothing to test then
-      when CeSymbol
+      when family <= CeSymbol
          return false unless self.is_a?(family)
-      when Array
+      when family <= Array
         return false unless family.find {|f| self.is_a?(f)}
       else
         raise "invalid argument: :symbol_family => #{family.inspect}"

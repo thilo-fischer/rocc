@@ -20,7 +20,7 @@ Feature: Command `ls'
     | trivial/minimal/03_global_var_decl.c  | trivial/minimal/03_global_var_decl_ls |
     | trivial/minimal/04_local_var_decl.c   | trivial/minimal/04_local_var_decl_ls  |
     | trivial/minimal/05_var_def.c          | trivial/minimal/05_var_def_ls         |
-#    | trivial/minimal/06_var_ref.c          | trivial/minimal/06_var_ref_ls         |
+    | trivial/minimal/06_var_ref.c          | trivial/minimal/06_var_ref_ls         |
 #    | trivial/minimal/07_func_decl.c        | trivial/minimal/07_func_decl_ls       |
 #    | trivial/minimal/08_func_def.c         | trivial/minimal/08_func_def_ls        |
 #    | trivial/minimal/09_macro.c            | trivial/minimal/09_macro_ls           |

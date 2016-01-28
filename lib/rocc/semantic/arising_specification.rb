@@ -246,4 +246,4 @@ module Rocc::Semantic::Temporary
     
   end # class ArisingSpecification
 
-end # module Rocc::Semantic
+end # module Rocc::Semantic::Temporary

@@ -17,6 +17,7 @@ require 'rocc/semantic/arising_specification'
 require 'rocc/semantic/statement'
 #require 'rocc/semantic/expression' # not (yet) in use
 require 'rocc/semantic/function'
+require 'rocc/semantic/r_value'
 
 module Rocc::CodeElements::CharRepresented::Tokens
 
@@ -50,6 +51,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
             raise "`#{keyword}' used outside of function" unless function
             s = Rocc::Semantic::ReturnStatement.new(branch.current_scope, self, function)
             branch.enter_scope(s)
+            rv = Rocc::Semantic::CeRValue.new(s)
+            branch.enter_scope(rv)
+            s.expression = rv
             
           when :else
             bmrs = branch.most_recent_scope
