@@ -69,10 +69,12 @@ module Rocc::Semantic
 
       result = symbols_matching_id.select do |s|
         #warn "symbols with according identifier: #{s.name_dbg}"
-        s.match(criteria)
+        # FIXME duplication of criteria decreases performance
+        crit_copy = criteria.dup
+        match = s.match(crit_copy)
+        raise "unhandled criteria (not yet supported?): #{crit_copy.keys}" if match and not crit_copy.empty?
+        match
       end
-
-      raise "unhandled criteria (not yet supported?): #{criteria.inspect}" if not result.empty? and not criteria.empty?
 
       result
     end

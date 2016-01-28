@@ -36,7 +36,7 @@ module Rocc::Semantic
     alias adducer adducers
 
     def match(criteria)
-      #warn "#{name_dbg} -> match: #{criteria}"
+      #warn "XXXX #{name_dbg} -> match: #{criteria.keys}"
       
       return true if criteria.empty? # shortcut to maybe safe performance. XXX remove?
       
@@ -65,10 +65,12 @@ module Rocc::Semantic
       end
 
       origin = criteria.delete(:origin)
+      #warn "XXXX match #{name_dbg}, origin criterion: #{origin}"
       case origin
       when nil
         # nothing to test then
-      when CodeElement
+      when Rocc::CodeElements::CodeElement
+        #warn "XXXX match #{name_dbg}.origin: Is #{@origin} == #{origin} ?"
         return false unless @origin == origin
       when Class
         return false unless @origin.is_a? origin

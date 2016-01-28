@@ -97,7 +97,7 @@ module Rocc::Commands
       elsif args.empty?
         #warn "cursor: #{applctx.cursor}"
         #warn "symbols: #{applctx.cursor.find_symbols}"
-        applctx.cursor.find_symbols.each {|s| puts s.strf}
+        applctx.cursor.find_symbols(:origin => applctx.cursor).each {|s| puts s.strf}
       else
         args.each { |o| o.list(STDOUT, options) }
       end
