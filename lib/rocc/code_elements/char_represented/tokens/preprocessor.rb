@@ -36,7 +36,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     def self.pick!(env)
       if self != TknPpDirective
-        # allow subclasses to call superclasses method implementation
+        # allow subclasses to call superclass' method implementation
         super
       else
         if env.remainder =~ @PICKING_REGEXP then
@@ -274,7 +274,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     def self.pick!(env)
       if self != TknPpDirective
-        # allow subclasses to call superclasses method implementation
+        # allow subclasses to call superclass' method implementation
         super
       else
         if str = self.pick_string(env) then

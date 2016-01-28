@@ -204,7 +204,7 @@ module Rocc::Semantic
     private
 
     def pick_from_hashargs(hashargs, key_symbol)
-      raise unless hashargs.key? key_symbol # XXX defensive progamming => remove some day
+      raise "Cannot find `#{key_symbol}' in #{hashargs.inspect}" unless hashargs.key? key_symbol # XXX defensive progamming => remove some day
       value = hashargs[key_symbol]
       hashargs.delete(key_symbol) # XXX defensive progamming => remove some day
       value

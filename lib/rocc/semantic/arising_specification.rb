@@ -14,6 +14,8 @@
 require 'rocc/semantic/specification'
 require 'rocc/semantic/declaration'
 require 'rocc/semantic/definition'
+require 'rocc/semantic/function'
+require 'rocc/semantic/variable'
 #require 'rocc/semantic/typedef'
 
 module Rocc::Semantic::Temporary
@@ -43,7 +45,7 @@ module Rocc::Semantic::Temporary
     def initialize
       @origin_shared = []
       @origin_private = []
-      @symbol_family = nil
+      @symbol_family = Rocc::Semantic::CeSymbol
       @identifier = nil
       @storage_class = nil
       @type_qualifiers = []
@@ -57,38 +59,41 @@ module Rocc::Semantic::Temporary
     
     def finalize(branch)
       raise "CeSpecification is abstract class" if @specification_type == Rocc::Semantic::CeSpecification # FIXME rework @specification_type
+      @symbol = create_symbol(branch) unless @symbol
       specification = @specification_type.new(origin)
-      @symbol = create_symbol(specification) unless @symbol
       @symbol.add_adducer(specification)
       @symbol
     end
 
     def create_symbol(branch)
+      raise "missing identifier" unless @identifier
+      raise "missing symbol_family" unless @symbol_family
       raise "Already created symbol from this #{self.class}!" if @symbol
       hashargs = {}
       hashargs[:storage_class] = @storage_class if @storage_class
       hashargs[:type_qualifiers] = @type_qualifiers unless @type_qualifiers.empty?
-      hashargs[:type_specifiers] = @type_specifiers unless @type_specifiers.empty?
-      @symbol = branch.announce_symbol(branch.closest_symbol_origin_scope, @symbol_family, @identifier, hashargs)
+      hashargs[:type_specifiers] = @type_specifiers unless @type_specifiers.empty? # XXX this would be the better place to set type specififer :implicit if no type specifier is given ...
+      origin = branch.closest_symbol_origin_scope
+      @symbol = branch.announce_symbol(origin, @symbol_family, @identifier, hashargs)
       @symbol
     end
 
-    private
-    def extend_origin(tokens)
-      if tokens.is_a? Array
-        @origin += tokens
-      else
-        @origin << tokens
-      end
+    def share_origin(other)
+      @origin_shared = other.origin_shared
+      # ensure we don't accidently change shared origin and implizitly
+      # alter other
+      @origin_shared.freeze
+      
+      @storage_class = other.storage_class
+      @type_qualifiers = other.type_qualifiers
+      @type_specifiers = other.type_specifiers
     end
     
-    public
-    def symbol_family=(symbol_family)
-      if @symbol_family and not symbol_family < @symbol_family
-        raise "inconsistent symbol_familys detected"
-      end
-      @symbol_family = symbol_family     
-    end
+    #def origin_shared=(arg)
+    #  raise unless @origin_shared.empty?
+    #  @origin_shared = arg
+    #  @origin_shared.freeze
+    #end
 
     def set_identifier(token)
       raise "multiple identifiers" if @identifier
@@ -101,7 +106,7 @@ module Rocc::Semantic::Temporary
       raise "multiple storage class specifiers" if storage_class
       raise "storage class specifier cannot occur after identifier" if @identifier
       @origin_shared << token
-      @storage_class = token.storage_class_symbol
+      @storage_class = token.storage_class_specifier_symbol
     end
 
     def add_type_qualifier(token)
@@ -119,19 +124,19 @@ module Rocc::Semantic::Temporary
         no_prefix = @type_specifiers.find {|s| not [:short, :long, :signed, :unsigned].include? s }
         raise "inconsistent type specifiers: #{@type_specifiers.inspect} vs. #{symbol}" if no_prefix
 
-        if @type_specifiers.includes?(symbol)
-          warn "redundant #{symbol}" unless symbol == long and @type_specifiers.count(symbol) == 1 # XXX warn or raise ?!
+        if @type_specifiers.include?(symbol)
+          warn "redundant #{symbol}" unless symbol == :long and @type_specifiers.count(symbol) == 1 # XXX warn or raise ?!
         end
 
         case symbol
         when :short
-          raise "inconsistent type specifiers" if @type_specifiers.includes?(:long)
+          raise "inconsistent type specifiers" if @type_specifiers.include?(:long)
         when :long
-          raise "inconsistent type specifiers" if @type_specifiers.includes?(:short)
+          raise "inconsistent type specifiers" if @type_specifiers.include?(:short)
         when :signed
-          raise "inconsistent type specifiers" if @type_specifiers.includes?(:unsigned)
+          raise "inconsistent type specifiers" if @type_specifiers.include?(:unsigned)
         when :unsigned
-          raise "inconsistent type specifiers" if @type_specifiers.includes?(:signed)
+          raise "inconsistent type specifiers" if @type_specifiers.include?(:signed)
         when :char, :short, :int, :long
           # do nothing
         when :void, :float, :double, :bool, Rocc::Semantic::CeTypedef
@@ -157,36 +162,81 @@ module Rocc::Semantic::Temporary
 
     private
 
-    def specification_type=(st_arg)
-      raise if @specification_type and not st_arg < @specification_type
-      @specification_type = st_arg
+    def specification_type=(arg)
+      raise if @specification_type and not arg < @specification_type
+      @specification_type = arg
     end
 
     public
     
     def is_definition?
-      case @specification_type
-      when CeDefinition
+      case
+      when @specification_type <= Rocc::Semantic::CeDefinition
         true
-      when CeDeclaration
+      when @specification_type <= Rocc::Semantic::CeDeclaration
         false
-      when CeSpecification
+      when @specification_type <= Rocc::Semantic::CeSpecification
         nil
       else
-        raise "programming error"
+        raise "programming error, @specification_type: #{@specification_type}"
       end
     end
 
     def is_declaration?
-      case @specification_type
-      when CeDefinition
+      case
+      when @specification_type <= Rocc::Semantic::CeDefinition
         false
-      when CeDeclaration
+      when @specification_type <= Rocc::Semantic::CeDeclaration
         true
-      when CeSpecification
+      when @specification_type <= Rocc::Semantic::CeSpecification
         nil
       else
-        raise "programming error"
+        raise "programming error, @specification_type: #{@specification_type}"
+      end
+    end
+
+    # XXX? support symbol family CeFunctionParameter
+    
+    def mark_as_function
+      @symbol_family = Rocc::Semantic::CeFunction
+    end
+
+    def mark_as_variable
+      @symbol_family = Rocc::Semantic::CeVariable
+    end
+
+    private
+
+    def symbol_family=(arg)
+      raise if @symbol_family and not arg < @symbol_family
+      @symbol_family = arg
+    end
+
+    public
+    
+    def is_function?
+      case
+      when @symbol_family <= Rocc::Semantic::CeFunction
+        true
+      when @symbol_family <= Rocc::Semantic::CeVariable
+        false
+      when @symbol_family <= Rocc::Semantic::CeSymbol
+        nil
+      else
+        raise "programming error, @symbol_family: #{@symbol_family}"
+      end
+    end
+
+    def is_variable?
+      case
+      when @symbol_family <= Rocc::Semantic::CeFunction
+        false
+      when @symbol_family <= Rocc::Semantic::CeVariable
+        true
+      when @symbol_family <= Rocc::Semantic::CeSymbol
+        nil
+      else
+        raise "programming error, @symbol_family: #{@symbol_family}"
       end
     end
 

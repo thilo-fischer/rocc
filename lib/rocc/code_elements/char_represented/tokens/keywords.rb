@@ -186,24 +186,16 @@ module Rocc::CodeElements::CharRepresented::Tokens
         # alias for shorter code lines
         storage_class = branch.current_scope.storage_class
 
-        if branch.find_scope(CeFunction)
-          if branch.find_scope(CeFunctionSignature)
+        if branch.find_scope(Rocc::Semantic::CeFunction)
+          if branch.find_scope(Rocc::Semantic::CeFunctionSignature)
             raise "register is the only storage class specifier allowed for function parameters" unless storage_class == :register
           else
             # XXX all storage class specifiers allowed in function body? (=> typedef?)
-            #raise if [].includes?(storage_class)
+            #raise if [].include?(storage_class)
           end
         else
-          raise "auto not allowed outside of function body" if [:auto].includes?(storage_class)
+          raise "auto not allowed outside of function body" if [:auto].include?(storage_class)
         end
-        
-        case storage_class
-        when :extern
-          branch.current_scope.linkage = :extern
-        when :static
-          branch.current_scope.linkage = :intern
-        end
-        
       end
 
       def storage_class_specifier_symbol
@@ -222,7 +214,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       # TODO old implementation. still in accordance with pick/pick_string/pick_string!/create ?
       def self.pick!(env)
         if self != THIS_CLASS
-          # allow subclasses to call superclasses method implementation
+          # allow subclasses to call superclass' method implementation
           super
         else
           tkn = nil
@@ -253,7 +245,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
       def self.pick!(env)
         if self != THIS_CLASS
-          # allow subclasses to call superclasses method implementation
+          # allow subclasses to call superclass' method implementation
           super
         else
           tkn = nil

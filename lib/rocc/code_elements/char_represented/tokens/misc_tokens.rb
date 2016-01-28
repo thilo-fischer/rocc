@@ -26,7 +26,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     def self.pick!(env)
       if self != TknWord
-        # allow subclasses to call superclasses method implementation
+        # allow subclasses to call superclass' method implementation
         # FIXME smells
         super
       else
@@ -191,8 +191,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
         case branch.current_scope
         when Rocc::Semantic::Temporary::ArisingSpecification
-            branch.current_scope.mark_as_declaration unless branch.current_scope.is_definition
-            branch.finish_current_scope
+          branch.current_scope.mark_as_declaration unless branch.current_scope.is_definition?
+          branch.current_scope.mark_as_variable unless branch.current_scope.is_function?
+          branch.finish_current_scope
         else
           if branch.current_scope.complete?
             branch.leave_scope
@@ -212,11 +213,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
           else
             prev_arising = branch.current_scope
             
-            next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new([prev_arising.origin_shared])
-            next_arising.storage_class = prev_arising.storage_class
-            next_arising.type_qualifiers = prev_arising.type_qualifiers
-            next_arising.type_specifiers = prev_arising.type_specifiers
+            next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new
+            next_arising.share_origin(prev_arising)
             
+            branch.current_scope.mark_as_declaration unless branch.current_scope.is_definition?
+            branch.current_scope.mark_as_variable unless branch.current_scope.is_function?
             branch.finish_current_scope
             branch.enter_scope(next_arising)
           end
@@ -309,7 +310,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
             
           when Rocc::Semantic::Temporary::ArisingSpecification
             if branch.current_scope.identifier
-              branch.current_scope.symbol_family = Rocc::Semantic::CeFunction
+              branch.current_scope.mark_as_function
               function = branch.current_scope.create_symbol(branch)
               branch.enter_scope(function)
               func_sig = Rocc::Semantic::CeFunctionSignature.new(function, self)

@@ -15,7 +15,7 @@ require 'rocc/semantic/typed_symbol'
 
 module Rocc::Semantic
 
-  class CeFunction < TypedSymbol
+  class CeFunction < CeTypedSymbol
 
     attr_reader :parameters
 

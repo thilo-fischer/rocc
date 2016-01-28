@@ -15,13 +15,19 @@ require 'rocc/semantic/symbol'
 
 module Rocc::Semantic
 
-  class TypedSymbol < CeSymbol
+  class CeTypedSymbol < CeSymbol
 
     attr_reader :linkage
     
     def initialize(origin, identifier, hashargs)
       @linkage = pick_from_hashargs(hashargs, :linkage)
       @type_specifiers = pick_from_hashargs(hashargs, :type_specifiers) # FIXME not yet processed
+      if hashargs.key?(:type_qualifiers)
+        @type_qualifiers = pick_from_hashargs(hashargs, :type_qualifiers) # FIXME not yet processed
+      end
+      if hashargs.key?(:storage_class)
+        @storage_class = pick_from_hashargs(hashargs, :storage_class) # FIXME not yet processed
+      end
       super # XXX defensive progamming => replace some day with # super(origin, identifier)
     end
 
@@ -33,21 +39,21 @@ module Rocc::Semantic
       return false unless super
       return true if criteria.empty? # shortcut to maybe safe performance. XXX remove?
 
-      linkage = criteria.delete(:linkage)
-      case linkage
+      linkage_criterion = criteria.delete(:linkage)
+      case linkage_criterion
       when nil
         # nothing to test then
       when Symbol # note: ruby's Symbol class, not Rocc::Semantic::CeSymbol
-        return false unless @linkage == linkage
+        return false unless @linkage == linkage_criterion
       when Array
-        return false unless linkage.find {|l| @linkage == l}
+        return false unless linkage_criterion.find {|l| @linkage == l}
       else
-        raise "invalid argument: :linkage => #{linkage.inspect}"
+        raise "invalid argument: :linkage => #{linkage_criterion.inspect}"
       end
 
       true
     end # def match(criteria)
     
-  end # class TypedSymbol
+  end # class CeTypedSymbol
 
 end # module Rocc::Semantic

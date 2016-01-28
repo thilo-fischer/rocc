@@ -161,6 +161,10 @@ module Rocc::Contexts
       @scope_stack[idx] if idx
     end
 
+    ##
+    # find the closest scope (i.e. the surrounding scope with the
+    # highest position in the scope stack) that can be the origin of a
+    # symbol
     def closest_symbol_origin_scope
       result = find_scope([Rocc::CodeElements::FileRepresented::CeTranslationUnit, Rocc::Semantic::CompoundStatement])
     end

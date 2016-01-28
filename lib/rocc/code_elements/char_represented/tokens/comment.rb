@@ -89,7 +89,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     def self.pick!(tokenization_context)
       if self != THIS_CLASS
-        # allow subclasses to call superclasses method implementation
+        # allow subclasses to call superclass' method implementation
         super
       else
         tkn = nil

@@ -15,8 +15,27 @@ require 'rocc/semantic/typed_symbol'
 
 module Rocc::Semantic
 
-  class Variable < TypedSymbol
+  class CeVariable < CeTypedSymbol
 
-  end # class Variable
+    def self.default_linkage
+      :extern
+    end
+
+    def name
+      "variable `#{@identifier}'"
+    end
+    
+    def name_dbg
+      "Var[#{@identifier}]"
+    end
+
+    # FIXME? define constant instead of function?
+    def self.family_character
+      'V'
+    end
+    def self.family_name
+      'variable'
+    end
+  end # class CeVariable
 
 end # module Rocc::Semantic
