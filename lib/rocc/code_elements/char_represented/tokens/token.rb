@@ -38,7 +38,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
   # to test for Tkn3Char before Tkn2Char and for Tkn2Char before
   # Tkn1Char to ensure to detect e.g. the >>= token not as as tokens >
   # and >= or as tokens >, > and =.
-  PICKING_ORDER = [ TknWord, TknStringLiteral, TknCharLiteral, TknIntegerLiteral, TknFloatLiteral, TknComment, Tkn3Char, Tkn2Char, Tkn1Char ]
+  PICKING_ORDER = [ TknWord, TknStringLiteral, TknCharLiteral, TknIntegerLiteral, TknFloatLiteral, TknCharLiteral, TknStringLiteral, TknComment, Tkn3Char, Tkn2Char, Tkn1Char ]
 
   class CeToken < Rocc::CodeElements::CodeElement
     

@@ -127,7 +127,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
   end # class TknFloatLiteral
 
   class TknCharLiteral < TknLiteral
-    @PICKING_REGEXP = Regexp.union(/^L'.'/, /^L'\\(['"?\\abfnrtv]|[01234567]+|[xuU](\d|[AaBbCcDdEeFf])+)'/)
+    @PICKING_REGEXP = Regexp.union(/^L?'.'/, /^L?'\\(['"?\\abfnrtv]|[01234567]+|[xuU](\d|[AaBbCcDdEeFf])+)'/)
     
     def pursue_branch(compilation_context, branch)
       super
@@ -348,6 +348,22 @@ module Rocc::CodeElements::CharRepresented::Tokens
         case branch.current_scope
         when Rocc::Semantic::Temporary::ArisingSpecification
             # FIXME handle asterisk (->pointer) => branch.current_scope. ...
+        else
+          raise "not yet supported: #{name_dbg} outside of specification"
+        end
+        
+      when "="
+        case branch.current_scope
+        when Rocc::Semantic::Temporary::ArisingSpecification
+          branch.current_scope.mark_as_definition
+          branch.current_scope.mark_as_variable
+        when Rocc::Semantic::CompoundStatement
+          if branch.current_scope.has_pending?
+            raise "not an rvalue (or no support implemented yet for this kind of rvalue): `#{branch.current_scope.pending_to_s}'" unless branch.pending_tokens.count == 1 and branch.pending.first.is_a?(Rocc::CodeElements::CharReperesented::TknIdentifier)
+            raise "TODO setup arising assignment statement"
+          else
+            raise "invalid syntax at #{path}"
+          end
         else
           raise "not yet supported: #{name_dbg} outside of specification"
         end

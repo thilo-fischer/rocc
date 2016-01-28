@@ -4,7 +4,7 @@
 
 // various declarations of global variables
 int i_var = 42;
-const unsigned short int cusi_var = 4711us;
+const unsigned short int cusi_var = 4711u;
 extern signed es_var;
 static long long sll_var = 0x1122334455667788ll;
 char c_var_a, c_var_b = 'b';
