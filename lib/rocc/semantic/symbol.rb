@@ -117,31 +117,43 @@ module Rocc::Semantic
     #      [n] namespace (planned with C++ support)
     # [%F] Full name of the symbol's family
     # [%y] symbol's type for all symbols that natively have a type
-    #      (like variables, functions) (including brackets to indicate array types,
+    #      (like variables, functions) (including brackets to indicate
+    #      array types,
     #      including numbers in brackets for fixed-sized arrays)
     # [%Y] symbol's type for all symbols where some type can be determined,
-    #      e.g. assign type +int+ to a macro +#define m 42+, type +unsigned long int+
+    #      e.g. assign type +int+ to a macro +#define m 42+, type
+    #      +unsigned long int+
     #      to a macro +#define m 42ul+
     #
     # = Parameters
-    # Have effect on symbols with parameters only, i.e. funtions and function
+    # Have effect on symbols with parameters only, i.e. funtions and
+    # function
     # style macros only. Will be an in empty string for any other symbols.
-    # [%0P] number of parameters
-    # [%>P] number of parameters if at least one parameter, empty string otherwise
-    # [%(P] TODO number of parameters in parenthesis
-    # [%)P] TODO number of parameters in parenthesis if if at least one parameter,
-    #       empty parenthesis otherwise
-    # [%,P] comma-separated list of parameter types (includes one
-    #       space character after each comma)
-    # [%.p] The . may be any character or sequence of characters. This character
-    #       (sequence) will be put literally to the result string if
-    #       the symbol has parameters. ('p' may not be the character or in the
-    #       character sequence.)
+    # [%0P]  number of parameters
+    # [%>P]  number of parameters if at least one parameter, empty
+    #        string otherwise
+    # [%)P]  number of parameters in parenthesis
+    # [%\]P] number of parameters in parenthesis if if at least
+    #        one parameter,
+    #        empty parenthesis otherwise
+    # [%}P]  number of parameters in parenthesis if if at least
+    #        one parameter, 0 if void is given within the function
+    #        signature's parenthesis (FIXME: WHICH signature?!),
+    #        empty parenthesis otherwise
+    # [%,P]  comma-separated list of parameter types (includes one
+    #        space character after each comma)
+    # [%.p]  The . may be any character or sequence of characters.
+    #        This character
+    #        (sequence) will be put literally to the result string if
+    #        the symbol has parameters. ('p' cannot not be this character
+    #        or in the
+    #        character sequence.)
     #
     # = Formatting
-    # [%nC] Add space characters until the string is n characters long, n is an integer number.
+    # [%nC] Add space characters until the string is n characters long,
+    #       n is an integer number.
     #
-    def strf(format = '%f %i%(p%>P%)p')
+    def strf(format = '%f %i%}P')
       format = format.split('%')
       format.inject do |result, part|
         directive = part.slice!(/[^A-Za-z]*[A-Za-z]/)
@@ -173,6 +185,32 @@ module Rocc::Semantic
                 when '>P'
                   if self.respond_to? :parameters and not parameters.empty?
                     parameters.count.to_s
+                  else
+                    ''
+                  end
+                when ')P'
+                  if self.respond_to? :parameters
+                    "(#{parameters.count.to_s})"
+                  else
+                    ''
+                  end
+                when ']P'
+                  if self.respond_to? :parameters
+                    if parameters.empty?
+                      '()'
+                    else
+                      "(#{parameters.count.to_s})"
+                    end
+                  else
+                    ''
+                  end
+                when '}P'
+                  if self.respond_to? :parameters
+                    if parameters.empty? and not self.signatures.find {|s| s.is_void?}
+                      '()'
+                    else
+                      "(#{parameters.count.to_s})"
+                    end
                   else
                     ''
                   end

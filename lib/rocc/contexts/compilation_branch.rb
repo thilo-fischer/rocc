@@ -183,7 +183,7 @@ module Rocc::Contexts
     
     # for debugging
     def scope_stack_trace
-      result = "scope_stack of compilation branch #{id}:\n"
+      result = "scope_stack of #{name_dbg}:\n"
       @scope_stack.reverse_each do |frame|
         result += "\t#{scope_name_dbg(frame)}\n"
       end

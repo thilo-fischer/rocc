@@ -28,11 +28,14 @@ module Rocc::Semantic
       super(origin)
       @param_names = []
       @adducer = [adducer]
+      @void = nil
     end
 
     def add_param(type, name, storage_class_specifier = nil)
       raise "register is the only storage class specifier allowed for function parameters" if storage_class_specifier and storage_class_specifier != :register
 
+      @void = false
+      
       @param_names << name
       
       if function.param_list_complete?
@@ -41,7 +44,7 @@ module Rocc::Semantic
         function.announce_parameter(@param_names.count, type, storage_class_specifier)
       end
       
-    end
+    end # sdd_param
 
     def complete?
       adducer.count == 2
@@ -50,7 +53,8 @@ module Rocc::Semantic
     # add closing parenthesis token
     def close(token)
       adducer << token
-      function.param_list_finalize unless function.param_list_complete?
+      raise if function.param_list_complete? # XXX only for debugging => remove
+      function.param_list_finalize
     end
 
     def opening
@@ -59,6 +63,20 @@ module Rocc::Semantic
     
     def closing
       adducer.last
+    end
+
+    def mark_as_void
+      @void = true
+    end
+
+    ##
+    # returns +true+ if function has no parameters and signature is
+    # like +func(void)+, +false+ if signature is like +func()+ or if
+    # function has parameters, returns +nil+ if function signature has
+    # not yet been parsed to a point where it is known whether the one
+    # or the other applies.
+    def is_void?
+      @void
     end
     
   end # class CeFunction

@@ -17,12 +17,14 @@ module Rocc::Semantic
 
   class CeFunction < CeTypedSymbol
 
-    attr_reader :parameters
+    attr_reader :parameters, :signatures, :block
 
     def initialize(origin, identifier, hashargs)
       super
       @parameters = []
       @param_list_complete = false
+      @signatures = []
+      @block = nil
     end
 
     def self.default_linkage
@@ -34,11 +36,15 @@ module Rocc::Semantic
     end
 
     def announce_parameter(position, type, storage_class)
-      raise if  param_list_complete?
-      # assume all parameters are added in their native order
-      raise unless @parameters.count == position - 1
-      @parameters << :function_parameter # FIXME
-      # TODO @parameters << CeFunctionParameter.new(self, type)
+      if param_list_complete?
+        raise unless position < @parameters.count
+        # TODO raise unless @parameters[position].type == type and @parameters[position].storage_class == storage_class
+      else
+        # assume all parameters are added in their native order
+        raise unless @parameters.count == position - 1
+        @parameters << :function_parameter # FIXME
+        # TODO @parameters << CeFunctionParameter.new(self, type)
+      end
     end
 
     def param_list_complete?
@@ -47,6 +53,20 @@ module Rocc::Semantic
 
     def param_list_finalize
       @param_list_complete = true
+    end
+
+    def complete?
+      param_list_complete?
+      # XXX function definition also requires a block/compound statement
+    end
+
+    def add_signature(arg)
+      @signatures << arg
+    end
+
+    def block=(arg)
+      raise "multiple definitions for #{path_dbg}" if @block
+      @block = arg
     end
     
     def name

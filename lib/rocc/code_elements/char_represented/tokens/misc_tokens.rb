@@ -198,14 +198,15 @@ module Rocc::CodeElements::CharRepresented::Tokens
       case @text
          
       when ';'
-        warn "pursue `;': #{branch.scope_stack_trace}"
         raise "still pending: `#{branch.pending_to_s}'" if branch.has_pending?
 
-        if branch.current_scope.is_a?(Rocc::Semantic::CeRValue)
+        # XXX? smells (?): two successive `case branch.current_scope'
+        case branch.current_scope
+        when Rocc::Semantic::CeRValue, Rocc::Semantic::CeFunction
           if branch.current_scope.complete?
             branch.leave_scope
           else
-            raise "incomplete r-value at #{path_dbg}"
+            raise "found #{name_dbg}, but #{branch.current_scope.name_dbg} is not yet complete"
           end
         end
         
@@ -214,13 +215,14 @@ module Rocc::CodeElements::CharRepresented::Tokens
           branch.current_scope.mark_as_declaration unless branch.current_scope.is_definition?
           branch.current_scope.mark_as_variable unless branch.current_scope.is_function?
           branch.finish_current_scope
-        else
+        when Rocc::Semantic::Statement
           if branch.current_scope.complete?
             branch.leave_scope
           else
-            warn branch.scope_stack_trace
-            raise "found `;', but #{branch.current_scope.name_dbg} is not yet complete"
+            raise "found #{name_dbg}, but #{branch.current_scope.name_dbg} is not yet complete"
           end
+        else
+          raise "programming error: unexpected scope at #{path_dbg} -- #{branch.scope_stack_trace}"
         end
         
       when ','
@@ -237,7 +239,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
           case branch.surrounding_scope
           when Rocc::Semantic::CeFunctionSignature
-            wrapup_function_parameter(branch)
+            wrapup_function_parameter(branch.surrounding_scope, branch.current_scope)
+            branch.leave_scope
           else
             prev_arising = branch.current_scope
             
@@ -292,9 +295,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
           branch.current_scope.mark_as_definition
           branch.finish_current_scope
           branch.enter_scope(function)
-          #function.block = cs # FIXME
+          function.block = cs
         else
-          warn branch.scope_stack_trace
           raise "not yet supported"
         end
 
@@ -335,6 +337,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
               branch.enter_scope(function)
               func_sig = Rocc::Semantic::CeFunctionSignature.new(function, self)
               branch.enter_scope(func_sig)
+              function.add_signature(func_sig)
             else
               raise "not yet supported (#{branch.arising.inspect})"
             end
@@ -363,16 +366,23 @@ module Rocc::CodeElements::CharRepresented::Tokens
         when Rocc::Semantic::Temporary::ArisingSpecification
           case branch.surrounding_scope
           when Rocc::Semantic::CeFunctionSignature
-            wrapup_function_parameter(branch)
+            wrapup_function_parameter(branch.surrounding_scope, branch.current_scope)
             branch.leave_scope
           else
             raise
           end
         when Rocc::Semantic::CompoundExpression, Rocc::Semantic::CeFunctionSignature
+          # do nothing, handle in next case statement
+        else
+          raise "found #{name_dbg}, but #{branch.scope_stack_trace}"
+        end
+
+        case branch.current_scope
+        when Rocc::Semantic::CompoundExpression, Rocc::Semantic::CeFunctionSignature
           branch.current_scope.close(self)
           branch.leave_scope
         else
-          raise "found #{name_dbg}, but scope is #{branch.scope_stack_trace}"
+          raise "found #{name_dbg}, but #{branch.scope_stack_trace}"
         end
         
       when '*'
@@ -417,11 +427,14 @@ module Rocc::CodeElements::CharRepresented::Tokens
     end # pursue_branch 
 
     private
-    def wrapup_function_parameter(branch)
-      arising = branch.current_scope
-      func_sig = branch.surrounding_scope
-      func_sig.add_param(arising.type_specifiers, arising.identifier, arising.storage_class)
-      branch.leave_scope
+    def wrapup_function_parameter(function_signature, arising_param)
+      if arising_param.identifier
+        function_signature.add_param(arising_param.type_specifiers, arising_param.identifier, arising_param.storage_class)
+      elsif arising_param.type_specifiers == [:void] and arising_param.storage_class == nil
+        function_signature.mark_as_void
+      else
+        raise
+      end
     end
     
 #    def expand_with_context(env, ctxt)
