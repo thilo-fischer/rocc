@@ -190,6 +190,11 @@ module Rocc::Contexts
       result
     end
 
+    # FIXME
+    def announce_created_symbol(symbol)
+      @symbol_idx.announce_symbol(symbol)
+    end
+
     def announce_symbol(origin, symbol_family, identifier, hashargs = {})
 
       warn "#{name_dbg}.announce_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"
@@ -297,6 +302,20 @@ module Rocc::Contexts
         parent.deactivate(branch)
       end
     end
+
+    def start_collect_macro_tokens(macro)
+      @greedy_macro = macro
+    end
+
+    def stop_collect_macro_tokens
+      @greedy_macro = nil
+    end
+
+    def collect_macro_tokens?
+      @greedy_macro
+    end
+
+    attr_reader :greedy_macro
       
 #    def progress_token(tkn = nil, length)
 #      @recent_token = tkn if tkn

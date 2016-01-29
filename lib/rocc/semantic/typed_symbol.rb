@@ -29,7 +29,19 @@ module Rocc::Semantic
         @storage_class = pick_from_hashargs(hashargs, :storage_class) # FIXME not yet processed
       end
       super # XXX defensive progamming => replace some day with # super(origin, identifier)
+      @adducers = []
     end
+
+    def name_dbg
+      "TySym[#{@identifier}]"
+    end    
+
+    # adducers are the specifications that announce the symbol
+    def add_adducer(a)
+      @adducers << a
+    end
+
+    alias adducer adducers
 
     def namespace
       :ordinary

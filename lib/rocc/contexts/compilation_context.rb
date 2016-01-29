@@ -19,7 +19,7 @@ module Rocc::Contexts
 
     # XXX implement active_branches as method returning an iterator that recursively iterates the branches tree (performance improvement?)
     
-    attr_reader :active_branches, :fs_element_index
+    attr_reader :translation_unit, :active_branches, :fs_element_index
 
     def initialize(translation_unit, fs_element_index, base_branch = nil)
       @translation_unit = translation_unit
@@ -42,6 +42,14 @@ module Rocc::Contexts
 
     def announce_symbols(symbols)
       @translation_unit.announce_symbols(symbols)
+    end
+
+    def finalize_logic_line
+      active_branches.each do |b|
+        if b.collect_macro_tokens?
+          b.stop_collect_macro_tokens
+        end
+      end
     end
     
   end # class CompilationContext

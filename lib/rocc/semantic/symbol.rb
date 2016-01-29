@@ -25,15 +25,15 @@ module Rocc::Semantic
       raise "unprocessed hashargs: #{hashargs.inspect}" unless hashargs.empty? # XXX defensive progamming => remove some day
       super(origin)
       @identifier = identifier
-      @adducers = []
     end # initialize
 
-    # adducers are the specifications that announce the symbol
-    def add_adducer(a)
-      @adducers << a
+    def name
+      "symbol `#{@identifier}'"
     end
-
-    alias adducer adducers
+    
+    def name_dbg
+      "Sym[#{@identifier}]"
+    end
 
     def match(criteria)
       #warn "XXXX #{name_dbg} -> match: #{criteria}"
@@ -81,14 +81,6 @@ module Rocc::Semantic
       #warn "#{name_dbg} -> match: #{criteria} => true"
       true
     end # def match(criteria)
-
-    def name
-      "symbol `#{@identifier}'"
-    end
-    
-    def name_dbg
-      "Sym[#{@identifier}]"
-    end
 
     ##
     # Create a string representation of this symbol formatted

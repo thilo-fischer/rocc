@@ -11,14 +11,14 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'rocc/code_elements/code_element'
+require 'rocc/semantic/symbol'
 #require 'rocc/semantic/macro_definition'
 
 module Rocc::Semantic
 
-  class CeMacro < Rocc::CodeElements::CodeElement
+  class CeMacro < Rocc::Semantic::CeSymbol
 
-    attr_reader :adducer, :identifier, :text, :parameters
+    attr_reader :adducer, :text, :parameters
     
     ##
     # +origin+ of a +Macro+ is the translation unit it appears in.
@@ -26,21 +26,24 @@ module Rocc::Semantic
     #
     # +parameters+ is array with parameter names, empty array for
     # function-like macro without parameters, nil for "plain" macros
-    def initialize(origin, adducer, identifier, text, parameters = nil)
-      super(origin)
+    def initialize(origin, adducer, identifier, parameters = nil)
+      super(origin, identifier, {})
       @adducer = adducer
-      @identifier = identifier
-      @text = text
       @parameters = parameters
+      @tokens = []
     end
 
     def name_dbg
-      '#Macro[@identifier]'
+      '#M[#{@identifier}]'
     end
 
     def is_function_like?
       #@parameters.is_a?(Array)
       @parameters != nil
+    end
+
+    def add_token(arg)
+      @tokens << arg
     end
 
   end # class CeMacro

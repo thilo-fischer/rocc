@@ -13,6 +13,9 @@
 
 require 'rocc/code_elements/char_represented/tokens/token.rb'
 
+require 'rocc/semantic/macro'
+require 'rocc/semantic/macro_definition'
+
 module Rocc::CodeElements::CharRepresented::Tokens
 
   # forward declarations
@@ -142,12 +145,17 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
 
   class TknPpDefine < TknPpDirective
+    # TODO the stuff picked here is more than a token, it is several tokens at once. same applies to (most of) the other preprocessor "token" classes handling preprocessor directives. technically fine, but calling it a token is missleading.
+    @PICKING_REGEXP = /^#\s*define\s*?(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*?(?<identifier>[A-Za-z_]\w*)(?<parameters>\(.*?\))?/
 
-    @PICKING_REGEXP = /^#\s*define\s*?(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*?(?<name>[A-Za-z_]\w*)(?<args>\(.*?\))?/
+    attr_reader :identifier, :comments, :parameters
 
-    attr_reader :identifier, :args
+    public # FIXME protect from write access from other classes, but allow write access from class methods
+    #protected
+    attr_writer :identifier, :comments, :parameters
 
-    def self.pick(env, str = nil, tknclass = nil)
+    public
+    def self.pick!(tokenization_context)
 
       tkn = super
 
@@ -156,35 +164,39 @@ module Rocc::CodeElements::CharRepresented::Tokens
         tkn.text =~ @PICKING_REGEXP
 
         tkn.identifier = $~[:identifier]
-        comments = $~[:comments]
-        args     = $~[:args]
+        
+        comments   = $~[:comments]
+        parameters = $~[:parameters]
 
         # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `define' and macro identifier
         if not comments.strip.empty? then
           tkn.text.sub!(comments, " ")
         end
-        while not comments.strip!.empty? do
-          TknComment.pick!(env, comments)
-        end
+        # FIXME create comment objects
+        #while not comments.strip!.empty? do
+        #  TknComment.pick!(env, comments)
+        #end
         
-        tkn.args = if args
-                     args[ 0] = ""
-                     args[-1] = ""
-                     args.split(/\s*,\s*/)
-                   end
+        tkn.parameters = if parameters
+                           parameters[ 0] = ""
+                           parameters[-1] = ""
+                           parameters.split(/\s*,\s*/)
+                         end
       end
 
       tkn
-    end # pick
+    end # pick!
 
 
     def pursue_branch(compilation_context, branch)
 
-      d = CeMacroDefinition.new(self)
-      m = CeMacro.new(compilation_context.translation_unit, d, @identifier, @text, @parameters)
+      d = Rocc::Semantic::CeMacroDefinition.new(self)
+      m = Rocc::Semantic::CeMacro.new(compilation_context.translation_unit, d, @identifier, @parameters)
       
-      branch.announce_symbol(m)
+      branch.announce_created_symbol(m)
 
+      # FIXME wouldn't it be sufficient (and more performant) to make start/stop_collect_macro_tokens part of CompilationContext instead of CompilationBranch ?!
+      branch.start_collect_macro_tokens(m)
     end # pursue_branch
 
     def tokens

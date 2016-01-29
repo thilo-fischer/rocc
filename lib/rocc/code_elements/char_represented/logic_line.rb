@@ -83,7 +83,9 @@ module Rocc::CodeElements::CharRepresented
     def pursue(lineread_context)
       cmt_ctx = lineread_context.comment_context
       tokenize(cmt_ctx)
-      super(cmt_ctx.compilation_context)
+      cc_ctx = cmt_ctx.compilation_context
+      super(cc_ctx)
+      cc_ctx.finalize_logic_line
     end
 
     ##
