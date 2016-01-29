@@ -13,7 +13,7 @@ char c_var_c = 99, *pc_var_b = "pc_var_b";
 char *pc_var_c = &c_var_c, c_var_d = *pc_var_b;
 
 // some function declarations and definitions
-void v_func() {};
+void v_func() {}
 int i_func_v(void)
 {
   return 0;

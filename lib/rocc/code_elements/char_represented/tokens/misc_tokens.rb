@@ -221,6 +221,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
           else
             raise "found #{name_dbg}, but #{branch.current_scope.name_dbg} is not yet complete"
           end
+        when Rocc::CodeElements::FileRepresented::CeTranslationUnit
+          # XXX warn about superflous ';' token
         else
           raise "programming error: unexpected scope at #{path_dbg} -- #{branch.scope_stack_trace}"
         end

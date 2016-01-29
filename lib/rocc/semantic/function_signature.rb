@@ -53,8 +53,7 @@ module Rocc::Semantic
     # add closing parenthesis token
     def close(token)
       adducer << token
-      raise if function.param_list_complete? # XXX only for debugging => remove
-      function.param_list_finalize
+      function.param_list_finalize # XXX smells: missleading function names when function has multiple signatures
     end
 
     def opening
