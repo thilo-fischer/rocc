@@ -190,7 +190,7 @@ module Rocc::Contexts
       result
     end
 
-    def announce_symbol(origin, symbol_family, identifier, hashargs)
+    def announce_symbol(origin, symbol_family, identifier, hashargs = {})
 
       warn "#{name_dbg}.announce_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"
       #warn caller

@@ -145,21 +145,21 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     @PICKING_REGEXP = /^#\s*define\s*?(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*?(?<name>[A-Za-z_]\w*)(?<args>\(.*?\))?/
 
-    attr_reader :name, :args
+    attr_reader :identifier, :args
 
     def self.pick(env, str = nil, tknclass = nil)
 
       tkn = super
 
       if tkn
-        # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
+        # XXX performance: super just did match the @PICKING_REGEXP, and we match it here a second time (redundantly).
         tkn.text =~ @PICKING_REGEXP
 
-        tkn.name = $~[:name]
+        tkn.identifier = $~[:identifier]
         comments = $~[:comments]
         args     = $~[:args]
 
-        # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `define' and macro name
+        # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `define' and macro identifier
         if not comments.strip.empty? then
           tkn.text.sub!(comments, " ")
         end
@@ -172,36 +172,26 @@ module Rocc::CodeElements::CharRepresented::Tokens
                      args[-1] = ""
                      args.split(/\s*,\s*/)
                    end
-
       end
 
       tkn
-
     end # pick
 
 
-    def expand(env)
+    def pursue_branch(compilation_context, branch)
 
-      macros = env.preprocessing[:macros]
-      if macros.key? @name then
-        macros[@name] << self
-      else
-        macros[@name] = [self]
-      end
+      d = CeMacroDefinition.new(self)
+      m = CeMacro.new(compilation_context.translation_unit, d, @identifier, @text, @parameters)
+      
+      branch.announce_symbol(m)
 
-      env.preprocessing.freeze
-      env.preprocessing = env.preprocessing.dup
-
-    end # expand
+    end # pursue_branch
 
     def tokens
       line_tokens = origin(LogicLine).tokens
       own_index = line_tokens.index(self)
       line_tokens[own_index+1..-1]
     end
-
-    # fixme: make protected
-    attr_writer :name, :args
 
   end # class TknPpDefine
 

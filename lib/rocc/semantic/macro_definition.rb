@@ -12,19 +12,22 @@
 # approach. See LICENSE.txt from the top-level directory for details.
 
 require 'rocc/code_elements/code_element'
-require 'rocc/semantic/specification'
 
 module Rocc::Semantic
 
-  class MacroDefinition < Specification
+  class CeMacroDefinition < Rocc::CodeElements::CodeElement
 
     ##
-    # +origin+ of a +MacroDefinition+ shall be the +#define+
-    # directive that defines it.
+    # +origin+ of a +MacroDefinition+ shall be the +#define+ token of
+    # the preprocessor directive that defines it.
     def initialize(origin)
       super
     end
 
-  end # class MacroDefinition
+    def name_dbg
+      '#define'
+    end
+
+  end # class CeMacroDefinition
 
 end # module Rocc::Semantic
