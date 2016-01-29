@@ -14,8 +14,9 @@ char c_var_c, *pc_var_b;
 char *pc_var_c, c_var_d;
 
 // invalid variable declarations that should give an error (or warning?), but don't yet get detected by rocc as invalid declarations
-bool lb_var; // FIXME requires #include <stdbool.h>
-void lv_var; // FIXME? should void variable give warning or error?
+bool b_var; // FIXME requires #include <stdbool.h>
+void v_var; // FIXME? should void variable give warning or error?
+void *pv_var;
 
 // main function of the program
 int main(int argc, char **argv)

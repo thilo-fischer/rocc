@@ -9,6 +9,7 @@ V c_var_c
 V pc_var_b
 V pc_var_c
 V c_var_d
-V lb_var
-V lv_var
+V b_var
+V v_var
+V pv_var
 F main(2)
