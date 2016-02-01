@@ -37,17 +37,17 @@ module Rocc::CodeElements::CharRepresented::Tokens
     @PICKING_REGEXP = /^#\s*\w+/
     SUBCLASSES = [ TknPpInclude, TknPpConditional, TknPpDefine, TknPpUndef, TknPpError, TknPpPragma, TknPpLine ] # fixme(?): use `inherited' hook ?
 
-    def self.pick!(env)
+    def self.pick!(tokenization_context)
       if self != TknPpDirective
         # allow subclasses to call superclass' method implementation
         super
       else
-        if env.remainder =~ @PICKING_REGEXP then
+        if tokenization_context.remainder =~ @PICKING_REGEXP then
           tkn = nil
-          if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
+          if SUBCLASSES.find {|c| tkn = c.pick!(tokenization_context)} then
             tkn
           else
-            raise "Unknown preprocessor directive @#{env.expansion_stack.last.to_s}: `#{env.tokenization[:remainder]}'"
+            raise "Unknown preprocessor directive @#{tokenization_context.expansion_stack.last.to_s}: `#{tokenization_context.tokenization[:remainder]}'"
           end
         end
       end
@@ -67,7 +67,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     attr_reader :file
 
-    def self.pick(env, str = nil, tknclass = nil)
+    def self.pick(tokenization_context, str = nil, tknclass = nil)
 
       tkn = super
 
@@ -83,7 +83,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
           tkn.text.sub!(comments, " ")
         end
         while not comments.strip!.empty? do
-          TknComment.pick!(env, comments)
+          TknComment.pick!(tokenization_context, comments)
         end
         
       end
@@ -174,7 +174,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         end
         # FIXME create comment objects
         #while not comments.strip!.empty? do
-        #  TknComment.pick!(env, comments)
+        #  TknComment.pick!(tokenization_context, comments)
         #end
         
         tkn.parameters = if parameters
@@ -278,43 +278,61 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     SUBCLASSES = [ TknPpCondIf, TknPpCondElif, TknPpCondElse, TknPpCondEndif ] # fixme(?): use `inherited' hook ?
 
-    def self.pick!(env)
+    def self.pick!(tokenization_context)
       if self != TknPpDirective
         # allow subclasses to call superclass' method implementation
         super
       else
-        if str = self.pick_string(env) then
+        if str = self.pick_string(tokenization_context) then
           tkn = nil
-          if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
+          if SUBCLASSES.find {|c| tkn = c.pick!(tokenization_context)} then
             tkn
           else
-            raise StandardError, "Error processing preprocessor directive, not accepted by subclasses @#{origin.list}: `#{str}'"
+            raise StandardError, "Error processing preprocessor directive, not accepted by subclasses @#{origin.path_dbg}: `#{str}'"
           end
         end
       end
     end # pick!
     
-    def expand(env)
-      env.preprocessing.freeze
-      env.preprocessing = env.preprocessing.dup
+    def pursue_branch(compilation_context, branch)
+      if conditions > branch.conditions
+        fork = branch.fork(self)
+      end
     end
 
   end # class TknPpConditional
 
   class TknPpCondIf < TknPpConditional
     @PICKING_REGEXP = /^#\s*if(n?def)?\s+/
-    attr_reader :dependants
 
-    def expand(env)
-      @dependants = { TknPpCondIf => self }
-      env.preprocessing[:conditional_stack] << self
+    attr_reader :condition
+    
+    def initialize(origin)
       super
+      @contition = nil
     end
 
-    def summarize(given = [])
-      result = []
-      result << self if not given.include? self
-      result
+    def self.pick!(tokenization_context)
+      tkn = super
+      case tkn.text
+      when /^#\s*ifdef\s+(?<identifier>\w+)\s*$/,
+           /^#\s*if\s+defined\s*[\s\(]\s*(?<identifier>\w+)\s*[\s\)]\s*$/
+        tkn.condition = "defined(#{$~[:identifier]})"
+      when /^#\s*ifndef\s+(?<identifier>\w+)\s*$/,
+           /^#\s*if\s*!\s*defined\s*[\s\(]\s*(?<identifier>\w+)\s*[\s\)]\s*$/
+        tkn.condition = "!defined(#{$~[:identifier]})"
+      when /^#\s*if\b(?<condition>.*)$/
+        condition = $~[:condition]
+        condition.strip!
+        tkn.condition = condition
+      else
+        raise "error while parsing #{origin.path_dbg}"
+      end
+    end # self.pick!
+
+    def condition=(arg)
+      raise if @condition
+      @condition = arg
     end
 
   end # class
