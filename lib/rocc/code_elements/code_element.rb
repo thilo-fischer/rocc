@@ -221,6 +221,17 @@ module Rocc::CodeElements
 #      end
 #    end
 
+    def conditions
+      case adducer
+      when CodeElement
+        adducer.conditions
+      when Array
+        adducer.inject {|combined, adcr| combined + adcr}
+      else
+        raise
+      end
+    end
+
   end # class CodeElement
 
 end # module Rocc::CodeObjects

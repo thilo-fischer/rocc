@@ -91,6 +91,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # alias location path
     def location; path; end
 
+    ##
+    # for Tokens, adducer and origin are (usually) the same
+    alias adducer origin
     
     ##
     # If the to be tokenized string in tokenization_context begins
@@ -145,6 +148,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
       compilation_context.active_branches.each do |b|
         if b.collect_macro_tokens?
           b.greedy_macro.add_token(self)
+        elsif b.has_token_request?
+          b.token_requester.process_token(compilation_context, b, self)
         else
           warn "#{name_dbg}.pursue_branch #{b.id} (#{path_dbg}) -- #{b.scope_stack_trace}" # FIXME loglevel trace ?!
           pursue_branch(compilation_context, b)
@@ -180,6 +185,13 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # XXX seems not in use => deprecated?
     def self.peek(tokenization_context)
       at_front?(tokenization_context.remainder)
+    end
+
+    ##
+    # Conditions that must apply for this token to be part of the code
+    # after preprocessing.
+    def conditions
+      0 # FIXME
     end
     
     protected

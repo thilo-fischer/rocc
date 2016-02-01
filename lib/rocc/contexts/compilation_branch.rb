@@ -303,6 +303,27 @@ module Rocc::Contexts
       end
     end
 
+    def open_token_request(code_object)
+      @token_requester = code_object
+    end
+
+    def close_token_request
+      @token_requester = nil
+    end
+
+    def has_token_request?
+      @token_requester
+    end
+
+    attr_reader :token_requester
+
+    # start/stop_collect_macro_tokens is mostly redundant with
+    # open/close_token_request, but the first could probably be moved
+    # to CompilationContext, while the latter needs to stay as part of
+    # CompilationBranch. TODO Investigate moving
+    # start/stop_collect_macro_tokens to CompilationContext. If
+    # possible, move and rename. If not, merge with
+    # open/close_token_request.
     def start_collect_macro_tokens(macro)
       @greedy_macro = macro
     end
@@ -333,8 +354,11 @@ module Rocc::Contexts
 #      @symbols = master.symbols.branch
 #    end
 
+    ##
+    # Conditions that must apply to make those preprocessor
+    # conditionals' branches active correspond to this branch.
     def conditions
-      
+      0 # FIXME
     end
 
     def name_dbg

@@ -35,6 +35,7 @@ module Rocc::Semantic
       (not @parameters.empty?) and @parameters.last.variadic?
     end
 
+    # +position+ number corresponding to the position of the parameter. First parameter has position 0, second parameter position 1, and so on.
     def announce_parameter(position, type, storage_class)
       if param_list_complete?
         raise unless position < @parameters.count

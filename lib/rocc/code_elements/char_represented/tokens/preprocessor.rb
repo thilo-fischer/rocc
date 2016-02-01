@@ -195,7 +195,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
       
       branch.announce_created_symbol(m)
 
-      # FIXME wouldn't it be sufficient (and more performant) to make start/stop_collect_macro_tokens part of CompilationContext instead of CompilationBranch ?!
+      # XXX? Wouldn't it be sufficient (and more performant) to make
+      # start/stop_collect_macro_tokens part of CompilationContext for
+      # #define directive instead of CompilationBranch?
+      # (open/close_token_request still needs to be part of
+      # CompilationBranch for macro invokations though.)
       branch.start_collect_macro_tokens(m)
     end # pursue_branch
 

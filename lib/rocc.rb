@@ -58,6 +58,30 @@
 # to. Some comments with general scope or affecting multiple code
 # sections are placed in the central todo list below.
 #
+# To mark a region of code to which a todo comment applies to, the
+# comment will be put before that region with the keyword suffixed
+# with a '>'. The same keyword prefixed with a '<' will mark the end
+# of the region.
+#
+# To link several such comments together, a tag can be specified in
+# parenthesis as a suffix to the keyword, e.g. TODO(ticket4711).
+#
+# Code example demonstrating these conventions:
+#  MAX_BAR_COUNTER = 42 # TODO(ut)
+#  def foo(bar)
+#    counter = 0 # TODO(ut) Defensive programming. Ensures +bar+
+#                # contains correct number of elements. This code
+#                # causes unnecessary runtime overhead and shall
+#                # be superseeded by according unit tests ASAP.
+#    bar.each do |bar_element|
+#      # TODO(ut)>
+#      counter += 1
+#      raise "bar contains to many elements" if counter > MAX_BAR_COUNTER
+#      # <TODO(ut)
+#      process(bar_element)
+#    end
+#  end
+#
 # == Central TODO list
 #
 # * TODO replace +env+ with +session+ or +applctx+ (=> ack --ignore-dir=outdated --ruby '\benv\b)

@@ -37,6 +37,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @PICKING_REGEXP = Regexp.union %w(return if else for while do continue break switch case default goto)
 
       def pursue_branch(compilation_context, branch)
+        # handle word if it is identifier of a macro
+        return if super
+
         if branch.has_pending?
           # FIXME exception
           branch.fail{"Syntax error: #{name_dbg} `#{text}' following `#{branch.pending_to_s}'."}
@@ -98,6 +101,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @PICKING_REGEXP = Regexp.union %w(enum struct union)
       
       def pursue_branch(compilation_context, branch)
+        # handle word if it is identifier of a macro
+        return if super
+
         invalid_ptkn = branch.pending_tokens.find do |ptkn|
           case ptkn
           when TknKwTypeQualifier, TknKwStorageClassSpecifier
@@ -132,6 +138,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @PICKING_REGEXP = Regexp.union %w(void char short int long float double signed unsigned bool) # XXX C99 featrue bool required #include <stdbool.h>
 
       def pursue_branch(compilation_context, branch)
+        # handle word if it is identifier of a macro
+        return if super
+
         raise "unexpected pending tokens: `#{branch.pending_to_s}'" if branch.has_pending?
         unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
           arising = Rocc::Semantic::Temporary::ArisingSpecification.new
@@ -156,6 +165,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @PICKING_REGEXP = Regexp.union %w(volatile const restrict)
       
       def pursue_branch(compilation_context, branch)
+        # handle word if it is identifier of a macro
+        return if super
+
         raise if branch.has_pending?
         unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
           arising = Rocc::Semantic::Temporary::ArisingSpecification.new
@@ -178,6 +190,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @PICKING_REGEXP = Regexp.union %w(typedef static extern auto register)
 
       def pursue_branch(compilation_context, branch)
+        # handle word if it is identifier of a macro
+        return if super
+
         raise if branch.has_pending?
         
         # TODO typedef needs special treatment
@@ -268,7 +283,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       #        raise StandardError, "Error processing keyword, not accepted by subclasses @#{origin.list}: `#{str}'"
       #      end
       #    end
-      #  end   
+      #  end
 
     end # TknKeyword
 

@@ -169,25 +169,25 @@ module Rocc::Semantic
                   raise "not yet implemented" # FIXME
                   imposed_type_string
                 when '0P'
-                  if self.respond_to? :parameters
+                  if self.respond_to? :parameters and parameters
                     parameters.count.to_s
                   else
                     ''
                   end
                 when '>P'
-                  if self.respond_to? :parameters and not parameters.empty?
+                  if self.respond_to? :parameters and parameters and not parameters.empty?
                     parameters.count.to_s
                   else
                     ''
                   end
                 when ')P'
-                  if self.respond_to? :parameters
+                  if self.respond_to? :parameters and parameters
                     "(#{parameters.count.to_s})"
                   else
                     ''
                   end
                 when ']P'
-                  if self.respond_to? :parameters
+                  if self.respond_to? :parameters and parameters
                     if parameters.empty?
                       '()'
                     else
@@ -197,7 +197,7 @@ module Rocc::Semantic
                     ''
                   end
                 when '}P'
-                  if self.respond_to? :parameters
+                  if self.respond_to? :parameters and parameters
                     if parameters.empty? and not self.signatures.find {|s| s.is_void?}
                       '()'
                     else
@@ -207,14 +207,14 @@ module Rocc::Semantic
                     ''
                   end
                 when ',P'
-                  if self.respond_to? :parameters
+                  if self.respond_to? :parameters and parameters
                     raise "not yet implemented" # FIXME
                     parameters.map {|p| p.type_string}.join(', ')
                   else
                     ''
                   end
                 when /.*?p/
-                  if self.respond_to? :parameters
+                  if self.respond_to? :parameters and parameters
                     directive.chop
                   else
                     ''

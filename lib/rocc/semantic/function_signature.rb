@@ -22,19 +22,19 @@ module Rocc::Semantic
     attr_reader :adducer, :param_names
 
     ##
-    # origin is the associated function, adducer is the opening
-    # parenthesis token
+    # origin is the associated function, adducer is an array of all
+    # those tokens thate make up the function signature (including the
+    # opening and closing parenthesis)
     def initialize(origin, adducer)
       super(origin)
       @param_names = []
       @adducer = [adducer]
       @void = nil
+      @complete = false
     end
 
-    def add_param(type, name, storage_class_specifier = nil)
-      raise "register is the only storage class specifier allowed for function parameters" if storage_class_specifier and storage_class_specifier != :register
-
-      @void = false
+    def add_param(tokens, type, name, storage_class_specifier = nil)
+      @adducer += tokens
       
       @param_names << name
       
@@ -44,16 +44,18 @@ module Rocc::Semantic
         function.announce_parameter(@param_names.count, type, storage_class_specifier)
       end
       
+      raise "register is the only storage class specifier allowed for function parameters" if storage_class_specifier and storage_class_specifier != :register
     end # sdd_param
 
     def complete?
-      adducer.count == 2
+      @complete
     end
 
     # add closing parenthesis token
     def close(token)
       adducer << token
       function.param_list_finalize # XXX smells: missleading function names when function has multiple signatures
+      @complete = true
     end
 
     def opening
@@ -75,7 +77,7 @@ module Rocc::Semantic
     # not yet been parsed to a point where it is known whether the one
     # or the other applies.
     def is_void?
-      @void
+      (@void == true) if complete?
     end
     
   end # class CeFunction

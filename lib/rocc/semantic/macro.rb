@@ -18,7 +18,7 @@ module Rocc::Semantic
 
   class CeMacro < Rocc::Semantic::CeSymbol
 
-    attr_reader :adducer, :text, :parameters
+    attr_reader :adducer, :tokens, :parameters
     
     ##
     # +origin+ of a +Macro+ is the translation unit it appears in.
@@ -33,8 +33,20 @@ module Rocc::Semantic
       @tokens = []
     end
 
+    def name
+      "macro `#{@identifier}'"
+    end
+    
     def name_dbg
       '#M[#{@identifier}]'
+    end
+
+    # FIXME? define constant instead of function?
+    def self.family_character
+      'M'
+    end
+    def self.family_name
+      'macro'
     end
 
     def is_function_like?

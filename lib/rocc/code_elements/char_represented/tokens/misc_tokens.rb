@@ -17,6 +17,8 @@ require 'rocc/semantic/expression'
 require 'rocc/semantic/function'
 require 'rocc/semantic/function_signature'
 require 'rocc/semantic/initializer'
+require 'rocc/semantic/macro'
+require 'rocc/semantic/macro_invocation'
 
 module Rocc::CodeElements::CharRepresented::Tokens
 
@@ -39,25 +41,35 @@ module Rocc::CodeElements::CharRepresented::Tokens
         #end
       end
     end # pick!
-    
+
+    ##
+    # Return true if word has been handled and child classes invoking
+    # this function don't need to bother about the word anymore, false
+    # otherwise. All steps to handle macros are implemented here,
+    # handling of keywords and identifiers is implemented in the
+    # according subclasses.
     def pursue_branch(compilation_context, branch)
       @symbols = branch.find_symbols(:identifier => @text)
+      macro_without_additional_conditions = 0 # XXX(ut) defensive programming. remove when according (unit) tests are in place
       @symbols.each do |s|
-        case s.family
-        when CeMacro
+        case s
+        when Rocc::Semantic::CeMacro
           if s.conditions > branch.conditions
             subbranch = branch.branch_out(s.conditions - branch.conditions)
-            mexp = CeMacroExpansion.new(self, s)
-            mexp.pursue_branch(compilation_context, subbranch)
+            minvoc = Rocc::Semantic::CeMacroInvocation.new(self, s)
+            minvoc.pursue_branch(compilation_context, subbranch)
           else
-            mexp = CeMacroExpansion.new(self, s)
-            mexp.pursue_branch(compilation_context, branch)
+             # XXX(ut)>
+            macro_without_additional_conditions += 1
+            raise if macro_without_additional_conditions > 1
+            # <XXX(ut)
+            minvoc = Rocc::Semantic::CeMacroInvokation.new(self, s)
+            minvoc.pursue_branch(compilation_context, branch)
           end
         #when CeTypedef
-        else
-          super
         end
       end
+      return macro_without_additional_conditions != 0
     end # pursue_branch
 
     def family_abbrev
@@ -70,6 +82,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
     @PICKING_REGEXP = /^[A-Za-z_]\w*\b/
     
     def pursue_branch(compilation_context, branch)
+      # handle word if it is identifier of a macro
+      return if super
 
       raise if branch.has_pending? # FIXME? handle pending '*' and '&' tokens here ?!?
 
@@ -79,7 +93,10 @@ module Rocc::CodeElements::CharRepresented::Tokens
         branch.current_scope.set_identifier(self)
       when Rocc::Semantic::CeRValue
         branch.current_scope.expression = Rocc::Semantic::AtomicExpression.new(branch.current_scope, self)
-        # FIXME set to ArisingExpression that collects expressions and operators to form a Atomic- or CompoundExpression at finalization
+      # FIXME set to ArisingExpression that collects expressions and operators to form a Atomic- or CompoundExpression at finalization
+      when Rocc::Semantic::Expression
+        raise unless r_val_scope = branch.find_scope(Rocc::Semantic::CeRValue)
+        # FIXME? r_val_scope.expression = 
       else
         raise unless branch.current_scope == branch.closest_symbol_origin_scope # FIXME laborious test if current scope can be symbol origin
         arising = Rocc::Semantic::Temporary::ArisingSpecification.new
@@ -344,9 +361,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
               raise "not yet supported (#{branch.arising.inspect})"
             end
           when Rocc::Semantic::CeRValue
-            expr = CompoundExpression.new(self)
+            expr = Rocc::Semantic::CompoundExpression.new(branch.current_scope, self)
             branch.current_scope.expression = expr
-            branch.enter_scope(expr)            
+            branch.enter_scope(expr)
           when Rocc::Semantic::IfStatement, Rocc::Semantic::WhileStatement, Rocc::Semantic::DoWhileStatement
             raise "TODO"
           when Rocc::Semantic::ForStatement
@@ -399,7 +416,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         
       when '&'
         case branch.current_scope
-        when Rocc::Semantic::CeRValue
+        when Rocc::Semantic::CeRValue, Rocc::Semantic::Expression
             # FIXME handle ampersand (->pointer)
         else
           raise "not yet supported: #{name_dbg} outside of specification"

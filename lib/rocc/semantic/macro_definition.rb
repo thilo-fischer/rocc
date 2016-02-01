@@ -15,6 +15,10 @@ require 'rocc/code_elements/code_element'
 
 module Rocc::Semantic
 
+  ##
+  # Represents the specification of a macro.
+  #
+  # FIXME? derive from CeSpecification?
   class CeMacroDefinition < Rocc::CodeElements::CodeElement
 
     ##

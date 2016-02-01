@@ -48,6 +48,8 @@ module Rocc::Contexts
       active_branches.each do |b|
         if b.collect_macro_tokens?
           b.stop_collect_macro_tokens
+        elsif b.has_token_request?
+          raise "newline within macro invokation (or programming error)" # FIXME is this an error condition? shouldn't newline characters be allowed withn macro *invokations* (in contrast to macro *definitions*) ?!?
         end
       end
     end
