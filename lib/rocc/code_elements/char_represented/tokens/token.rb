@@ -45,6 +45,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
     attr_reader :text, :charpos, :direct_predecessor, :direct_successor, :whitespace_after
 
     ##
+    # Conditions that must apply for this token to be part of the code
+    # after preprocessing.
+    attr_reader :conditions
+
+    ##
     # +origin+ is the logic line this token is located in.
     #
     # +text+ is the string representing this token.
@@ -64,6 +69,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @whitespace_after = whitespace_after
       @direct_predecessor = direct_predecessor
       @direct_predecessor.direct_successor = self if @direct_predecessor
+      @conditions = nil
     end # initialize
 
     def family_abbrev
@@ -145,7 +151,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
     ##
     # Token's implementation of CodeElements.pursue.
     def pursue(compilation_context)
-      compilation_context.active_branches.each do |b|
+      active_branches = compilation_context.active_branches
+      @conditions = active_branches.first.ppcond_stack.inject(Rocc::Semantic::CeEmptyCondition.instance) {|conj, c| conj.conjunction(c)}# FIXME smells + bad performance
+      active_branches.each do |b|
         if b.collect_macro_tokens?
           b.greedy_macro.add_token(self)
         elsif b.has_token_request?
@@ -187,13 +195,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
       at_front?(tokenization_context.remainder)
     end
 
-    ##
-    # Conditions that must apply for this token to be part of the code
-    # after preprocessing.
-    def conditions
-      0 # FIXME
-    end
-    
     protected
 
     #      @ORIGIN_CLASS = CeLogicLine
