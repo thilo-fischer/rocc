@@ -22,68 +22,146 @@ module Rocc::Contexts
 
   class CompilationBranch
 
-    attr_reader :parent, :conditional, :id, :tkn_cursor, :symbols, :pending_tokens, :scope_stack, :children
+    ##
+    # Data members wrt managing a tree of compilation branches.
+    #
+    # +parent+ The branch this branch was forked from.
+    #
+    # +branching_condition+ The (preprocessor) codition(s) that
+    # apply to this branch in addition to the conditions that apply
+    # to its parent branch.
+    #
+    # +forks+ Array of branches forked from this branch.
+    #
+    # +id+ String identifying this branch, listing its ancestry.
+    #
+    # +adducer+ The CodeElement that caused to fork this branch.
+    attr_reader :parent, :branching_condition, :forks, :id, :adducer
 
     ##
+    # Data members wrt interpreting the tokens within a specific
+    # branch.
+    # 
+    # +pending_tokens+ Array of successive tokens which could not yet
+    # be associated with specific semantics and must be taken into
+    # account and will influence the semantics of a token to be parsed
+    # soon.
+    #
+    # +scope_stack+ Stack of the semantic contexts that could be
+    # identified and within which the interpretation of the following
+    # tokens must be done.
+    #
+    # +most_recent_scope+ The scope most recently taken from the
+    # scope_stack (if any, nil otherwise).
+    attr_reader :pending_tokens, :scope_stack, :most_recent_scope, :ppcond_stack
+
+    # See open_token_request and start_collect_macro_tokens
+    attr_reader :token_requester
+    attr_reader :greedy_macro
+      
+    ##
+    # Should not be called directly. Call
+    # CompilationBranch.root_branch or CompilationBranch#fork instead.
+    # FIXME? make protected, private?
+    #
     # New branch that branches out from +parent+ and is active when
-    # the given +conditional+ applies. +parent+ is the branch the new
-    # branch derives from for usual branches, it is the current
-    # CompilationContext for the initial branch. +conditional+ refers
-    # to a +CePpConditional+ object, it is nil for the initial branch.
-    #--
-    # FIXME smells to pass scope stack as parameter -> recurse parents' scope stacks?
-    def initialize(parent, conditions, id, scope_stack = [])
+    # the parent's conditions plus the given +branching_condition+
+    # apply.
+    #
+    # +parent+ is the branch the new branch derives from for regular
+    # branches, it is the current CompilationContext for the root
+    # branch.
+    #
+    # +branching_condition+ refers to a +CeCondition+ object for
+    # regular branches, it is nil for the initial branch.
+    #
+    # +adducer+ The CodeElement that caused to fork this branch.
+    def initialize(parent, branching_condition, adducer)
       @parent = parent
-      @conditions = Rocc::Semantic::Conditions.new(conditions)
-      @id = id
+      @branching_condition = branching_condition
+      @adducer = adducer
 
-      case @parent
-      when CompilationContext
-        @tkn_cursor = nil
-      when CompilationBranch
-        @tkn_cursor = @parent.tkn_cursor
+      if is_root?
+        @id = '*'
+        @pending_tokens = []
+        @scope_stack = []
+        @most_recent_scope = nil
+        @ppcond_stack = []
+        @token_requester = nil
+        @greedy_macro = nil
       else
-        raise "programming error"
+        @id = nil # will be set after registration at parent
+        @pending_tokens = parent.pending_tokens.dup
+        @scope_stack = parent.scope_stack.dup
+        @most_recent_scope = parent.most_recent_scope
+        @ppcond_stack = parent.ppcond_stack.dup
+        @token_requester = parent.token_requester
+        @greedy_macro = parent.greedy_macro
       end
-      
+
       @active = true
-      
       @symbol_idx = Rocc::Semantic::SymbolIndex.new
+      @forks = []
+      @all_conditions = nil
+    end
 
-      @pending_tokens = []
+    ##
+    # Is this the main branch directly initiated from the
+    # CompilationContext?
+    def is_root?
+      @parent.is_a?(CompilationContext)
+    end
 
-      @scope_stack = scope_stack
-
-      @ppcond_stack = []
-
-      @children = []
-      @next_child_id = 0
+    def self.root_branch(compilation_context)
+      # XXX? use compilation_context as adducer instead of as parent?
+      self.new(compilation_context, CeEmptyCondition.instance, nil)
     end
 
     ##
     # Derive a new branch from this branch that processes the
-    # compilation done when +condition+ applies.
-    def fork(condition)
-      b = new(self, @conditions.conjunction(condition), @id + ".#{@next_child_id}", @scope_stack.clone) # FIXME need deep copy of scope stack as ArisingSpecification elements (and some other elements, like CeFunction elements that don't yet have a announcement or block) in stack may alter
-      @children << b
-      @next_child_id += 1
+    # compilation done when +branching_condition+ applies.
+    def fork(branching_condition, adducer)
+      f = new(self, branching_condition, adducer)
+      f.id = register_fork(f)
     end
 
-    def has_children?
-      not children.empty?
+    def has_forks?
+      not forks.empty?
     end
 
+    private
+    def register_fork(fork)
+      fork_id = @id + '-' + @forks.count.to_s
+      @forks << fork
+      fork_id
+    end
+
+    def id=(arg)
+      raise if @id
+      @id = arg
+    end
+
+    public
     ##
-    # Is this the main branch directly initiated from the CompilationContext?
-    def root?
-      @parent.is_a? CompilationContext
+    # Conditions that must apply to make those preprocessor
+    # conditionals' branches active that correspond to this branch.
+    def conditions
+      if is_root?
+        @branching_condition
+      else
+        @all_conditions ||= @parent.conditions.conjunction(@branching_condition)
+      end
     end
-
+    
     ##
-    # Add one more token to the list of successively parsed tokens
+    # Add one more tokens to the list of successively parsed tokens
     # for which no semantics could be assigned yet.
     def push_pending(token)
-      @pending_tokens << token
+      if token.is_a? Array
+        @pending_tokens += token
+      else
+        @pending_tokens << token
+      end
     end
 
     ##
@@ -146,8 +224,6 @@ module Rocc::Contexts
       @most_recent_scope = @scope_stack.pop
     end
 
-    attr_reader :most_recent_scope
-
     def find_scope(symbol_family)
       idx = nil
       case symbol_family
@@ -192,7 +268,8 @@ module Rocc::Contexts
       result
     end
 
-    # FIXME
+    # FIXME_R clarify coherence of announce_created_symbol and announce_symbol
+    # FIXME_R? merge announce_created_symbol and announce_symbol?
     def announce_created_symbol(symbol)
       @symbol_idx.announce_symbol(symbol)
     end
@@ -253,16 +330,42 @@ module Rocc::Contexts
       result
     end
 
+    #def collect_forks
+    #  @forks.each {|f| f.try_join}
+    #end
+
+    def try_join
+      return nil if is_root?
+      if join_possible? 
+        join
+      end
+    end
+
+    def join_possible?
+      @ppcond_stack == parent.ppcond_stack and
+        @pending_tokens == parent.pending_tokens and
+        @scope_stack == parent.scope_stack and
+        @most_recent_scope == parent.most_recent_scope and
+        @token_requester == parent.token_requester and
+        @greedy_macro == parent.greedy_macro
+    end
+
+    def join
+      @parent.announce_symbols(@symbol_idx)
+      deactivate
+      @parent
+    end
+    private :join
+    
     def terminate
       if has_pending?
         fail{"Branch terminated while still having pending tokens."}
         $log.debug{"Pending tokens: #{pending_to_s}"}
         raise
       end
-      @children.each {|c| c.terminate }
-      @parent.announce_symbols(@symbol_idx)
-      deactivate
-      @parent
+      @forks.each {|c| c.terminate }
+      raise unless join_possible?
+      join
     end
 
     ##
@@ -282,6 +385,7 @@ module Rocc::Contexts
           end
       end
       $log.info "Conditions of failed branch: #{@conditions.dbg_name}"
+      raise
     end # def fail
 
     def active?
@@ -306,6 +410,11 @@ module Rocc::Contexts
       end
     end
 
+    ##
+    # Redirect all tokens to code_object instead of invoking
+    # pursue_branch on the token until invokation of
+    # close_token_request. Logic to achive redirection is implemented
+    # in CeToken.pursue.
     def open_token_request(code_object)
       @token_requester = code_object
     end
@@ -318,8 +427,12 @@ module Rocc::Contexts
       @token_requester
     end
 
-    attr_reader :token_requester
-
+    ##
+    # Redirect all tokens to macro instead of invoking pursue_branch
+    # on the token until invokation of
+    # stop_collect_macro_tokens. Logic to achive redirection is
+    # implemented in CeToken.pursue.
+    #
     # start/stop_collect_macro_tokens is mostly redundant with
     # open/close_token_request, but the first could probably be moved
     # to CompilationContext, while the latter needs to stay as part of
@@ -339,34 +452,40 @@ module Rocc::Contexts
       @greedy_macro
     end
 
-    attr_reader :greedy_macro
-      
-#    def progress_token(tkn = nil, length)
-#      @recent_token = tkn if tkn
-#      @line_offset += length
-#      @line_offset += @remainder.slice!(/^\s*/).length
-#      @recent_token
-#    end
-#
-#    private
-#
-#    def setup(master)
-#      @tkn_cursor = master.tkn_cursor
-#      ## XXX Which gives better performance? Copy the arrays and add to those copies or adding to empty arrays and collecting the elements of all arrays when looking for an entry?
-#      #@macros = master.macros.dup
-#      @symbols = master.symbols.branch
-#    end
 
-    ##
-    # Conditions that must apply to make those preprocessor
-    # conditionals' branches active that correspond to this branch.
-    def condition
-      if is_root?
-        @condition
-      else
-        parent.condition.conjunction(@condition)
+
+    def announce_pp_branch(ppcond_directive)
+      raise "programming error" unless ppcond_directive.associated_cond_dirs.include?(ppcond_directive) # XXX defensive programming, substitute with according unit test
+
+      case ppcond_directive
+      when TknPpCondEndif, TknPpCondElif, TknPpCondElse
+
+        if parent.ppcond_stack == @ppcond_stack
+          deactivate
+          parent.activate
+          parent.announce_pp_branch(ppcond_directive)
+        end
+      
+
+        prev = @ppcond_stack.pop
+        raise "programming error" unless prev.associated_cond_dirs == ppcond_directive.associated_cond_dirs # XXX defensive programming, substitute with according unit test
+        
       end
-    end # condition
+      
+      case ppcond_directive
+      when TknPpCondIf, TknPpCondElif, TknPpCondElse
+        @ppcond_stack << ppcond_directive
+        if conditions.imply?(ppcond_directive.collected_conditions)
+          # no branching necessary
+        else
+          deactivate
+          f = fork(conditions.complement(ppcond_directive.collected_conditions), ppcond_directive)
+          f.activate
+        end
+      end
+      
+      
+    end # def announce_pp_branch
 
     def change_pp_branch(ppcond_directive)
 

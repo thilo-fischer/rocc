@@ -278,6 +278,21 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     SUBCLASSES = [ TknPpCondIf, TknPpCondElif, TknPpCondElse, TknPpCondEndif ] # fixme(?): use `inherited' hook ?
 
+    ##
+    # +associated_cond_dirs+ array shared among all conditional
+    # preprocessor directives that are associated with each other,
+    # i.e. represent the same level of preprocessor branching. E.g. an
+    # +#if+ directive along with two +#elif+ directives, a +#else+
+    # directive and a +#endif+ directive which all belong
+    # together. Stores references to all those TknPpConditional
+    # objects that share the array.
+    attr_reader :associated_cond_dirs
+
+    def initialize(origin)
+      super
+      @associated_cond_dirs = nil
+    end
+
     def self.pick!(tokenization_context)
       if self != TknPpDirective
         # allow subclasses to call superclass' method implementation
@@ -295,19 +310,56 @@ module Rocc::CodeElements::CharRepresented::Tokens
     end # pick!
     
     def pursue_branch(compilation_context, branch)
-      branch.change_pp_branch(self)
+      branch.announce_pp_branch(self)
+    end
+
+    ##
+    # Add self to an associated_cond_dirs array and set up a reference
+    # to that array.
+    def associate(ppcond_directive)
+      @associated_cond_dirs = ppcond_directive.associated_cond_dirs
+      @associated_cond_dirs << self
     end
 
   end # class TknPpConditional
 
-  class TknPpCondIf < TknPpConditional
-    @PICKING_REGEXP = /^#\s*if(n?def)?\b/
+  # XXX_R? Make an inner module of class TknPpConditional?
+  module PpConditionalMixin
+    
+    def collected_conditions
+      negated_associated_conditions.conjunction(condition)
+    end
 
+    def negated_associated_conditions
+      @associated_cond_dirs.inject(CeEmptyCondition.instance) do |conjunct, c|
+        conjunct.conjunction(c.negate)
+      end
+    end
+    private :negated_associated_conditions
+
+  end # module PpCondIfMixin
+
+  # XXX_R? Make an inner module of class TknPpConditional?
+  module PpConditionalOwnConditionMixin
+    
     attr_reader :condition_text
     
+    def condition
+      @condition ||= CeAtomicCondition(@condition_text, self)
+    end
+    
+  end # module PpCondIfMixin
+
+  class TknPpCondIf < TknPpConditional
+    include PpConditionalOwnConditionMixin
+
+    @PICKING_REGEXP = /^#\s*if(n?def)?\b/
+
     def initialize(origin)
       super
       @condition_text = nil
+      # start a associated_cond_dirs array
+      @associated_cond_dirs = []
     end
 
     def pursue_branch(compilation_context, branch)
@@ -330,11 +382,18 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
   end # class TknPpCondIf
 
-  class TknPpCondElif < TknPpConditional
+  class TknNonautonomousPpConditional < TknPpConditional
+    def pursue_branch(compilation_context, branch)
+      associate(branch.ppcond_stack.last)
+      super
+    end
+  end # class TknNonautonomousPpConditional
+
+  class TknPpCondElif < TknNonautonomousPpConditional
+    include PpConditionalOwnConditionMixin
+
     @PICKING_REGEXP = /^#\s*elif\b/
 
-    attr_reader :condition_text
-    
     def initialize(origin)
       super
       @condition_text = nil
@@ -359,7 +418,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
   end # class TknPpCondElif
 
-  class TknPpCondElse < TknPpConditional
+  class TknPpCondElse < TknNonautonomousPpConditional
+    include PpConditionalMixin
+
     @PICKING_REGEXP = /^#\s*else\b/
 
     # XXX substitute with unit test
@@ -368,14 +429,19 @@ module Rocc::CodeElements::CharRepresented::Tokens
       super
     end
     
+    def condition
+      CeEmptyCondition.instance
+    end
+    private :condition
+    
   end # class TknPpCondElse
 
-  class TknPpCondEndif < TknPpConditional
+  class TknPpCondEndif < TknNonautonomousPpConditional
     @PICKING_REGEXP = /^#\s*endif\b/
 
     # XXX substitute with unit test
     def pursue_branch(compilation_context, branch)
-      raise "Programming error :(" unless text =~ /^#\s*else\s*$/
+      raise "Programming error :(" unless text =~ /^#\s*endif\s*$/
       super
     end
     

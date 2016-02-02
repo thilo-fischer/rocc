@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'singleton' # for CeEmptyCondition
+
 require 'rocc/code_elements/code_element'
 require 'rocc/code_elements/char_represented/tokens/preprocessor.rb'
 
@@ -36,9 +38,9 @@ module Rocc::Semantic
     def conjunction(other)
       if other.is_a?(CeEmptyCondition) or
         self == other or
-        self.implies?(other)
+        self.imply?(other)
         self
-      elsif other.implies?(self)
+      elsif other.imply?(self)
         other
       else
         # XXX? CeConjunctiveCondition.new(self, complement(other))
@@ -53,6 +55,8 @@ module Rocc::Semantic
   # empty conditions.
   # XXX create only one instance of CeEmptyCondition.
   class CeEmptyCondition < CeCondition
+
+    include Singleton
 
     def initialize
       super(nil, nil)
@@ -71,13 +75,13 @@ module Rocc::Semantic
     ##
     # return +true+ if +other+ will always be true when +self+ is true,
     # (self -> other), false otherwise.
-    def implies?(other)
+    def imply?(other)
       equivalent?(other)
     end
 
     ##
     # Returns all conditions from +other+ not implied by +self+.
-    # Result will be empty if +self.implies?(other)+.
+    # Result will be empty if +self.imply?(other)+.
     def complement(other)
       other
     end
@@ -126,7 +130,7 @@ module Rocc::Semantic
     ##
     # return +true+ if +other+ will always be true when +self+ is true,
     # (self -> other), false otherwise.
-    def implies?(other)
+    def imply?(other)
       case other
       when CeEmptyCondition
         true
@@ -135,7 +139,7 @@ module Rocc::Semantic
         equivalent?(other)
       when CeConjunctiveCondition
         not other.conditions.find do |oc|
-          not implies?(oc)
+          not imply?(oc)
         end
       else
         raise
@@ -144,20 +148,20 @@ module Rocc::Semantic
 
     ##
     # Returns all conditions from +other+ not implied by +self+.
-    # Result will be empty if +self.implies?(other)+.
+    # Result will be empty if +self.imply?(other)+.
     def complement(other)
       case other
       when CeEmptyCondition
         other
       when CeAtomicCondition
-        if implies?(other)
-          CeEmptyCondition.new
+        if imply?(other)
+          CeEmptyCondition.instance
         else
           other
         end
       when CeConjunctiveCondition
         CeConjunctiveCondition.new(other.conditions.collect do |oc|
-          not implies?(oc)
+          not imply?(oc)
         end)
       else
         raise
@@ -202,13 +206,13 @@ module Rocc::Semantic
     ##
     # return +true+ if +other+ will always be true when +self+ is true,
     # (self -> other), false otherwise.
-    def implies?(other)
+    def imply?(other)
       case other
       when CeEmptyCondition
         equivalent?(other)
       when CeAtomicCondition
         @conditions.find do |sc|
-          sc.implies?(other)
+          sc.imply?(other)
         end
       else
         if @conditions.empty?
@@ -221,28 +225,28 @@ module Rocc::Semantic
           true
         else
           not other.conditions.find do |oc|
-            not implies?(other)
+            not imply?(other)
           end
         end
       end # case other
-    end # def implies?
+    end # def imply?
 
     ##
     # Returns all conditions from +other+ not implied by +self+.
-    # Result will be empty if +self.implies?(other)+.
+    # Result will be empty if +self.imply?(other)+.
     def complement(other)
       case other
       when CeEmptyCondition
         other
       when CeAtomicCondition
-        if implies?(other)
-          CeEmptyCondition.new
+        if imply?(other)
+          CeEmptyCondition.instance
         else
           other
         end
       else
         if self == other
-          CeEmptyCondition.new
+          CeEmptyCondition.instance
         else
           result = []
           other.conditions.each do |oc|
@@ -250,7 +254,7 @@ module Rocc::Semantic
             when CeEmptyCondition
               raise "CeEmptyCondition should not be part of conjunctions."
             when CeAtomicCondition
-              result << oc unless implies?(oc)
+              result << oc unless imply?(oc)
             else
               result += complement(oc)
             end

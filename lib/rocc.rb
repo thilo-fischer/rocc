@@ -30,7 +30,7 @@
 # that great because it does not handle special corner cases, has
 # suboptimal performance, is not flexible, extendable, easy to read
 # and understand or unclean in another way, this code section should
-# be marked accordingly. To mark these code sections, a commet is
+# be marked accordingly. To mark these code sections, a comment is
 # added including an according keyword that marks it as a TODO
 # comment. Keywords are used according to the conventions of the
 # Eclipse IDE:
@@ -46,6 +46,17 @@
 # TODO is used for issues that should be fixed ASAP.
 #
 # XXX marks nice to have issues that should be fixed some day.
+#
+# Todo items shall also be prioritized according to the
+#  Make It Work -- Make It Right -- Make It Fast
+# principle. (I consider marking a todo item with huge performance
+# impact +FIXME+ not in contrast to this principle: A *huge*
+# performace impact may affect the program's usability in a way that
+# comes close to _not working_.)
+#
+# If one of the keywords is followed by a _W, _R or _F, the todo item
+# should be addressed to either make something *W*ork, *R*ight or
+# *F*ast.
 #
 # If one of the keywords is followed by a question mark (e.g. +XXX?+),
 # the comment does not describe an action that should be taken, but
@@ -69,7 +80,7 @@
 # Code example demonstrating these conventions:
 #  MAX_BAR_COUNTER = 42 # TODO(ut)
 #  def foo(bar)
-#    counter = 0 # TODO(ut) Defensive programming. Ensures +bar+
+#    counter = 0 # TODO_R(ut) Defensive programming. Ensures +bar+
 #                # contains correct number of elements. This code
 #                # causes unnecessary runtime overhead and shall
 #                # be superseeded by according unit tests ASAP.
