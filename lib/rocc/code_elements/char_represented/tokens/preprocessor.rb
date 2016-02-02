@@ -16,6 +16,11 @@ require 'rocc/code_elements/char_represented/tokens/token.rb'
 require 'rocc/semantic/macro'
 require 'rocc/semantic/macro_definition'
 
+# for include directive
+require 'rocc/contexts/lineread_context'
+require 'rocc/contexts/comment_context'
+require 'rocc/contexts/compilation_context'
+
 module Rocc::CodeElements::CharRepresented::Tokens
 
   # forward declarations
@@ -68,7 +73,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     attr_reader :file
 
-    def self.pick(tokenization_context, str = nil, tknclass = nil)
+    def self.pick!(tokenization_context)
 
       tkn = super
 
@@ -79,6 +84,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
         tkn.file = $~[:file]
         comments = $~[:comments]
 
+        warn "XXXX #{tkn.name_dbg} file: `#{tkn.file}' from `#{tkn.text}'"
+        
         # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `include' and file name
         if not comments.strip.empty? then
           tkn.text.sub!(comments, " ")
@@ -93,32 +100,35 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     end # pick
 
+    # FIXME_R make private?
+    def file=(arg)
+      raise if @file
+      @file = arg
+    end
+
     def path
       @file[1..-2]
     end
 
     def quote
-      if @file.first == '"'
+      if @file.start_with?('"') and @file.end_with?('"')
         :doublequote
-      else
+      elsif @file.start_with?('<') and @file.end_with?('>')
         :anglebracket
+      else
+        raise # FIXME
       end
     end
 
     def pursue_branch(compilation_context, branch)
-
-      path_abs = find_include_file(path, branch.current_dir)
+      current_dir = logic_line.first_physic_line.file.parent_dir
+      path_abs = find_include_file(path, current_dir)
             
-      file = compilation_context.fs_elem_idx.announce_element(Rocc::CodeElements::FileRepresented::CeFile, path_abs, self)
+      file = compilation_context.fs_element_index.announce_element(Rocc::CodeElements::FileRepresented::CeFile, path_abs, self)
       compilation_context.translation_unit.add_include_file(file)
 
-      lineread_context = LinereadContext.new(CommentContext.new(CompilationContext.new(compilation_context.translation_unit, compilation_context.fs_elem_idx, branch))) # FIXME
-      current_dir = branch.current_dir
-      branch.current_dir = file.path_abs
+      lineread_context = Rocc::Contexts::LinereadContext.new(Rocc::Contexts::CommentContext.new(Rocc::Contexts::CompilationContext.new(compilation_context.translation_unit, compilation_context.fs_element_index, branch))) # FIXME
       file.pursue(lineread_context)
-      branch.current_dir = current_dir
-      
-      raise 'not yet implemented'
     end
 
     # TODO move to another, more appropriate class
@@ -128,10 +138,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
         # include directive gives absolute pathname
         path_abs = path
       else
-        if quote == :doublequote and File.exist?(File.absolute_path(path, current_dir))
-          path_abs = File.absolute_path(path, current_dir)
+        warn "try to find `#{path}' for #{name_dbg}: will test #{File.absolute_path(path, current_dir.path_full)} if #{quote}==doublequote, include dirs are: `#{Rocc::Session::Session.current_session.include_dirs}'"
+        if quote == :doublequote and File.exist?(File.absolute_path(path, current_dir.path_full))
+          path_abs = File.absolute_path(path, current_dir.path_full)
         else
-          session = Session.current_session
+          session = Rocc::Session::Session.current_session
           dir = session.include_dirs.find {|d| File.exist?(File.absolute_path(path, d))}
           raise "Cannot find file included from #{self}: #{path}" unless dir
           path_abs = File.absolute_path(path, dir)

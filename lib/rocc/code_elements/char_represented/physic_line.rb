@@ -39,6 +39,8 @@ module Rocc::CodeElements::CharRepresented
       #@ppdir_line_list = ppdir_line_list
     end
 
+    alias file origin
+
     # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
     def name_dbg
       "PhLn[#{line_number}]"

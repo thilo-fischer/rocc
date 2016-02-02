@@ -58,7 +58,7 @@ module Rocc::CodeElements::FileRepresented
         
         # find the base dir this element falls into
         basedir = @base_directories.keys.find do |b|
-          File.fnmatch(b.path_abs + "**", path_abs, File::FNM_PATHNAME)
+          File.fnmatch(b + "**", path_abs, File::FNM_PATHNAME)
         end
 
         # if not found, announce parent dir as base dir

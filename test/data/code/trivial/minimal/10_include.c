@@ -2,7 +2,7 @@
  * Same as 08_macro.c, but split into source and header file.
  */
 
-#include "09_include.h"
+#include "10_include.h"
 
 // various definitions and references of global variables
 int i_var = FORTYTWO;

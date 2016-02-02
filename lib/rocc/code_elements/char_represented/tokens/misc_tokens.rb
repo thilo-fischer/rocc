@@ -51,25 +51,25 @@ module Rocc::CodeElements::CharRepresented::Tokens
     def pursue_branch(compilation_context, branch)
       # FIXME_R why is symbols data member instead of function local variable?!
       @symbols = branch.find_symbols(:identifier => @text)
-      warn "XXXX found #{@symbols.count} symbols for identifier `#{@text}'"
+      #warn "XXXX found #{@symbols.count} symbols for identifier `#{@text}'"
       macro_without_additional_conditions = 0 # XXX(ut) defensive programming. remove when according (unit) tests are in place
       @symbols.each do |s|
         case s
         when Rocc::Semantic::CeMacro
-          warn "XXXX branch #{branch.conditions}"
-          warn "XXXX s      #{s.conditions}"
+          #warn "XXXX branch #{branch.conditions}"
+          #warn "XXXX s      #{s.conditions}"
           if branch.conditions.imply?(s.conditions)
-            warn "XXXX A"
-             # XXX(ut)>
+            #warn "XXXX A"
+            # XXX(ut)>
             macro_without_additional_conditions += 1
             raise if macro_without_additional_conditions > 1
             # <XXX(ut)
             macro_branch = branch
           else
-            warn "XXXX B"
+            #warn "XXXX B"
             macro_branch = branch.fork(branch.conditions.complement(s.conditions), s)
           end
-            warn "XXXX #{macro_branch}"          
+            #warn "XXXX #{macro_branch}"          
           minvoc = Rocc::Semantic::CeMacroInvokation.new(self, s)
           minvoc.pursue_branch(compilation_context, macro_branch)
         #when CeTypedef

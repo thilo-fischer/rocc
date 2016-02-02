@@ -90,12 +90,15 @@ module Rocc::CodeElements::CharRepresented::Tokens
     def path_separator
       ":#{@charpos} > "
     end
+
+
+    def logic_line; origin; end
     
     # See rdoc-ref:Rocc::CodeElements::CodeElement#location
     #--
     # XXX aliases not listed in rdoc ?!
     # alias location path
-    def location; path; end
+    def location; logic_line.path; end
 
     ##
     # for Tokens, adducer and origin are (usually) the same

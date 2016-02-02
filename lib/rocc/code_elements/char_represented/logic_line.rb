@@ -37,6 +37,14 @@ module Rocc::CodeElements::CharRepresented
       @indentation = nil
     end # initialize
 
+    def first_physic_line
+      if origin.is_a? Range
+        origin.begin
+      else
+        origin
+      end
+    end
+
     # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
     def name_dbg
       "LgLn[#{name}]"
