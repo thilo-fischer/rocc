@@ -295,112 +295,90 @@ module Rocc::CodeElements::CharRepresented::Tokens
     end # pick!
     
     def pursue_branch(compilation_context, branch)
-      if conditions > branch.conditions
-        fork = branch.fork(self)
-      end
+      branch.change_pp_branch(self)
     end
 
   end # class TknPpConditional
 
   class TknPpCondIf < TknPpConditional
-    @PICKING_REGEXP = /^#\s*if(n?def)?\s+/
+    @PICKING_REGEXP = /^#\s*if(n?def)?\b/
 
-    attr_reader :condition
+    attr_reader :condition_text
     
     def initialize(origin)
       super
-      @contition = nil
+      @condition_text = nil
     end
 
-    def self.pick!(tokenization_context)
-      tkn = super
-      case tkn.text
-      when /^#\s*ifdef\s+(?<identifier>\w+)\s*$/,
-           /^#\s*if\s+defined\s*[\s\(]\s*(?<identifier>\w+)\s*[\s\)]\s*$/
-        tkn.condition = "defined(#{$~[:identifier]})"
-      when /^#\s*ifndef\s+(?<identifier>\w+)\s*$/,
-           /^#\s*if\s*!\s*defined\s*[\s\(]\s*(?<identifier>\w+)\s*[\s\)]\s*$/
-        tkn.condition = "!defined(#{$~[:identifier]})"
+    def pursue_branch(compilation_context, branch)
+      case text
+      when /^#\s*if(?<negation>n)?def\s+(?<identifier>\w+)\s*$/,
+           /^#\s*if\s*(\s|(?<negation>!))\s*defined\s*[\s\(]\s*(?<identifier>\w+)\s*[\s\)]\s*$/
+        if $~[:negation]
+          @condition_text = "!defined(#{$~[:identifier]})"
+        else
+          @condition_text = "defined(#{$~[:identifier]})"
+        end
       when /^#\s*if\b(?<condition>.*)$/
-        condition = $~[:condition]
-        condition.strip!
-        tkn.condition = condition
+        @condition_text = $~[:condition]
+        @condition_text.strip!
       else
         raise "error while parsing #{origin.path_dbg}"
       end
-    end # self.pick!
-
-    def condition=(arg)
-      raise if @condition
-      @condition = arg
+      super
     end
 
-  end # class
+  end # class TknPpCondIf
 
   class TknPpCondElif < TknPpConditional
-    @PICKING_REGEXP = /^#\s*elif\s+/
+    @PICKING_REGEXP = /^#\s*elif\b/
 
-    def expand(env)
-
-      @dependants = env.preprocessing[:conditional_stack].last.dependants
-      if @dependants.key? TknPpCondElif then
-        @dependants[TknPpCondElif] << self
-      else
-        @dependants[TknPpCondElif] = [self]
-      end
-
-      env.preprocessing[:conditional_stack].pop
-      env.preprocessing[:conditional_stack] << self
+    attr_reader :condition_text
+    
+    def initialize(origin)
       super
-
-    end # expand
-
-    def summarize(given = [])
-      result = @dependants[TknPpCondIf].summarize(given)
-      @dependants[TknPpCondElif].each do |elif|
-        result << elif if not given.include? elif
-        break if elif.equal? self
-      end
+      @condition_text = nil
     end
 
-  end # class
+    def pursue_branch(compilation_context, branch)
+      case text
+      when /^#\s*elif\s*(\s|(?<negation>!))\s*defined\s*[\s\(]\s*(?<identifier>\w+)\s*[\s\)]\s*$/
+        if $~[:negation]
+          @condition_text = "!defined(#{$~[:identifier]})"
+        else
+          @condition_text = "defined(#{$~[:identifier]})"
+        end         
+      when /^#\s*elif\b(?<condition>.*)$/
+        @condition_text = $~[:condition]
+        @condition_text.strip!
+      else
+        raise "error while parsing #{origin.path_dbg}"
+      end
+      super
+    end
+
+  end # class TknPpCondElif
 
   class TknPpCondElse < TknPpConditional
-    @PICKING_REGEXP = /^#\s*else\s+/
+    @PICKING_REGEXP = /^#\s*else\b/
 
-    def expand(env)
-      raise "invalid syntax: multiple #else" if @dependants.key? TknPpCondElse # fixme: provide appropriate exception
-      
-      @dependants = env.preprocessing[:conditional_stack].last.dependants
-      @dependants[TknPpCondElse] = self
-
-      env.preprocessing[:conditional_stack].pop
-      env.preprocessing[:conditional_stack] << self
+    # XXX substitute with unit test
+    def pursue_branch(compilation_context, branch)
+      raise "Programming error :(" unless text =~ /^#\s*else\s*$/
       super
-
-    end # expand
-
-    def summarize(given = [])
-      result = @dependants[TknPpCondElif].last.summarize
-      result << self if not given.include? self
     end
-
-  end # class
+    
+  end # class TknPpCondElse
 
   class TknPpCondEndif < TknPpConditional
-    @PICKING_REGEXP = /^#\s*endif\s+/
+    @PICKING_REGEXP = /^#\s*endif\b/
 
-    def expand(env)
-
-      tkn_if = env.preprocessing[:conditional_stack].pop
-
-      @dependants = tkn_if.dependants
-      @dependants[TknPpCondEndif] = self
-
+    # XXX substitute with unit test
+    def pursue_branch(compilation_context, branch)
+      raise "Programming error :(" unless text =~ /^#\s*else\s*$/
       super
-
-    end # expand
-
-  end # class
+    end
+    
+  end # class TknPpCondEndif
 
 end # module Rocc::CodeElements::CharRepresented::Tokens

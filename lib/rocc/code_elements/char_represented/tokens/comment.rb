@@ -13,6 +13,8 @@
 
 require 'rocc/code_elements/char_represented/tokens/token'
 
+require 'rocc/helpers'
+
 module Rocc::CodeElements::CharRepresented::Tokens
 
   class TknComment < CeToken; end
@@ -85,8 +87,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
     SUBCLASSES = [ TknLineComment, TknBlockComment, TknMultiLineBlockComment ]
     #@PICKING_REGEXP = /^(\/\/.*$|\/\*.*?(\*\/|$))/
 
-    ABBREV_CHARCNT = 8
-
     def self.pick!(tokenization_context)
       if self != THIS_CLASS
         # allow subclasses to call superclass' method implementation
@@ -107,11 +107,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
     end
 
     def text_abbrev
-      if text.length < ABBREV_CHARCNT + 2
-        @text
-      else
-        @text[0..ABBREV_CHARCNT] + '...'
-      end
+      Rocc::Helpers::String::abbrev(@text)
     end
     
   end # class TknComment

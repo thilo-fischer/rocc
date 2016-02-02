@@ -54,6 +54,8 @@ module Rocc::Contexts
 
       @scope_stack = scope_stack
 
+      @ppcond_stack = []
+
       @children = []
       @next_child_id = 0
     end
@@ -62,7 +64,7 @@ module Rocc::Contexts
     # Derive a new branch from this branch that processes the
     # compilation done when +condition+ applies.
     def fork(condition)
-      b = new(self, @conditions + condition, @id + ".#{@next_child_id}", @scope_stack.clone) # FIXME need deep copy of scope stack as ArisingSpecification elements (and some other elements, like CeFunction elements that don't yet have a announcement or block) in stack may alter
+      b = new(self, @conditions.conjunction(condition), @id + ".#{@next_child_id}", @scope_stack.clone) # FIXME need deep copy of scope stack as ArisingSpecification elements (and some other elements, like CeFunction elements that don't yet have a announcement or block) in stack may alter
       @children << b
       @next_child_id += 1
     end
@@ -255,11 +257,12 @@ module Rocc::Contexts
       if has_pending?
         fail{"Branch terminated while still having pending tokens."}
         $log.debug{"Pending tokens: #{pending_to_s}"}
-        return
+        raise
       end
       @children.each {|c| c.terminate }
       @parent.announce_symbols(@symbol_idx)
       deactivate
+      @parent
     end
 
     ##
@@ -356,11 +359,75 @@ module Rocc::Contexts
 
     ##
     # Conditions that must apply to make those preprocessor
-    # conditionals' branches active correspond to this branch.
-    def conditions
-      0 # FIXME
-    end
+    # conditionals' branches active that correspond to this branch.
+    def condition
+      if is_root?
+        @condition
+      else
+        parent.condition.conjunction(@condition)
+      end
+    end # condition
 
+    def change_pp_branch(ppcond_directive)
+
+      # check conditions
+      case ppcond_directive
+      when DirPpCondIf
+        dir_condition = CeAtomicCondition.new(ppcond_directive.condition_text)
+        fork = branch.fork(self, dir_condition)
+        deactivate
+      when DirPpCondElif
+        dir_condition = negated_conditions.conjunction(CeAtomicCondition.new(ppcond_directive.condition_text))
+        terminate
+        parent.activate
+        parent.enter_pp_branch(ppcond_directive, dir_condition)
+      when DirPpCondElse
+        dir_condition = negated_conditions.conjunction(CeAtomicCondition.new(ppcond_directive.condition_text))
+        terminate
+        parent.activate
+        parent.enter_pp_branch(ppcond_directive, dir_condition)
+      when DirPpCondEndif
+        terminate
+        parent.activate
+      else
+        raise
+      end
+        
+
+        #if condition.implies(dir_condition)
+        #  @ppcond_stack << ppcond_directive
+        #else
+        #  fork = branch.fork(self, ppcond_directive)
+        #  deactivate
+        #end
+        
+      when DirPpCondElif, DirPpCondElse
+        
+        if_dir = @ppcond_stack.last.if_directive
+      else
+        raise "Programming error :("
+      end
+      
+      if @ppcond_stack.empty?
+        @ppcond_stack << ppcond_directive
+        
+      case @ppcond_stack
+
+      
+      if ppcond_directive.conditions > conditions
+        fork = branch.fork(self, ppcond_directive)
+        deactivate
+      else
+        @ppcond_stack << ppcond_directive
+      end
+    end # def change_pp_branch
+
+    def leave_pp_branch(ppcond_directive)
+      if @ppcond_stack.empty?
+        
+      end
+    end
+    
     def name_dbg
       "CcBr[#{@id}]"
     end

@@ -255,11 +255,24 @@ module Rocc::Semantic
               result += complement(oc)
             end
           end
-          CeCondition.new(result)
+          CeConjunctiveCondition.new(result)
         end
       end
     end
 
+    ##
+    # Return the conjunction of +self+ and +other+, i.e. the set of
+    # conditions that implies +self+ *and* +other+.
+    def conjunction(other)
+      if other.is_a?(CeConjunctionCondition)
+        c_dup = @conditions.dup
+        c_dup += other.conditions
+        CeConjunctiveCondition.new(c_dup)
+      else
+        super
+      end
+    end
+    
   end # class CeConjunctiveCondition    
 
 end # module Rocc::Semantic

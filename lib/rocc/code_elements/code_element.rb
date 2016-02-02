@@ -130,7 +130,9 @@ module Rocc::CodeElements
     alias original_to_s to_s
     alias to_s name_dbg
     alias original_inspect inspect
-    #alias inspect path_dbg
+
+    ##
+    # Overridden +inspect+ as ruby's original inspect results in several hundred characters for a usual CodeElement.
     def inspect
       original_to_s.chop + " " + path_dbg + ">"
     end
@@ -221,12 +223,12 @@ module Rocc::CodeElements
 #      end
 #    end
 
-    def conditions
+    def condition
       case adducer
       when CodeElement
-        adducer.conditions
+        adducer.condition
       when Array
-        adducer.inject {|combined, adcr| combined + adcr}
+        CeConjunctiveCondition.new(adducer.map {|a| a.condition})
       else
         raise
       end
