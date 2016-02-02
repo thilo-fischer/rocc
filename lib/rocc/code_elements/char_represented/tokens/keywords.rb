@@ -146,7 +146,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
           arising = Rocc::Semantic::Temporary::ArisingSpecification.new
           branch.enter_scope(arising)
         end
-        warn "#{name_dbg} #{branch.scope_stack_trace}"
         branch.current_scope.add_type_specifier(self)
       end # pursue_branch
       

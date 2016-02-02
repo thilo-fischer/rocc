@@ -118,7 +118,7 @@ module Rocc::Semantic::Temporary
     end
 
     def add_type_specifier(token)
-      raise "type specifier cannot occur after identifier" if @identifier
+      raise "type specifier #{token.name_dbg} cannot occur after identifier `#{@identifier}'" if @identifier
       symbol = token.type_specifier_symbol
       if not @type_specifiers.empty?
         no_prefix = @type_specifiers.find {|s| not [:short, :long, :signed, :unsigned].include? s }

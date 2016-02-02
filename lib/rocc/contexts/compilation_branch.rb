@@ -14,7 +14,7 @@
 require 'rocc/code_elements/code_element'
 
 require 'rocc/semantic/symbol_index'
-require 'rocc/semantic/conditions'
+require 'rocc/semantic/condition'
 
 require 'rocc/semantic/function'
 
@@ -84,7 +84,7 @@ module Rocc::Contexts
       if is_root?
         @id = '*'
         @pending_tokens = []
-        @scope_stack = []
+        @scope_stack = [ parent.translation_unit ]
         @most_recent_scope = nil
         @ppcond_stack = []
         @token_requester = nil
@@ -102,7 +102,7 @@ module Rocc::Contexts
       @active = true
       @symbol_idx = Rocc::Semantic::SymbolIndex.new
       @forks = []
-      @all_conditions = nil
+      @cached_conditions = nil
     end
 
     ##
@@ -114,14 +114,14 @@ module Rocc::Contexts
 
     def self.root_branch(compilation_context)
       # XXX? use compilation_context as adducer instead of as parent?
-      self.new(compilation_context, CeEmptyCondition.instance, nil)
+      self.new(compilation_context, Rocc::Semantic::CeEmptyCondition.instance, nil)
     end
 
     ##
     # Derive a new branch from this branch that processes the
     # compilation done when +branching_condition+ applies.
     def fork(branching_condition, adducer)
-      f = new(self, branching_condition, adducer)
+      f = self.class.new(self, branching_condition, adducer)
       f.id = register_fork(f)
     end
 
@@ -136,6 +136,7 @@ module Rocc::Contexts
       fork_id
     end
 
+    protected
     def id=(arg)
       raise if @id
       @id = arg
@@ -149,7 +150,7 @@ module Rocc::Contexts
       if is_root?
         @branching_condition
       else
-        @all_conditions ||= @parent.conditions.conjunction(@branching_condition)
+        @cached_conditions ||= @parent.conditions.conjunction(@branching_condition)
       end
     end
     
@@ -326,7 +327,7 @@ module Rocc::Contexts
       c = criteria.clone
       result += @symbol_idx.find_symbols(c)
       c = criteria.clone
-      result += @parent.find_symbols(c) if not root?
+      result += @parent.find_symbols(c) if not is_root?
       result
     end
 
@@ -335,13 +336,13 @@ module Rocc::Contexts
     #end
 
     def try_join
-      return nil if is_root?
       if join_possible? 
         join
       end
     end
 
     def join_possible?
+      return nil if is_root?
       @ppcond_stack == parent.ppcond_stack and
         @pending_tokens == parent.pending_tokens and
         @scope_stack == parent.scope_stack and
@@ -364,8 +365,12 @@ module Rocc::Contexts
         raise
       end
       @forks.each {|c| c.terminate }
-      raise unless join_possible?
-      join
+      if is_root?
+        @parent.announce_symbols(@symbol_idx)
+      else        
+        raise unless join_possible?
+        join
+      end
     end
 
     ##
@@ -459,93 +464,40 @@ module Rocc::Contexts
 
       case ppcond_directive
       when TknPpCondEndif, TknPpCondElif, TknPpCondElse
-
-        if parent.ppcond_stack == @ppcond_stack
+        # FIXME smells
+        if adducer == ppcond_directive.associated_cond_dirs[-2]
+          # announce_pp_branch called on branch that was opened to process the previous conditional pp directive
           deactivate
           parent.activate
           parent.announce_pp_branch(ppcond_directive)
         end
-      
 
         prev = @ppcond_stack.pop
         raise "programming error" unless prev.associated_cond_dirs == ppcond_directive.associated_cond_dirs # XXX defensive programming, substitute with according unit test
-        
+
+        # FIXME smells
+        if adducer != ppcond_directive.associated_cond_dirs[-2]
+          # announce_pp_branch called on parent branch
+          if ppcond_directive.is_a? TknPpCondEndif
+            forks.each do |f|
+              unless f.try_join
+                f.activate
+              end
+            end
+          end
+        end        
+
       end
       
       case ppcond_directive
       when TknPpCondIf, TknPpCondElif, TknPpCondElse
         @ppcond_stack << ppcond_directive
-        if conditions.imply?(ppcond_directive.collected_conditions)
-          # no branching necessary
-        else
-          deactivate
-          f = fork(conditions.complement(ppcond_directive.collected_conditions), ppcond_directive)
-          f.activate
-        end
+        deactivate
+        f = fork(conditions.complement(ppcond_directive.collected_conditions), ppcond_directive)
+        f.activate
       end
-      
       
     end # def announce_pp_branch
-
-    def change_pp_branch(ppcond_directive)
-
-      # check conditions
-      case ppcond_directive
-      when DirPpCondIf
-        dir_condition = CeAtomicCondition.new(ppcond_directive.condition_text)
-        fork = branch.fork(self, dir_condition)
-        deactivate
-      when DirPpCondElif
-        dir_condition = negated_conditions.conjunction(CeAtomicCondition.new(ppcond_directive.condition_text))
-        terminate
-        parent.activate
-        parent.enter_pp_branch(ppcond_directive, dir_condition)
-      when DirPpCondElse
-        dir_condition = negated_conditions.conjunction(CeAtomicCondition.new(ppcond_directive.condition_text))
-        terminate
-        parent.activate
-        parent.enter_pp_branch(ppcond_directive, dir_condition)
-      when DirPpCondEndif
-        terminate
-        parent.activate
-      else
-        raise
-      end
-        
-
-        #if condition.implies(dir_condition)
-        #  @ppcond_stack << ppcond_directive
-        #else
-        #  fork = branch.fork(self, ppcond_directive)
-        #  deactivate
-        #end
-        
-      when DirPpCondElif, DirPpCondElse
-        
-        if_dir = @ppcond_stack.last.if_directive
-      else
-        raise "Programming error :("
-      end
-      
-      if @ppcond_stack.empty?
-        @ppcond_stack << ppcond_directive
-        
-      case @ppcond_stack
-
-      
-      if ppcond_directive.conditions > conditions
-        fork = branch.fork(self, ppcond_directive)
-        deactivate
-      else
-        @ppcond_stack << ppcond_directive
-      end
-    end # def change_pp_branch
-
-    def leave_pp_branch(ppcond_directive)
-      if @ppcond_stack.empty?
-        
-      end
-    end
     
     def name_dbg
       "CcBr[#{@id}]"

@@ -135,7 +135,7 @@ module Rocc::Semantic
       when CeEmptyCondition
         true
       when CeAtomicCondition
-      # TODO understand and compare the texts' semantics, e.g. `A > 42' implies `A >= 42'
+        # TODO understand and compare the texts' semantics, e.g. `A > 42' implies `A >= 42'
         equivalent?(other)
       when CeConjunctiveCondition
         not other.conditions.find do |oc|
@@ -161,8 +161,8 @@ module Rocc::Semantic
         end
       when CeConjunctiveCondition
         CeConjunctiveCondition.new(other.conditions.collect do |oc|
-          not imply?(oc)
-        end)
+                                     not imply?(oc)
+                                   end)
       else
         raise
       end        
@@ -193,12 +193,11 @@ module Rocc::Semantic
     ##
     # return true if self and other are equivalent
     def equivalent(other)
-        if other.is_a? CeConjunctiveCondition and @conditions == other.conditions
-          true
-        else
-          not @conditions.find do |sc|
-            not sc.equivalent(other)
-          end
+      if other.is_a? CeConjunctiveCondition and @conditions == other.conditions
+        true
+      else
+        not @conditions.find do |sc|
+          not sc.equivalent(other)
         end
       end
     end # def equivalent

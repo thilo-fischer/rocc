@@ -28,9 +28,10 @@ module Rocc::CodeElements::CharRepresented::Tokens
   class TknPpLine        < TknPpDirective;   end
   class TknPpConditional < TknPpDirective;   end
   class TknPpCondIf      < TknPpConditional; end
-  class TknPpCondElif    < TknPpConditional; end
-  class TknPpCondElse    < TknPpConditional; end
-  class TknPpCondEndif   < TknPpConditional; end
+  class TknNonautonomousPpConditional < TknPpConditional; end
+  class TknPpCondElif    < TknNonautonomousPpConditional; end
+  class TknPpCondElse    < TknNonautonomousPpConditional; end
+  class TknPpCondEndif   < TknNonautonomousPpConditional; end
 
 
   class TknPpDirective < CeToken

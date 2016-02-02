@@ -223,12 +223,12 @@ module Rocc::CodeElements
 #      end
 #    end
 
-    def condition
+    def conditions
       case adducer
       when CodeElement
-        adducer.condition
+        adducer.conditions
       when Array
-        CeConjunctiveCondition.new(adducer.map {|a| a.condition})
+        @cached_conditions ||= CeConjunctiveCondition.new(adducer.map {|a| a.conditions})
       else
         raise
       end

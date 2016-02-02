@@ -23,7 +23,7 @@ module Rocc::Contexts
 
     def initialize(translation_unit, fs_element_index, base_branch = nil)
       @translation_unit = translation_unit
-      @main_branch = base_branch || CompilationBranch.new(self, nil, "*", [@translation_unit])
+      @main_branch = base_branch || CompilationBranch.root_branch(self)
       @active_branches = [ @main_branch ].to_set
       @fs_element_index = fs_element_index
     end
