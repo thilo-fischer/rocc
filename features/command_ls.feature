@@ -25,7 +25,7 @@ Feature: Command `ls'
     | trivial/minimal/08_func_def.c         | trivial/minimal/08_func_def_ls        |
     | trivial/minimal/09_macro.c            | trivial/minimal/09_macro_ls           |
     | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls         |
-#    | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls          |
+    | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls          |
 #    | trivial/hello-world/hello-world.c    | trivial/hello-world/ls                |
 #    | indented_hello_world/indented_hello_world_00.c                                 |
 #    | indented_hello_world/indented_hello_world_01.c                                 |

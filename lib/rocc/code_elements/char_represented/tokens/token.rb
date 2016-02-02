@@ -155,7 +155,15 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # Token's implementation of CodeElements.pursue.
     def pursue(compilation_context)
       active_branches = compilation_context.active_branches
+
+      raise "no active branches" if active_branches.empty? # XXX remove
+      
+      # Set conditions for this token. Conditions of a token depend
+      # only on the preprocessor conditional directives and on nothing
+      # else.
       @conditions = active_branches.first.ppcond_stack.inject(Rocc::Semantic::CeEmptyCondition.instance) {|conj, c| conj.conjunction(c)}# FIXME smells + bad performance
+
+      # pursue all active branches
       active_branches.each do |b|
         if b.collect_macro_tokens?
           b.greedy_macro.add_token(self)
@@ -166,6 +174,14 @@ module Rocc::CodeElements::CharRepresented::Tokens
           pursue_branch(compilation_context, b)
         end
       end
+
+      # join as many branches as possible
+      active_branches.each {|b| b.try_join}
+      
+      # adapt set of active branches according to the branch
+      # activations and deactivations that may have happened from this
+      # token
+      compilation_context.sync_branch_activity
     end
 
     ##

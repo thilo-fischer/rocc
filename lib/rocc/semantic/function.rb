@@ -66,8 +66,17 @@ module Rocc::Semantic
     end
 
     def block=(arg)
-      raise "multiple definitions for #{path_dbg}" if @block
-      @block = arg
+      if @block
+        if @block.conditions.equivalent?(arg.conditions)
+          warn "XX block #{@block.conditions} #{@block.conditions.class}"
+          warn "XX arg   #{arg.conditions} #{arg.conditions.class}"
+          raise "multiple definitions for #{path_dbg}" if @block
+        else
+          @block = [ @block, arg ] # FIXME smells
+        end
+      else
+        @block = arg
+      end
     end
     
     def name

@@ -2,7 +2,7 @@
  * Same as 09_include.c, but with some preprocessor conditionals.
  */
 
-#include "09_include.h"
+#include "10_include.h"
 
 // various definitions and references of global variables
 int i_var = FORTYTWO;
@@ -37,8 +37,8 @@ int i_func_i(int i_param) {
 }
 
 #ifdef NO_SUCH_MACRO
-#error errornous preprocessor-conditional branch
-#elsif defined(FORTYTWO) && FORTYTWO == 42
+// FIXME #error errornous preprocessor-conditional branch
+#elif defined(FORTYTWO) && FORTYTWO == 42
 char *pc_func_(unsigned int i_param, char c_param, char *pc_param)
 {
   return pc_param;

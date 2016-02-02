@@ -228,7 +228,7 @@ module Rocc::CodeElements
       when CodeElement
         adducer.conditions
       when Array
-        @cached_conditions ||= CeConjunctiveCondition.new(adducer.map {|a| a.conditions})
+        @cached_conditions ||= Rocc::Semantic::CeConjunctiveCondition.new(adducer.map {|a| a.conditions})
       else
         raise
       end

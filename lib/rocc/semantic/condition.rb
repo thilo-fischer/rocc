@@ -36,6 +36,7 @@ module Rocc::Semantic
     # Return the conjunction of +self+ and +other+, i.e. the set of
     # conditions that implies +self+ *and* +other+.
     def conjunction(other)
+      warn "#{name_dbg}.conjunction(#{other} -> #{other.class})"
       if other.is_a?(CeEmptyCondition) or
         self == other or
         self.imply?(other)
@@ -44,7 +45,7 @@ module Rocc::Semantic
         other
       else
         # XXX? CeConjunctiveCondition.new(self, complement(other))
-        CeConjunctiveCondition.new(self, other)
+        CeConjunctiveCondition.new([self, other])
       end
     end
 
@@ -142,7 +143,7 @@ module Rocc::Semantic
           not imply?(oc)
         end
       else
-        raise
+        raise "invalid argument: `#{other}' (#{other.class})"
       end        
     end
 
@@ -160,13 +161,19 @@ module Rocc::Semantic
           other
         end
       when CeConjunctiveCondition
-        CeConjunctiveCondition.new(other.conditions.collect do |oc|
+        CeConjunctiveCondition.new(other.conditions.select do |oc|
                                      not imply?(oc)
                                    end)
       else
         raise
       end        
     end
+
+    def negate
+      # XXX pass origin? same origin for both conditions?
+      @negated ||= self.class.new("!(#{@text})", origin)
+    end
+      
 
   end # class CeAtomicCondition
 
@@ -181,7 +188,7 @@ module Rocc::Semantic
     # CodeElement#origin is this array of conditions.
     def initialize(conditions, adducer = conditions)
       raise "invalid argument: should create CeEmptyCondition instead" if conditions.empty?
-      raise "invalid argument: conditions contains only a single element" if conditions.count == 1
+      # FIXME raise "invalid argument: conditions contains only a single element" if conditions.count == 1
       @conditions = conditions
       super(@conditions, adducer)
     end
@@ -192,15 +199,15 @@ module Rocc::Semantic
 
     ##
     # return true if self and other are equivalent
-    def equivalent(other)
+    def equivalent?(other)
       if other.is_a? CeConjunctiveCondition and @conditions == other.conditions
         true
       else
         not @conditions.find do |sc|
-          not sc.equivalent(other)
+          not sc.equivalent?(other)
         end
       end
-    end # def equivalent
+    end # def equivalent?
 
     ##
     # return +true+ if +other+ will always be true when +self+ is true,
@@ -255,10 +262,23 @@ module Rocc::Semantic
             when CeAtomicCondition
               result << oc unless imply?(oc)
             else
-              result += complement(oc)
+              comp = complement(oc)
+              # FIXME smells
+              case comp
+              when Array
+                result += comp
+              when CeAtomicCondition
+                result << comp
+              end
             end
           end
-          CeConjunctiveCondition.new(result)
+          if result.count > 1
+            CeConjunctiveCondition.new(result)
+          elsif result.count == 1
+            result.first
+          else
+            raise
+          end
         end
       end
     end
@@ -267,7 +287,7 @@ module Rocc::Semantic
     # Return the conjunction of +self+ and +other+, i.e. the set of
     # conditions that implies +self+ *and* +other+.
     def conjunction(other)
-      if other.is_a?(CeConjunctionCondition)
+      if other.is_a?(CeConjunctiveCondition)
         c_dup = @conditions.dup
         c_dup += other.conditions
         CeConjunctiveCondition.new(c_dup)

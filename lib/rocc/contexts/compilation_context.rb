@@ -25,15 +25,25 @@ module Rocc::Contexts
       @translation_unit = translation_unit
       @main_branch = base_branch || CompilationBranch.root_branch(self)
       @active_branches = [ @main_branch ].to_set
+      @next_active_branches = @active_branches.dup
+      @branches_for_deactivation = Set[]
       @fs_element_index = fs_element_index
     end
 
     def activate_branch(branch)
-      active_branches.add(branch)
+      @next_active_branches.add(branch)
     end
 
     def deactivate_branch(branch)
-      active_branches.delete(branch)
+      @next_active_branches.delete(branch)
+    end
+
+    def sync_branch_activity
+      # TODO_F Set of active branches will be the same for most
+      # tokens, and changes will affect only few branches. Collect and
+      # apply diff of branches to activate and deactivate instead of
+      # altering a copy of the active_branches set.
+      @active_branches = @next_active_branches.dup
     end
 
     def terminate

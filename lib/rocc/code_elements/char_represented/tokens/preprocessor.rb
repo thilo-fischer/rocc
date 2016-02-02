@@ -53,7 +53,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
           if SUBCLASSES.find {|c| tkn = c.pick!(tokenization_context)} then
             tkn
           else
-            raise "Unknown preprocessor directive @#{tokenization_context.expansion_stack.last.to_s}: `#{tokenization_context.tokenization[:remainder]}'"
+            raise "Unknown preprocessor directive @#{tokenization_context.remainder}'"
           end
         end
       end
@@ -286,9 +286,10 @@ module Rocc::CodeElements::CharRepresented::Tokens
   end # class TknPpLine
 
   class TknPpConditional < TknPpDirective
-    @PICKING_REGEXP = /^#\s*(if(n?def)?|elif|else|endif)\s+/
 
+    THIS_CLASS = TknPpConditional
     SUBCLASSES = [ TknPpCondIf, TknPpCondElif, TknPpCondElse, TknPpCondEndif ] # fixme(?): use `inherited' hook ?
+    #@PICKING_REGEXP = /^#\s*(if(n?def)?|elif|else|endif)\b/ # TODO_R should not be necessary
 
     ##
     # +associated_cond_dirs+ array shared among all conditional
@@ -300,28 +301,28 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # objects that share the array.
     attr_reader :associated_cond_dirs
 
-    def initialize(origin)
+    def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
       super
       @associated_cond_dirs = nil
     end
 
     def self.pick!(tokenization_context)
-      if self != TknPpDirective
+      if self != THIS_CLASS
         # allow subclasses to call superclass' method implementation
         super
       else
-        if str = self.pick_string(tokenization_context) then
-          tkn = nil
-          if SUBCLASSES.find {|c| tkn = c.pick!(tokenization_context)} then
-            tkn
-          else
-            raise StandardError, "Error processing preprocessor directive, not accepted by subclasses @#{origin.path_dbg}: `#{str}'"
-          end
-        end
+        tkn = nil
+        SUBCLASSES.find {|c| tkn = c.pick!(tokenization_context)}
+        tkn
       end
-    end # pick!
+    end   
+    
+    def family_abbrev
+      '#Cond'
+    end
     
     def pursue_branch(compilation_context, branch)
+      #warn "XXXX #{name_dbg}.pursue_branch(..., #{branch.name_dbg})"
       branch.announce_pp_branch(self)
     end
 
@@ -329,6 +330,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # Add self to an associated_cond_dirs array and set up a reference
     # to that array.
     def associate(ppcond_directive)
+      return if ppcond_directive.associated_cond_dirs.last == self # no need to associate if association was already established from another compilation_branch -- TODO smells
+      #warn "XXXX #{name_dbg}.associate(#{ppcond_directive.name_dbg})"
       @associated_cond_dirs = ppcond_directive.associated_cond_dirs
       @associated_cond_dirs << self
     end
@@ -337,43 +340,55 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
   # XXX_R? Make an inner module of class TknPpConditional?
   module PpConditionalMixin
-    
-    def collected_conditions
-      negated_associated_conditions.conjunction(condition)
-    end
 
     def negated_associated_conditions
-      @associated_cond_dirs.inject(CeEmptyCondition.instance) do |conjunct, c|
-        conjunct.conjunction(c.negate)
+      # negate conditions of all associated_cond_dirs except for the
+      # last one because the last element in that array is self.
+      raise unless @associated_cond_dirs.last == self # XXX remove
+      warn "XXX #{@associated_cond_dirs.map {|c| c.name_dbg}}"
+      warn "XXX #{@associated_cond_dirs[0..-2].map {|c| c.name_dbg}}"
+      @associated_cond_dirs[0..-2].inject(Rocc::Semantic::CeEmptyCondition.instance) do |conjunct, c|
+        warn "#{name_dbg}.negated_associated_conditions -> #{c.name_dbg}"
+        conjunct.conjunction(c.condition.negate)
       end
     end
     private :negated_associated_conditions
 
-  end # module PpCondIfMixin
+  end # module PpConditionalMixin
 
   # XXX_R? Make an inner module of class TknPpConditional?
   module PpConditionalOwnConditionMixin
+    include PpConditionalMixin
     
     attr_reader :condition_text
     
     def condition
-      @condition ||= CeAtomicCondition(@condition_text, self)
+      @condition ||= Rocc::Semantic::CeAtomicCondition.new(@condition_text, self)
     end
     
-  end # module PpCondIfMixin
+    # XXX_F if self would be the first element in @associated_cond_dirs, one could invoke inject similar as in negated_associated_conditions but without an argument to get collected_conditions
+    def collected_conditions
+      negated_associated_conditions.conjunction(condition)
+    end
+
+  end # module PpConditionalOwnConditionMixin
 
   class TknPpCondIf < TknPpConditional
     include PpConditionalOwnConditionMixin
 
-    @PICKING_REGEXP = /^#\s*if(n?def)?\b/
+    @PICKING_REGEXP = /^#\s*if(n?def)?\b.*$/
 
-    def initialize(origin)
+    def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
       super
       @condition_text = nil
-      # start a associated_cond_dirs array
-      @associated_cond_dirs = []
+      # TknPpCondIf starts associated_cond_dirs array
+      @associated_cond_dirs = [ self ]
     end
 
+    def family_abbrev
+      '#If'
+    end
+    
     def pursue_branch(compilation_context, branch)
       case text
       when /^#\s*if(?<negation>n)?def\s+(?<identifier>\w+)\s*$/,
@@ -404,13 +419,17 @@ module Rocc::CodeElements::CharRepresented::Tokens
   class TknPpCondElif < TknNonautonomousPpConditional
     include PpConditionalOwnConditionMixin
 
-    @PICKING_REGEXP = /^#\s*elif\b/
+    @PICKING_REGEXP = /^#\s*elif\b.*$/
 
-    def initialize(origin)
+    def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
       super
       @condition_text = nil
     end
 
+    def family_abbrev
+      '#Elif'
+    end
+    
     def pursue_branch(compilation_context, branch)
       case text
       when /^#\s*elif\s*(\s|(?<negation>!))\s*defined\s*[\s\(]\s*(?<identifier>\w+)\s*[\s\)]\s*$/
@@ -433,25 +452,32 @@ module Rocc::CodeElements::CharRepresented::Tokens
   class TknPpCondElse < TknNonautonomousPpConditional
     include PpConditionalMixin
 
-    @PICKING_REGEXP = /^#\s*else\b/
+    @PICKING_REGEXP = /^#\s*else\b.*$/
 
+    def family_abbrev
+      '#Else'
+    end
+    
     # XXX substitute with unit test
     def pursue_branch(compilation_context, branch)
       raise "Programming error :(" unless text =~ /^#\s*else\s*$/
       super
     end
-    
-    def condition
-      CeEmptyCondition.instance
+
+    def collected_conditions
+      negated_associated_conditions
     end
-    private :condition
     
   end # class TknPpCondElse
 
   class TknPpCondEndif < TknNonautonomousPpConditional
-    @PICKING_REGEXP = /^#\s*endif\b/
+    @PICKING_REGEXP = /^#\s*endif\b.*$/
 
-    # XXX substitute with unit test
+     def family_abbrev
+      '#Endif'
+    end
+    
+   # XXX substitute with unit test
     def pursue_branch(compilation_context, branch)
       raise "Programming error :(" unless text =~ /^#\s*endif\s*$/
       super

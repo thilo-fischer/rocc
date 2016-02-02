@@ -123,6 +123,8 @@ module Rocc::Contexts
     def fork(branching_condition, adducer)
       f = self.class.new(self, branching_condition, adducer)
       f.id = register_fork(f)
+      #warn "XXXXXXXX #{name_dbg}.fork(#{branching_condition.inspect}, #{adducer.name_dbg}) => #{f.name_dbg}"
+      f      
     end
 
     def has_forks?
@@ -150,6 +152,7 @@ module Rocc::Contexts
       if is_root?
         @branching_condition
       else
+        #warn "#{name_dbg}.conditions, @parent.conditions: #{@parent.conditions}"
         @cached_conditions ||= @parent.conditions.conjunction(@branching_condition)
       end
     end
@@ -269,6 +272,10 @@ module Rocc::Contexts
       result
     end
 
+    def announce_symbols(other_symbol_idx)
+      @symbol_idx.announce_symbols(other_symbol_idx)
+    end
+    
     # FIXME_R clarify coherence of announce_created_symbol and announce_symbol
     # FIXME_R? merge announce_created_symbol and announce_symbol?
     def announce_created_symbol(symbol)
@@ -398,17 +405,19 @@ module Rocc::Contexts
     end
 
     def activate(branch = self)      
+      warn "~~~ #{branch.name_dbg}.activate(#{branch.name_dbg}) <- #{caller[0..1].map {|c| c.sub(/^.*\//, '')}}"
       @active = true if branch == self
-      if root?
+      if is_root?
         parent.activate_branch(branch)
       else
         parent.activate(branch)
       end
     end
       
-    def deactivate(branch = self)      
+    def deactivate(branch = self)
+      warn "~~~ #{branch.name_dbg}.deactivate(#{branch.name_dbg}) <- #{caller[0..1].map {|c| c.sub(/^.*\//, '')}}"
       @active = false if branch == self
-      if root?
+      if is_root?
         parent.deactivate_branch(branch)
       else
         parent.deactivate(branch)
@@ -460,10 +469,12 @@ module Rocc::Contexts
 
 
     def announce_pp_branch(ppcond_directive)
-      raise "programming error" unless ppcond_directive.associated_cond_dirs.include?(ppcond_directive) # XXX defensive programming, substitute with according unit test
+      raise "programming error :( -> #{ppcond_directive.name_dbg}, associated_cond_dirs: #{ppcond_directive.associated_cond_dirs}" unless ppcond_directive.associated_cond_dirs.include?(ppcond_directive) # XXX defensive programming, substitute with according unit test
 
       case ppcond_directive
-      when TknPpCondEndif, TknPpCondElif, TknPpCondElse
+      when Rocc::CodeElements::CharRepresented::Tokens::TknPpCondEndif,
+           Rocc::CodeElements::CharRepresented::Tokens::TknPpCondElif,
+           Rocc::CodeElements::CharRepresented::Tokens::TknPpCondElse
         # FIXME smells
         if adducer == ppcond_directive.associated_cond_dirs[-2]
           # announce_pp_branch called on branch that was opened to process the previous conditional pp directive
@@ -478,7 +489,7 @@ module Rocc::Contexts
         # FIXME smells
         if adducer != ppcond_directive.associated_cond_dirs[-2]
           # announce_pp_branch called on parent branch
-          if ppcond_directive.is_a? TknPpCondEndif
+          if ppcond_directive.is_a? Rocc::CodeElements::CharRepresented::Tokens::TknPpCondEndif
             forks.each do |f|
               unless f.try_join
                 f.activate
@@ -490,9 +501,12 @@ module Rocc::Contexts
       end
       
       case ppcond_directive
-      when TknPpCondIf, TknPpCondElif, TknPpCondElse
+      when Rocc::CodeElements::CharRepresented::Tokens::TknPpCondIf,
+           Rocc::CodeElements::CharRepresented::Tokens::TknPpCondElif,
+           Rocc::CodeElements::CharRepresented::Tokens::TknPpCondElse
         @ppcond_stack << ppcond_directive
         deactivate
+        #warn "#{name_dbg}.announce_pp_branch -> #{conditions.complement(ppcond_directive.collected_conditions)}"
         f = fork(conditions.complement(ppcond_directive.collected_conditions), ppcond_directive)
         f.activate
       end
