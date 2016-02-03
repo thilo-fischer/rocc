@@ -353,8 +353,12 @@ module Rocc::Contexts
       end
     end
 
+    # FIXME_R when an #else directive exists, it might happen that forks never get to a point where join_poissible?. E.g., assume parent has pending tokens and/or an arising specification on the scope stack and both get resolved in the #if- and the #else-fork. join_possible? will (very likely) not be true until the end of the program and parent branch might fail, though the code is absolutely correct. Resolution(?):
+    # - #else branch must always join with the parent branch ??
+    # - pursue parent branch with additional conditions as #else branch ??
     def join_possible?
       return nil if is_root?
+      return false unless parent.is_active?
       @ppcond_stack == parent.ppcond_stack and
         @pending_tokens == parent.pending_tokens and
         @scope_stack == parent.scope_stack and
