@@ -19,7 +19,7 @@ require 'singleton'
 # logging levels for different modules and classes.
 module Rocc::Session
 
-  module LogClientMixin
+  module LogClientClassMixin
 
     def log
       @logger ||= LogConfig.instance.get_logger(logtag)
@@ -37,6 +37,14 @@ module Rocc::Session
     def update_logger
       @logger = nil
       log
+    end
+
+  end
+
+  module LogClientMixin
+
+    def log
+      self.class.log
     end
 
   end

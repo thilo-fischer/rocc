@@ -130,7 +130,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       if str
         whitespace_after = pick_whitespace!(tokenization_context)
         tkn = create(tokenization_context, str, whitespace_after)
-        tkn.log.debug{ "pick! `#{str}' + `#{Rocc::Helpers::String::no_lbreak(whitespace_after)}', remainder: `#{tokenization_context.remainder}' => #{tkn.name_dbg}" }
+        log.debug{ "pick! `#{str}' + `#{Rocc::Helpers::String::no_lbreak(whitespace_after)}', remainder: `#{tokenization_context.remainder}' => #{tkn.name_dbg}" }
         tkn        
       end
     end # pick!
@@ -148,7 +148,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       pred = tokenization_context.recent_token
       new_tkn = new(tokenization_context.line, text, tokenization_context.charpos, whitespace_after, pred)
       tokenization_context.add_token(new_tkn)
-      new_tkn.log.debug{ "new token: #{new_tkn.name_dbg}" }
+      log.debug{ "new token: #{new_tkn.name_dbg}" }
       new_tkn
     end
 
