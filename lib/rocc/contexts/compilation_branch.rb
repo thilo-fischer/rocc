@@ -24,7 +24,8 @@ module Rocc::Contexts
 
   class CompilationBranch
 
-    include Rocc::Session::LogClientMixin
+    extend  Rocc::Session::LogClientClassMixin
+    include Rocc::Session::LogClientInstanceMixin
 
     ##
     # Data members wrt managing a tree of compilation branches.

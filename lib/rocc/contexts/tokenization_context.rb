@@ -26,7 +26,8 @@ module Rocc::Contexts
   # be passed on over multiple method invokations.
   class TokenizationContext
 
-    include Rocc::Session::LogClientMixin
+    extend  Rocc::Session::LogClientClassMixin
+    include Rocc::Session::LogClientInstanceMixin
 
     attr_reader :line, :tokens, :remainder, :charpos
 

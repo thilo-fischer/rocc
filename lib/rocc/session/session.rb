@@ -28,7 +28,9 @@ require 'rocc/code_elements/file_represented/file'
 module Rocc::Session
 
   class Session
-    include LogClientClassMixin
+
+    extend  Rocc::Session::LogClientClassMixin
+    include Rocc::Session::LogClientInstanceMixin
 
     attr_reader :input_files, :include_dirs, :action, :working_dir, :options
 

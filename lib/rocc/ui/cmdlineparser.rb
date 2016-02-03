@@ -25,7 +25,9 @@ module Rocc::Ui
   # Parses the command line arguments passed to the rocc program at invocation
   
   class CommandLineParser
-    include Rocc::Session::LogClientMixin
+
+    extend  Rocc::Session::LogClientClassMixin
+    include Rocc::Session::LogClientInstanceMixin
 
     attr_reader :input_files, :action, :include_dirs
 

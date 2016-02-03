@@ -26,7 +26,7 @@ module Rocc::Session
     end
 
     def logtag
-      @logtag || self.class.name
+      @logtag || name
     end
 
     def logtag=(arg)
@@ -41,7 +41,7 @@ module Rocc::Session
 
   end
 
-  module LogClientMixin
+  module LogClientInstanceMixin
 
     def log
       self.class.log
@@ -106,10 +106,9 @@ module Rocc::Session
 
     def logtag_from_object(object)
       case object
-      when Class
-        raise unless object.include?(LogClientMixin)
+      when LogClientClassMixin
         object.name
-      when LogClientMixin
+      when LogClientInstanceMixin
         object.class.name
       when Symbol
         object.to_s

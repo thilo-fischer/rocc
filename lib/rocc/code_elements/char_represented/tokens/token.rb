@@ -131,7 +131,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         whitespace_after = pick_whitespace!(tokenization_context)
         tkn = create(tokenization_context, str, whitespace_after)
         log.debug{ "pick! `#{str}' + `#{Rocc::Helpers::String::no_lbreak(whitespace_after)}', remainder: `#{tokenization_context.remainder}' => #{tkn.name_dbg}" }
-        tkn        
+        tkn
       end
     end # pick!
 

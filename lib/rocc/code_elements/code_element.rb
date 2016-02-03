@@ -22,10 +22,8 @@ module Rocc::CodeElements
   # XXX consider making CodeElement a module instead of a class and use it as mixin
   class CodeElement
 
-    class << self
-      include Rocc::Session::LogClientClassMixin
-    end
-    include Rocc::Session::LogClientMixin
+    extend  Rocc::Session::LogClientClassMixin
+    include Rocc::Session::LogClientInstanceMixin
 
     ##
     # Each CodeElement shall have an origin which refers to the object
