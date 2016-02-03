@@ -171,7 +171,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         elsif b.has_token_request?
           b.token_requester.process_token(compilation_context, b, self)
         else
-          warn "#{name_dbg}.pursue_branch #{b.id} (#{path_dbg})\n`- #{b.scope_stack_trace}" # FIXME loglevel trace ?!
+          log.debug{"#{name_dbg}.pursue_branch #{b.id}\n(#{path_dbg})\n#{b.scope_stack_trace}"} # TODO loglevel trace ?! log with specific log tag?
           pursue_branch(compilation_context, b)
         end
       end

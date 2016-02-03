@@ -36,7 +36,7 @@ module Rocc::Semantic
     # Return the conjunction of +self+ and +other+, i.e. the set of
     # conditions that implies +self+ *and* +other+.
     def conjunction(other)
-      warn "#{name_dbg}.conjunction(#{other} -> #{other.class})"
+      log.debug{"#{name_dbg}.conjunction(#{other} -> #{other.class})"}
       if other.is_a?(CeEmptyCondition) or
         self == other or
         self.imply?(other)

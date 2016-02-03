@@ -84,7 +84,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         tkn.file = $~[:file]
         comments = $~[:comments]
 
-        warn "XXXX #{tkn.name_dbg} file: `#{tkn.file}' from `#{tkn.text}'"
+        #warn "XXXX #{tkn.name_dbg} file: `#{tkn.file}' from `#{tkn.text}'"
         
         # `comments' captures either all comments or -- if no comments are present -- all whitespace in between `include' and file name
         if not comments.strip.empty? then
@@ -138,7 +138,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         # include directive gives absolute pathname
         path_abs = path
       else
-        warn "try to find `#{path}' for #{name_dbg}: will test #{File.absolute_path(path, current_dir.path_full)} if #{quote}==doublequote, include dirs are: `#{Rocc::Session::Session.current_session.include_dirs}'"
+        #warn "try to find `#{path}' for #{name_dbg}: will test #{File.absolute_path(path, current_dir.path_full)} if #{quote}==doublequote, include dirs are: `#{Rocc::Session::Session.current_session.include_dirs}'"
         if quote == :doublequote and File.exist?(File.absolute_path(path, current_dir.path_full))
           path_abs = File.absolute_path(path, current_dir.path_full)
         else
@@ -255,8 +255,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
   class TknPpPragma < TknPpDirective
     @PICKING_REGEXP = /^#\s*pragma\s+.*/
-    def expand(env)
-      warn "ignoring #{origin.list}: `#{@text}' "
+    def pursue_branch(compilation_context, branch)
+      log.warn{"ignoring #{location}: `#{@text}' "}
     end
   end # class TknPpPragma
 
@@ -345,11 +345,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       # negate conditions of all associated_cond_dirs except for the
       # last one because the last element in that array is self.
       raise unless @associated_cond_dirs.last == self # XXX remove
-      warn "XXX #{@associated_cond_dirs.map {|c| c.name_dbg}}"
-      warn "XXX #{@associated_cond_dirs[0..-2].map {|c| c.name_dbg}}"
-      @associated_cond_dirs[0..-2].inject(Rocc::Semantic::CeEmptyCondition.instance) do |conjunct, c|
-        warn "#{name_dbg}.negated_associated_conditions -> #{c.name_dbg}"
-        conjunct.conjunction(c.condition.negate)
+      @associated_cond_dirs[0..-2].inject(Rocc::Semantic::CeEmptyCondition.instance) do |conj, c|
+        #warn "#{name_dbg}.negated_associated_conditions -> #{c.name_dbg}"
+        conj.conjunction(c.condition.negate)
       end
     end
     private :negated_associated_conditions

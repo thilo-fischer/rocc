@@ -140,13 +140,13 @@ module Rocc::Session
 
     DATETIME_FORMAT = '%H:%M:%S.%L'
     FORMATTER = proc do |severity, datetime, progname, msg|
-      "#{severity.to_s[0]} #{datetime.strftime(DATETIME_FORMAT)} > #{progname}: #{msg}\n"
+      "#{severity.to_s[0]} #{datetime.strftime(DATETIME_FORMAT)} > #{progname}: #{msg.gsub("\n", "\n\t")}\n"
     end
     DEFAULT_LOGLEVEL = Logger::INFO
     DEFAULT_PROGNAME = 'rocc'
 
     def create_logger(level = DEFAULT_LOGLEVEL, progname = DEFAULT_PROGNAME)
-      logger = Logger.new(STDOUT)
+      logger = Logger.new(STDERR)
       logger.formatter = FORMATTER
       logger.progname = progname
       logger.sev_threshold = level

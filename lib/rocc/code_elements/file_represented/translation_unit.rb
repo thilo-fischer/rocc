@@ -45,7 +45,7 @@ module Rocc::CodeElements::FileRepresented
     end
 
     def announce_symbols(symbol_idx)
-      warn "#{name_dbg} -> announce_symbols: #{symbol_idx.find_symbols({}).map{|s| s.name_dbg}.join(", ")}"
+      log.debug{"#{name_dbg} -> announce_symbols: #{symbol_idx.find_symbols({}).map{|s| s.name_dbg}.join(", ")}"}
       @symbol_idx.announce_symbols(symbol_idx)
     end
 

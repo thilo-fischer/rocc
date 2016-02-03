@@ -53,7 +53,7 @@ module Rocc::Commands
     end
 
     def self.run(env, argv, options)
-      warn "Command `#{@name}' not yet implemented :("
+      log.error{"Command `#{@name}' not yet implemented :("}
     end
 
   end # class Command

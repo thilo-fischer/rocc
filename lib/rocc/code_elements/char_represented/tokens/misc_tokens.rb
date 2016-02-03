@@ -461,7 +461,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
         raise
       end
     end
-    
+
+    # FIXME Review the deprecated, commented out method
+    # expand_with_context below. Delete if all aspects have been
+    # addressed in the new implementation.
+    #
 #    def expand_with_context(env, ctxt)
 #
 #      dbg "#{self}.expand_with_context" # at `#{ctxt.inspect}'"

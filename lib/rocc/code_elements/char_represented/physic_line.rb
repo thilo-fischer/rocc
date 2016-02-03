@@ -116,10 +116,12 @@ module Rocc::CodeElements::CharRepresented
     # Check if the line is a continued line, i.e. a line ending with a
     # backslash.  If there is whitespace between backslash and
     # newline, we do it like the gcc does: Accept it as a continued
-    # line, but print according warning message.  Returns true if line
-    # is a continued line with baskslash-newline, a string containing
-    # a warning message if it is a continued line with whitespace in
-    # between backslash and newline, false otherwise.
+    # line, but print according warning message.
+    #
+    # Returns true if line is a continued line with baskslash-newline,
+    # a string containing a warning message if it is a continued line
+    # with whitespace in between backslash and newline, false
+    # otherwise. FIXME return value usage smells.
     def check_continued_line
       if @text =~ /\\(\w*)$/
         if $1.length == 0
@@ -134,8 +136,8 @@ module Rocc::CodeElements::CharRepresented
 
     def pursue(lineread_context)
 
-      continued = check_continued_line()
-      warn continued if continued.class.is_a? String
+      continued = check_continued_line
+      log.warn{continued} if continued.class.is_a? String
       
       if continued
         lineread_context.announce_continued_line(self)

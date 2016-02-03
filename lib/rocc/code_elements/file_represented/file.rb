@@ -152,7 +152,6 @@ module Rocc::CodeElements::FileRepresented
     # Get the file's current modification date. Read from file system,
     # do not return any eventually buffered values.
     def volatile_mod_time
-      warn path_dbg
       File.mtime(path_full)
     end
     

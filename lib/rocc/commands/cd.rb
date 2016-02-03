@@ -59,7 +59,7 @@ module Rocc::Commands
 
       else
 
-        warn "Cannot #{name} to `#{arg}': No such directory or object."
+        log.error{"Cannot #{name} to `#{arg}': No such directory or object."}
 
       end
 

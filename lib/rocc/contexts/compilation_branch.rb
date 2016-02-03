@@ -289,7 +289,7 @@ module Rocc::Contexts
 
     def announce_symbol(origin, symbol_family, identifier, hashargs = {})
 
-      warn "#{name_dbg}.announce_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"
+      log.debug{"#{name_dbg}.announce_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"}
       #warn caller
       #warn scope_stack_trace
 
@@ -410,7 +410,7 @@ module Rocc::Contexts
     end
 
     def activate(branch = self)      
-      warn "~~~ #{branch.name_dbg}.activate(#{branch.name_dbg}) <- #{caller[0..1].map {|c| c.sub(/^.*\//, '')}}"
+      #warn "~~~ #{branch.name_dbg}.activate(#{branch.name_dbg}) <- #{caller[0..1].map {|c| c.sub(/^.*\//, '')}}"
       @active = true if branch == self
       if is_root?
         parent.activate_branch(branch)
@@ -420,7 +420,7 @@ module Rocc::Contexts
     end
       
     def deactivate(branch = self)
-      warn "~~~ #{branch.name_dbg}.deactivate(#{branch.name_dbg}) <- #{caller[0..1].map {|c| c.sub(/^.*\//, '')}}"
+      #warn "~~~ #{branch.name_dbg}.deactivate(#{branch.name_dbg}) <- #{caller[0..1].map {|c| c.sub(/^.*\//, '')}}"
       @active = false if branch == self
       if is_root?
         parent.deactivate_branch(branch)

@@ -113,7 +113,7 @@ module Rocc::Semantic::Temporary
       raise "type qualifier cannot occur after identifier" if @identifier
       @origin_shared << token
       symbol = token.type_qualifier_symbol
-      warn "redundant type qualifier: #{symbol}" if @type_qualifiers.include?(symbol)
+      log.warn{"redundant type qualifier: #{symbol}"} if @type_qualifiers.include?(symbol)
       @type_qualifiers << symbol
     end
 
@@ -125,7 +125,7 @@ module Rocc::Semantic::Temporary
         raise "inconsistent type specifiers: #{@type_specifiers.inspect} vs. #{symbol}" if no_prefix
 
         if @type_specifiers.include?(symbol)
-          warn "redundant #{symbol}" unless symbol == :long and @type_specifiers.count(symbol) == 1 # XXX warn or raise ?!
+          log.warn{"redundant #{symbol}"} unless symbol == :long and @type_specifiers.count(symbol) == 1 # XXX warn or raise ?!
         end
 
         case symbol
