@@ -12,6 +12,7 @@
 # approach. See LICENSE.txt from the top-level directory for details.
 
 require 'rocc/helpers'
+require 'rocc/session/logging'
 
 module Rocc::Contexts
 
@@ -24,6 +25,8 @@ module Rocc::Contexts
   # each new tokenization method invokation and thus does not need to
   # be passed on over multiple method invokations.
   class TokenizationContext
+
+    include Rocc::Session::LogClientMixin
 
     attr_reader :line, :tokens, :remainder, :charpos
 
@@ -39,8 +42,8 @@ module Rocc::Contexts
     # Return true if all tokens have been picked from the context's
     # line (tokenization reached end of logic line), false otherwise.
     def finished?
-      #$log.debug{ "TokenizationContext.finished? => #{@remainder.empty?}, remainder: `#{@remainder}'" }
-      #$log.debug{ Rocc::Helpers.backtrace(8) }
+      #log.debug{ "TokenizationContext.finished? => #{@remainder.empty?}, remainder: `#{@remainder}'" }
+      #log.debug{ Rocc::Helpers.backtrace(8) }
       @remainder.empty?
     end
 

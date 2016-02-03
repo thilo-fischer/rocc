@@ -11,8 +11,7 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'logger'
-
+require 'rocc/session/logging'
 require 'rocc/session/options'
 require 'rocc/session/application_context'
 require 'rocc/contexts/parsing_context' # XXX? make paring context a subcontext of application context?
@@ -29,6 +28,7 @@ require 'rocc/code_elements/file_represented/file'
 module Rocc::Session
 
   class Session
+    include LogClientMixin
 
     attr_reader :input_files, :include_dirs, :action, :working_dir, :options
 
@@ -101,10 +101,8 @@ module Rocc::Session
 
     private
 
-    # XXX options: a string representing the desired log level.
+    # +options+ string representing the desired log level.
     def setup_logging(options)
-      $log = Logger.new(STDOUT)
-      
       level = case options
               when "4", /^fatal/i   
                 Logger::FATAL
@@ -117,24 +115,19 @@ module Rocc::Session
               when "0", /^de?bu?g/i 
                 Logger::DEBUG
               when nil              
-                Logger::WARN
+                :default
               else
                 nil
               end
-      if level
-        $log.level = level
+      if level == :default
+        # nothing to do
+      elsif level
+        LogConfig.instance.set_default_threshold(level)
       else
-        $log.level = Logger::WARN
-        $log.warn{"Invalid log level: `#{options[:verbosity]}'. Fall back to default log level."}
+        log.warn{"Invalid log level: `#{options[:verbosity]}'. Fall back to default log level `#{log.sev_threshold}'."}
       end
 
-      $log.datetime_format = '%H:%M:%S.%L'
-      $log.formatter = proc do |severity, datetime, progname, msg|
-        "#{severity.to_s[0]} #{datetime.strftime($log.datetime_format)} > #{progname}: #{msg}\n"
-      end
-      $log.progname = 'rocc'
-      
-      $log.debug{"Set log level to #{$log.level}."}
+      log.debug{"Set default log level to #{log.sev_threshold}."}
     end # setup_logging
 
     def parse_input

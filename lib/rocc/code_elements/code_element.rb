@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/session/logging'
+
 module Rocc::CodeElements
 
   ##
@@ -19,6 +21,8 @@ module Rocc::CodeElements
   #--
   # XXX consider making CodeElement a module instead of a class and use it as mixin
   class CodeElement
+
+    include Rocc::Session::LogClientMixin
 
     ##
     # Each CodeElement shall have an origin which refers to the object

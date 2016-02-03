@@ -129,8 +129,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       str = self.pick_string!(tokenization_context)
       if str
         whitespace_after = pick_whitespace!(tokenization_context)
-        $log.debug{ "pick! `#{str}' + `#{Rocc::Helpers::String::no_lbreak(whitespace_after)}', remainder: `#{tokenization_context.remainder}'" }
-        create(tokenization_context, str, whitespace_after)
+        tkn = create(tokenization_context, str, whitespace_after)
+        tkn.log.debug{ "pick! `#{str}' + `#{Rocc::Helpers::String::no_lbreak(whitespace_after)}', remainder: `#{tokenization_context.remainder}' => #{tkn.name_dbg}" }
+        tkn        
       end
     end # pick!
 
@@ -147,7 +148,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       pred = tokenization_context.recent_token
       new_tkn = new(tokenization_context.line, text, tokenization_context.charpos, whitespace_after, pred)
       tokenization_context.add_token(new_tkn)
-      $log.debug{ "new token: #{new_tkn.name_dbg}" }
+      new_tkn.log.debug{ "new token: #{new_tkn.name_dbg}" }
       new_tkn
     end
 
@@ -177,6 +178,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
       # join as many branches as possible
       active_branches.each {|b| b.try_join}
+
+      log.debug{ "active branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}" }
       
       # adapt set of active branches according to the branch
       # activations and deactivations that may have happened from this
@@ -215,8 +218,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
     end
 
     protected
-
-    #      @ORIGIN_CLASS = CeLogicLine
 
     def direct_successor=(s)
       @direct_successor = s

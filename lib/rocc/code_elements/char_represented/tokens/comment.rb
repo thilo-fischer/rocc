@@ -69,7 +69,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         tokenization_context.leave_multiline_comment
         @text += str
         @whitespace_after = self.class.pick_whitespace!(tokenization_context)
-        $log.debug{ "picked `#{name_dbg}' + `#{Rocc::Helpers::String::no_lbreak(@whitespace_after)}', remainder: `#{tokenization_context.remainder}'" }
+        log.debug{ "picked `#{name_dbg}' + `#{Rocc::Helpers::String::no_lbreak(@whitespace_after)}', remainder: `#{tokenization_context.remainder}'" }
       else
         @text += tokenization_context.remainder
         tokenization_context.remainder.clear

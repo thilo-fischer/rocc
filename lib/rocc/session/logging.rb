@@ -45,33 +45,26 @@ module Rocc::Session
     include Singleton
 
     def initialize
-      @all_levels_loggers = {}
-      [ Logger::FATAL, Logger::ERROR, Logger::WARN, Logger::INFO, Logger::DEBUG ].each do |loglvl|
-        @all_levels_loggers[loglvl] = create_logger(loglvl)
-      end
-      
-      default_loglvl = Logger::INFO # for development versions
-      #default_loglvl = Logger::WARN # for productive versions
-      
-      @specific_loggers = {:default => get_level_logger(default_loglvl)}
+      @default_logger = create_logger
+      @specific_loggers = {}
     end # initialize
 
     def set_default_threshold(level)
-      @specific_loggers[:default] = get_level_logger(level)
+      @default_logger.sev_threshold = level
     end # set_default_threshold
 
     def set_threshold(object, level)
-      str = logtag_from_object(object)
-      @specific_loggers[str] = get_level_logger(level)
-      get_level_logger(Logger::INFO) {"set log level #{level} for #{object}"}
+      logtag = logtag_from_object(object)
+      @specific_loggers[logtag] = create_logger(level, logtag)
+      @default_logger.info {"set log level #{level} for #{logtag} (-> #{object})"}
     end # set_threshold
 
     def get_logger(object)
-      str = logtag_from_object(object)
+      logtag = logtag_from_object(object)
       
       best_match = nil
-      @secific_thresholds.keys.each do |k|
-        if str.starts_with?(k)
+      @specific_loggers.keys.each do |k|
+        if logtag.starts_with?(k)
           if best_match.nil? or best_match.length < k.length
             best_match = k
           end
@@ -79,30 +72,28 @@ module Rocc::Session
       end
 
       if best_match
-        @secific_thresholds[best_match]
+        @secific_loggers[best_match]
       else
         @default_logger
       end
     end # get_logger
 
-    
-    private
 
-    def get_level_logger(level)
-      @all_levels_loggers[level]
-    end
+    private
 
     DATETIME_FORMAT = '%H:%M:%S.%L'
     FORMATTER = proc do |severity, datetime, progname, msg|
       "#{severity.to_s[0]} #{datetime.strftime(DATETIME_FORMAT)} > #{progname}: #{msg}\n"
     end
+    DEFAULT_LOGLEVEL = Logger::INFO
     DEFAULT_PROGNAME = 'rocc'
 
-    def create_logger(level, progname = DEFAULT_PROGNAME)
+    def create_logger(level = DEFAULT_LOGLEVEL, progname = DEFAULT_PROGNAME)
       logger = Logger.new(STDOUT)
       logger.formatter = FORMATTER
       logger.progname = progname
       logger.sev_threshold = level
+      logger
     end
 
     def logtag_from_object(object)

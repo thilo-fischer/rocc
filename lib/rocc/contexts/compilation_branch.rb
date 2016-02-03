@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/session/logging'
+
 require 'rocc/code_elements/code_element'
 
 require 'rocc/semantic/symbol_index'
@@ -21,6 +23,8 @@ require 'rocc/semantic/function'
 module Rocc::Contexts
 
   class CompilationBranch
+
+    include Rocc::Session::LogClientMixin
 
     ##
     # Data members wrt managing a tree of compilation branches.
@@ -368,7 +372,7 @@ module Rocc::Contexts
     def terminate
       if has_pending?
         fail{"Branch terminated while still having pending tokens."}
-        $log.debug{"Pending tokens: #{pending_to_s}"}
+        log.debug{"Pending tokens: #{pending_to_s}"}
         raise
       end
       @forks.each {|c| c.terminate }
@@ -387,7 +391,7 @@ module Rocc::Contexts
     # String object will be included in the message being logged.
     def fail
       deactivate
-      $log.warn do
+      log.warn do
         message = yield
         "Failed processing branch #{@id}" +
           if message
@@ -396,11 +400,11 @@ module Rocc::Contexts
             "."
           end
       end
-      $log.info "Conditions of failed branch: #{@conditions.dbg_name}"
+      log.info "Conditions of failed branch: #{@conditions.dbg_name}"
       raise
     end # def fail
 
-    def active?
+    def is_active?
       @active
     end
 

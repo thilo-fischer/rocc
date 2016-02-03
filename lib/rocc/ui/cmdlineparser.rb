@@ -11,19 +11,21 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'optparse'
+
+require 'rocc/session/options'
+require 'rocc/session/logging'
+
 ##
 # User Interface Implementations
 
 module Rocc::Ui
 
-  require 'optparse'
-
-  require 'rocc/session/options'
-
   ##
   # Parses the command line arguments passed to the rocc program at invocation
   
   class CommandLineParser
+    include Rocc::Session::LogClientMixin
 
     attr_reader :input_files, :action, :include_dirs
 
@@ -124,7 +126,7 @@ module Rocc::Ui
         when :verbosity, :change_detection
           optsobj.set(key, value)
         else
-          $log.warn{"No option associated with command line argument of `#{key}'"}
+          log.warn{"No option associated with command line argument of `#{key}'"}
         end
       end
     end # set_options
