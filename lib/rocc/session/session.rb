@@ -127,6 +127,12 @@ module Rocc::Session
         $log.level = Logger::WARN
         $log.warn{"Invalid log level: `#{options[:verbosity]}'. Fall back to default log level."}
       end
+
+      $log.datetime_format = '%H:%M:%S.%L'
+      $log.formatter = proc do |severity, datetime, progname, msg|
+        "#{severity.to_s[0]} #{datetime.strftime($log.datetime_format)} > #{progname}: #{msg}\n"
+      end
+      $log.progname = 'rocc'
       
       $log.debug{"Set log level to #{$log.level}."}
     end # setup_logging
