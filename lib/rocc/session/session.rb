@@ -21,6 +21,7 @@ require 'rocc/code_elements/file_represented/translation_unit'
 require 'rocc/code_elements/file_represented/module'
 require 'rocc/code_elements/file_represented/file'
 
+
 ##
 # Things related to the currently running program instance.
 #--
@@ -104,31 +105,13 @@ module Rocc::Session
     private
 
     # +options+ string representing the desired log level.
-    def setup_logging(options)
-      level = case options
-              when "4", /^fatal/i   
-                Logger::FATAL
-              when "3", /^err/i     
-                Logger::ERROR
-              when "2", /^warn/i    
-                Logger::WARN
-              when "1", /^info/i    
-                Logger::INFO
-              when "0", /^de?bu?g/i 
-                Logger::DEBUG
-              when nil              
-                :default
-              else
-                nil
-              end
-      if level == :default
-        # nothing to do
-      elsif level
+    def setup_logging(arg)
+      level = LogConfig.instance.object_to_loglevel(arg)
+      if level
         LogConfig.instance.set_default_threshold(level)
       else
-        log.warn{"Invalid log level: `#{options[:verbosity]}'. Fall back to default log level `#{log.sev_threshold}'."}
+        log.warn{"Invalid log level: `#{arg}'. Fall back to default log level `#{log.sev_threshold}'."}
       end
-
       log.debug{"Set default log level to #{log.sev_threshold}."}
     end # setup_logging
 

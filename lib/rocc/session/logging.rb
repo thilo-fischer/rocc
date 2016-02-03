@@ -14,6 +14,9 @@
 require 'logger'
 require 'singleton'
 
+# XXX development aid
+require 'rocc/session/devel_loglevels'
+
 ##
 # Wrapper around ruby's Logger class allowing to activate different
 # logging levels for different modules and classes.
@@ -23,6 +26,8 @@ module Rocc::Session
 
     def log
       @logger ||= LogConfig.instance.get_logger(logtag)
+      #warn "#{self}.log (class) => threshold: #{@logger.sev_threshold}"
+      @logger
     end
 
     def logtag
@@ -44,7 +49,9 @@ module Rocc::Session
   module LogClientInstanceMixin
 
     def log
-      self.class.log
+      l = self.class.log
+      #warn "#{self}.log (instance) => threshold: #{l.sev_threshold}"
+      l
     end
 
   end
@@ -55,6 +62,12 @@ module Rocc::Session
     def initialize
       @default_logger = create_logger
       @specific_loggers = {}
+
+      # XXX development aid
+      if defined? SPECIFIC_LOGLEVELS
+        SPECIFIC_LOGLEVELS.each_pair {|k,v| set_threshold(k,v)}
+      end
+      #warn "@specific_loggers=#{@specific_loggers}"
     end # initialize
 
     def set_default_threshold(level)
@@ -72,19 +85,55 @@ module Rocc::Session
       
       best_match = nil
       @specific_loggers.keys.each do |k|
-        if logtag.starts_with?(k)
+        if logtag.start_with?(k)
           if best_match.nil? or best_match.length < k.length
             best_match = k
           end
         end
       end
 
-      if best_match
-        @secific_loggers[best_match]
-      else
-        @default_logger
-      end
+      result = if best_match
+                 @specific_loggers[best_match]
+               else
+                 @default_logger
+               end
+      #warn "get_logger for #{object} -> logtag=#{logtag} -> best_match=#{best_match.inspect} -> logger: #{result.progname}, lvl#{result.level}"
+      
+      result
     end # get_logger
+
+    ##
+    # Tries to map different kinds of objects to a certain log level
+    # as specified by the Logger::XYZ constants.  Returns the
+    # appropriate Logger::XYZ constant or nil if no constant could be
+    # associated with the given object.
+    def object_to_loglevel(obj)
+      case obj
+      when nil
+        DEFAULT_LOGLEVEL
+      when Logger::FATAL.class
+        nil unless [Logger::DEBUG..Logger::FATAL].include?(obj)
+      when String
+        case obj
+        when "4", /^fatal/i
+          Logger::FATAL
+        when "3", /^err/i
+          Logger::ERROR
+        when "2", /^warn/i
+          Logger::WARN
+        when "1", /^info/i
+          Logger::INFO
+        when "0", /^de?bu?g/i
+          Logger::DEBUG
+        else
+          nil
+        end
+      when Symbol
+        object_to_loglevel(obj.to_s)
+      else
+        nil
+      end
+    end # object_to_loglevel
 
 
     private
@@ -115,11 +164,10 @@ module Rocc::Session
       when String
         object
       else
-        raise "invalid argument"
+        raise "invalid argument: #{object.inspect}"
       end
     end # def logtag_from_object
 
   end # class RoccLogger
 
 end # Rocc::Session
-
