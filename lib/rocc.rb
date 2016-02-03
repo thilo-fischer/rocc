@@ -95,6 +95,8 @@
 #
 # == Central TODO list
 #
+# * FIXME cleanup logging and debug messages
+# * FIXME exception handling: create, raise and handle exception type specific for parsing issues that indicate invalid parsed source code.
 # * TODO replace +env+ with +session+ or +applctx+ (=> ack --ignore-dir=outdated --ruby '\benv\b)
 # * XXX can we simplify some of the "Rocc::CodeElements::FileRepresented::" paths ?! => ack --ruby 'Rocc::'
 # * test suite
