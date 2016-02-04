@@ -22,25 +22,22 @@ require 'rocc/semantic/macro_invocation'
 
 module Rocc::CodeElements::CharRepresented::Tokens
 
-  class TknWord < CeToken
+  # forward declaration
+  class TknIdentifier < TknWord; end
+
+  class TknWord < CeCoToken
+
+    # XXX_F directly pick! on TknWord and not only on TknKeyword, TknIdentifier and override create to create either TknKeyword or TknIdentifier
+    
     # one word-charcter that is no digit
     # followed by an arbitrary number of word-charcters or digits
-    @PICKING_REGEXP = /^[A-Za-z_]\w*\b/
+    @REGEXP = /[A-Za-z_]\w*\b/
 
-    def self.pick!(env)
-      if self != TknWord
-        # allow subclasses to call superclass' method implementation
-        # FIXME smells
-        super
-      else
-        # FIXME handle macros named like keywords
-
-        # XXX performance improvement through picking with TknWord#@PICKING_REGEXP and creating eighter TknKeyword or TknIdentifier form the picked string? (override TknWord#Create?)
-        #if pick_string(env) then
-        TknKeyword.pick!(env) || TknIdentifier.pick!(env)
-        #end
-      end
-    end # pick!
+    ##
+    # Order in which to try to delegate picking to other classes is
+    # important: test for TknKeyword first and TknIdentifier second as
+    # every match for TknKeyword also matches TknIdentifier.
+    @PICKING_DELEGATEES = [TknKeyword, TknIdentifier]
 
     ##
     # Return true if word has been handled and child classes invoking
@@ -78,14 +75,15 @@ module Rocc::CodeElements::CharRepresented::Tokens
       return macro_without_additional_conditions != 0
     end # pursue_branch
 
-    def family_abbrev
-      "TknWord"
+    FAMILY_ABBREV = 'TknWord'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
   end # class TknWord
 
   class TknIdentifier < TknWord
-    @PICKING_REGEXP = /^[A-Za-z_]\w*\b/
+    @REGEXP = /[A-Za-z_]\w*\b/
     
     def pursue_branch(compilation_context, branch)
       # handle word if it is identifier of a macro
@@ -112,13 +110,14 @@ module Rocc::CodeElements::CharRepresented::Tokens
       end
     end
     
-    def family_abbrev
-      "TknIdent"
+    FAMILY_ABBREV = 'TknId'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
 
  end # class TknIdentifier
 
-  class TknLiteral < CeToken
+  class TknLiteral < CeCoToken
     def pursue_branch(compilation_context, branch)
       if branch.has_pending?
         super
@@ -133,44 +132,48 @@ module Rocc::CodeElements::CharRepresented::Tokens
   end # class TknLiteral
   
   class TknIntegerLiteral < TknLiteral
-    @PICKING_REGEXP = Regexp.union(/^[+-]?\d+[ul]*\b/i, /^[+-]?0x(\d|[abcdef])+[ul]*\b/i)
+    @REGEXP = Regexp.union(/[+-]?\d+[ul]*\b/i, /^[+-]?0x(\d|[abcdef])+[ul]*\b/i)
     
     def pursue_branch(compilation_context, branch)
       super
       #branch.announce_symbol(self)
     end # pursue_branch
     
-    def family_abbrev
-      "TknInt"
+    FAMILY_ABBREV = 'TknInt'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
   end # class TknIntegerLiteral
 
   class TknFloatLiteral < TknLiteral
     # C99 allows hex float literals
-    @PICKING_REGEXP = Regexp.union(/^[+-]?(\d+\.|\.\d)\d*(e[+-]?\d+)?\b/i, /^[+-]?((\d|[abcdef])+\.|\.(\d|[abcdef]))(\d|[abcdef])*p[+-]?\d+\b/i)
+    # XXX_R allow hex float litarals only when in C99 compability mode
+    @REGEXP = Regexp.union(/[+-]?(\d+\.|\.\d)\d*(e[+-]?\d+)?\b/i, /^[+-]?((\d|[abcdef])+\.|\.(\d|[abcdef]))(\d|[abcdef])*p[+-]?\d+\b/i)
 
     def pursue_branch(compilation_context, branch)
       super
       #branch.announce_symbol(self)
     end # pursue_branch
     
-    def family_abbrev
-      "TknFloat"
+    FAMILY_ABBREV = 'TknFloat'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
   end # class TknFloatLiteral
 
   class TknCharLiteral < TknLiteral
-    @PICKING_REGEXP = Regexp.union(/^L?'.'/, /^L?'\\(['"?\\abfnrtv]|[01234567]+|[xuU](\d|[AaBbCcDdEeFf])+)'/)
+    @REGEXP = Regexp.union(/L?'.'/, /^L?'\\(['"?\\abfnrtv]|[01234567]+|[xuU](\d|[AaBbCcDdEeFf])+)'/)
     
     def pursue_branch(compilation_context, branch)
       super
       #branch.announce_symbol(self)
     end # pursue_branch
     
-    def family_abbrev
-      "TknChar"
+    FAMILY_ABBREV = 'TknChar'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
   end # class TknCharLiteral
@@ -182,38 +185,41 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # an arbitrary number of arbitrary characters (non-greedy)
     # where the last character is no backslash
     # followed by a double quote
-    @PICKING_REGEXP = /^L?"(.*?[^\\])?"/
+    @REGEXP = /L?"(.*?[^\\])?"/
 
     def pursue_branch(compilation_context, branch)
       super
       #branch.announce_symbol(self)
     end # pursue_branch
     
-    def family_abbrev
-      "TknStr"
+    FAMILY_ABBREV = 'TknStr'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
   end # class TknStringLiteral
 
   # XXX rename: TknNChar => TknNPunktuationChar
-  class Tkn3Char < CeToken
+  class Tkn3Char < CeCoToken
     # <<=, >>=, ...
-    @PICKING_REGEXP = /^((<<|>>)=|\.\.\.)/
-    def family_abbrev
-      "Tkn3Pkt"
+    @REGEXP = Regexp.union('<<=', '>>=', '...')
+    FAMILY_ABBREV = 'Tkn3Pkt'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
   end
 
-  class Tkn2Char < CeToken
-    @PICKING_REGEXP = /^([+\-*\/%=!&|<>\^]=|<<|>>|##)/
-    def family_abbrev
-      "Tkn2Pkt"
+  class Tkn2Char < CeCoToken
+    @REGEXP = Regexp.union(/[+\-*\/%&|\^]=/, /[=!<>]=/, '<<', '>>', '##')
+    FAMILY_ABBREV = 'Tkn2Pkt'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
   end
 
-  class Tkn1Char < CeToken
+  class Tkn1Char < CeCoToken
     
-    @PICKING_REGEXP = /^[+\-*\/%=!&|<>\^,:;?()\[\]{}~#]/
+    @REGEXP = /[+\-*\/%=!&|<>\^,:;?()\[\]{}~#]/
 
     def pursue_branch(compilation_context, branch)
       # FIXME refactor: split into smaller functions
@@ -589,8 +595,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
 #    end # expand_with_context   
     
     public
-    def family_abbrev
-      "Tkn1Pkt"
+    FAMILY_ABBREV = 'Tkn1Pkt'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
   end # Tkn1Char

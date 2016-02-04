@@ -15,15 +15,14 @@ require 'rocc/code_elements/char_represented/tokens/token'
 
 require 'rocc/semantic/arising_specification'
 require 'rocc/semantic/statement'
-#require 'rocc/semantic/expression' # not (yet) in use
 require 'rocc/semantic/function'
 require 'rocc/semantic/r_value'
 
 module Rocc::CodeElements::CharRepresented::Tokens
 
     # forward declarations
-    class CeToken               < Rocc::CodeElements::CodeElement; end
-    class TknWord               < CeToken; end
+    class CeCoToken               < Rocc::CodeElements::CharRepresented::CeCharObject; end
+    class TknWord               < CeCoToken; end
     class TknKeyword            < TknWord;        end
     class TknKwCtrlflow         < TknKeyword;     end
     class TknKwTagged           < TknKeyword;     end
@@ -34,7 +33,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
 
     class TknKwCtrlflow < TknKeyword
-      @PICKING_REGEXP = Regexp.union %w(return if else for while do continue break switch case default goto)
+      @REGEXP = Regexp.union %w(return if else for while do continue break switch case default goto)
 
       def pursue_branch(compilation_context, branch)
         # handle word if it is identifier of a macro
@@ -98,7 +97,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
 
     class TknKwTagged < TknKeyword 
-      @PICKING_REGEXP = Regexp.union %w(enum struct union)
+      @REGEXP = Regexp.union %w(enum struct union)
       
       def pursue_branch(compilation_context, branch)
         # handle word if it is identifier of a macro
@@ -135,7 +134,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
 
     class TknKwTypeSpecifier < TknKeyword
-      @PICKING_REGEXP = Regexp.union %w(void char short int long float double signed unsigned bool) # XXX C99 featrue bool required #include <stdbool.h>
+      @REGEXP = Regexp.union %w(void char short int long float double signed unsigned bool) # XXX C99 featrue bool required #include <stdbool.h>
 
       def pursue_branch(compilation_context, branch)
         # handle word if it is identifier of a macro
@@ -161,7 +160,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
 
     class TknKwTypeQualifier < TknKeyword
-      @PICKING_REGEXP = Regexp.union %w(volatile const restrict)
+      @REGEXP = Regexp.union %w(volatile const restrict)
       
       def pursue_branch(compilation_context, branch)
         # handle word if it is identifier of a macro
@@ -186,7 +185,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
 
     class TknKwStorageClassSpecifier < TknKeyword
-      @PICKING_REGEXP = Regexp.union %w(typedef static extern auto register)
+      @REGEXP = Regexp.union %w(typedef static extern auto register)
 
       def pursue_branch(compilation_context, branch)
         # handle word if it is identifier of a macro
@@ -226,63 +225,19 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
     class TknKwSpecifier < TknKeyword
 
-      THIS_CLASS = TknKwSpecifier
-      SUBCLASSES = [ TknKwTypeSpecifier, TknKwStorageClassSpecifier ] # fixme(?): use `inherited' hook ?
-      @PICKING_REGEXP = Regexp.union(SUBCLASSES.map{|c| c.picking_regexp})
-
-      # TODO old implementation. still in accordance with pick/pick_string/pick_string!/create ?
-      def self.pick!(env)
-        if self != THIS_CLASS
-          # allow subclasses to call superclass' method implementation
-          super
-        else
-          tkn = nil
-          SUBCLASSES.find {|c| tkn = c.pick!(env)}
-          tkn
-        end
-      end   
+      @PICKING_DELEGATEES = [ TknKwTypeSpecifier, TknKwStorageClassSpecifier ]
 
     end # class TknKwSpecifier
 
 
     class TknKwMisc < TknKeyword
-      @PICKING_REGEXP = Regexp.union %w(inline sizeof _Complex _Imaginary)
+      @REGEXP = Regexp.union %w(inline sizeof _Complex _Imaginary)
     end
 
 
     class TknKeyword < TknWord
 
-      THIS_CLASS = TknKeyword
-      SUBCLASSES = [ TknKwCtrlflow, TknKwTagged, TknKwTypeSpecifier, TknKwTypeQualifier, TknKwStorageClassSpecifier, TknKwMisc ]
-      @PICKING_REGEXP = Regexp.union(SUBCLASSES.map{|c| c.picking_regexp})
-
-      # XXX test which version of pick! works faster, this or the one commented out below. (adapt TknKwSpecifier.pick! accordingly)
-
-      def self.pick_string!(tokenization_context)
-        str = tokenization_context.remainder.slice!(Regexp.new("^(#{@PICKING_REGEXP.source})")) # FIXME quick and dirty => rebuilding regexp at every pick_string! is a performance issue!
-      end
-
-      def self.pick!(env)
-        if self != THIS_CLASS
-          # allow subclasses to call superclass' method implementation
-          super
-        else
-          tkn = nil
-          SUBCLASSES.find {|c| tkn = c.pick!(env)}
-          tkn
-        end
-      end   
-
-      #  def self.pick!(env)
-      #    if str = self.pick_string(env) then
-      #      tkn = nil
-      #      if SUBCLASSES.find {|c| tkn = c.pick!(env)} then
-      #        tkn
-      #      else
-      #        raise StandardError, "Error processing keyword, not accepted by subclasses @#{origin.list}: `#{str}'"
-      #      end
-      #    end
-      #  end
+      @PICKING_DELEGATEES = [ TknKwCtrlflow, TknKwTagged, TknKwTypeSpecifier, TknKwTypeQualifier, TknKwStorageClassSpecifier, TknKwMisc ]
 
     end # TknKeyword
 

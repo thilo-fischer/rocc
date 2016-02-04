@@ -11,8 +11,6 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'rocc/code_elements/char_represented/tokens/token.rb'
-
 require 'rocc/semantic/macro'
 require 'rocc/semantic/macro_definition'
 
@@ -21,55 +19,51 @@ require 'rocc/contexts/lineread_context'
 require 'rocc/contexts/comment_context'
 require 'rocc/contexts/compilation_context'
 
-module Rocc::CodeElements::CharRepresented::Tokens
+module Rocc::CodeElements::CharRepresented
 
   # forward declarations
-  class TknPpDirective   < CeToken;          end
-  class TknPpInclude     < TknPpDirective;   end
-  class TknPpDefine      < TknPpDirective;   end
-  class TknPpUndef       < TknPpDirective;   end
-  class TknPpError       < TknPpDirective;   end
-  class TknPpPragma      < TknPpDirective;   end
-  class TknPpLine        < TknPpDirective;   end
-  class TknPpConditional < TknPpDirective;   end
-  class TknPpCondIf      < TknPpConditional; end
-  class TknNonautonomousPpConditional < TknPpConditional; end
-  class TknPpCondElif    < TknNonautonomousPpConditional; end
-  class TknPpCondElse    < TknNonautonomousPpConditional; end
-  class TknPpCondEndif   < TknNonautonomousPpConditional; end
+  class CeCharObject < Rocc::CodeElements::CodeElement; end
+  class CeCoPpDirective   < CeCharObject;     end
+  class CeCoPpInclude     < CeCoPpDirective;   end
+  class CeCoPpDefine      < CeCoPpDirective;   end
+  class CeCoPpUndef       < CeCoPpDirective;   end
+  class CeCoPpError       < CeCoPpDirective;   end
+  class CeCoPpPragma      < CeCoPpDirective;   end
+  class CeCoPpLine        < CeCoPpDirective;   end
+  class CeCoPpConditional < CeCoPpDirective;   end
+  class CeCoPpCondIf      < CeCoPpConditional; end
+  class CeCoPpCondNonautonomous < CeCoPpConditional; end
+  class CeCoPpCondElif    < CeCoPpCondNonautonomous; end
+  class CeCoPpCondElse    < CeCoPpCondNonautonomous; end
+  class CeCoPpCondEndif   < CeCoPpCondNonautonomous; end
 
 
-  class TknPpDirective < CeToken
-    @PICKING_REGEXP = /^#\s*\w+/
-    SUBCLASSES = [ TknPpInclude, TknPpConditional, TknPpDefine, TknPpUndef, TknPpError, TknPpPragma, TknPpLine ] # fixme(?): use `inherited' hook ?
+  # FIXME_R handling of comments interfering with pp directives
 
-    def self.pick!(tokenization_context)
-      if self != TknPpDirective
-        # allow subclasses to call superclass' method implementation
-        super
-      else
-        if tokenization_context.remainder =~ @PICKING_REGEXP then
-          tkn = nil
-          if SUBCLASSES.find {|c| tkn = c.pick!(tokenization_context)} then
-            tkn
-          else
-            raise "Unknown preprocessor directive @#{tokenization_context.remainder}'"
-          end
-        end
-      end
-    end # pick!
+  class CeCoPpDirective < CeCharObject
+    @REGEXP = /#\s*\w+/
+    @PICKING_DELEGATEES = [
+      CeCoPpInclude,
+      CeCoPpConditional,
+      CeCoPpDefine,
+      CeCoPpUndef,
+      CeCoPpError,
+      CeCoPpPragma,
+      CeCoPpLine
+    ]
 
-    # override Token's default implementation and throw exception (no pp directive shall be added to list of pending tokens)
+    # override Token's default implementation and throw exception (no
+    # pp directive shall be added to list of pending tokens)
     def pursue_branch(compilation_context, branch)
       raise 'not yet implemented'
     end
     
-  end # class TknPpDirective
+  end # class CeCoPpDirective
 
 
-  class TknPpInclude < TknPpDirective
+  class CeCoPpInclude < CeCoPpDirective
 
-    @PICKING_REGEXP = /^#\s*include\s*(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*(?<file>(<|").*?(>|"))/ # fixme: not capable of handling `#include "foo\"bar"' or `#include <foo\>bar>'
+    @REGEXP = /#\s*include\s*(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*(?<file>(<|").*?(>|"))/ # XXX_R not capable of handling `#include "foo\"bar"' or `#include <foo\>bar>'
 
     attr_reader :file
 
@@ -78,8 +72,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
       tkn = super
 
       if tkn
-        # fixme: super just did match the @PICKING_REGEXP, and we match it here a second time.
-        tkn.text =~ @PICKING_REGEXP
+        # TODO_F(pick_captures) Super just did match the @PICKING_REGEXP, and we match it here a second time (redundantly). Consider returning Regexp.last_match in CharObject.peek and CharObject.pick_string! and passing Regexp.last_match.named_captures to the CharObject.create. (=> same performance?)
+        tkn.text =~ picking_regexp
 
         tkn.file = $~[:file]
         comments = $~[:comments]
@@ -91,7 +85,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
           tkn.text.sub!(comments, " ")
         end
         while not comments.strip!.empty? do
-          TknComment.pick!(tokenization_context, comments)
+          CeCoComment.pick!(tokenization_context, comments)
         end
         
       end
@@ -107,6 +101,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
     end
 
     def path
+      # strip quote characters
       @file[1..-2]
     end
 
@@ -153,12 +148,12 @@ module Rocc::CodeElements::CharRepresented::Tokens
     end
     private :find_include_file
 
-  end # class TknPpInclude
+  end # class CeCoPpInclude
 
 
-  class TknPpDefine < TknPpDirective
+  class CeCoPpDefine < CeCoPpDirective
     # TODO the stuff picked here is more than a token, it is several tokens at once. same applies to (most of) the other preprocessor "token" classes handling preprocessor directives. technically fine, but calling it a token is missleading.
-    @PICKING_REGEXP = /^#\s*define\s*?(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*?(?<identifier>[A-Za-z_]\w*)(?<parameters>\(.*?\))?/
+    @REGEXP = /#\s*define\s*?(?<comments>(\/\*.*?\*\/\s*)+|\s)\s*?(?<identifier>[A-Za-z_]\w*)(?<parameters>\(.*?\))?/
 
     attr_reader :identifier, :comments, :parameters
 
@@ -167,13 +162,15 @@ module Rocc::CodeElements::CharRepresented::Tokens
     attr_writer :identifier, :comments, :parameters
 
     public
+
+    # XXX_R mostly redundant to CeCoPpInclude.pick!
     def self.pick!(tokenization_context)
 
       tkn = super
 
       if tkn
-        # XXX performance: super just did match the @PICKING_REGEXP, and we match it here a second time (redundantly).
-        tkn.text =~ @PICKING_REGEXP
+        # TODO_F(pick_captures)
+        tkn.text =~ picking_regexp
 
         tkn.identifier = $~[:identifier]
         
@@ -186,7 +183,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         end
         # FIXME create comment objects
         #while not comments.strip!.empty? do
-        #  TknComment.pick!(tokenization_context, comments)
+        #  CeCoComment.pick!(tokenization_context, comments)
         #end
         
         tkn.parameters = if parameters
@@ -221,75 +218,72 @@ module Rocc::CodeElements::CharRepresented::Tokens
       line_tokens[own_index+1..-1]
     end
 
-  end # class TknPpDefine
+  end # class CeCoPpDefine
 
-  class TknPpUndef < TknPpDirective
-    @PICKING_REGEXP = /^#\s*undef\s+/
+  class CeCoPpUndef < CeCoPpDirective
+    @REGEXP = /^#\s*undef\s+/
 
-    def expand(env)
-
+    def pursue_branch(compilation_context, branch)
       raise "invalid syntax" unless successor.is_a? TknWord # fixme: provide appropriate exception
+      raise "not yet supported"
+    end # pursue_branch
 
-      macros = env.preprocessing[:macros]
-      if macros.key? successor.text then
-        macros[successor.text] << self
-      else
-        macros[successor.text] = [self]
-      end
+  end # class CeCoPpUndef
 
-      env.preprocessing.freeze
-      env.preprocessing = env.preprocessing.dup
+  class CeCoPpError < CeCoPpDirective
+    @REGEXP = /^#\s*error\s+.*/  
 
-    end # expand
-
-  end # class TknPpUndef
-
-  class TknPpError < TknPpDirective
-    @PICKING_REGEXP = /^#\s*error\s+.*/  
-    def expand(env)
+    # TODO_W
+    def pursue_branch(compilation_context, branch)
       # remove `#error' from @text
       @text.slice!(/#\s*error\s+/)
-      # raise "pp#error: `#{@text}'" if FALSE # todo ??
+      raise "pp#error: `#{@text}'"
     end
-  end # class TknPpError
+    
+  end # class CeCoPpError
 
-  class TknPpPragma < TknPpDirective
-    @PICKING_REGEXP = /^#\s*pragma\s+.*/
+  class CeCoPpPragma < CeCoPpDirective
+    @REGEXP = /^#\s*pragma\s+.*/
+    
     def pursue_branch(compilation_context, branch)
       log.warn{"ignoring #{location}: `#{@text}' "}
     end
-  end # class TknPpPragma
+    
+  end # class CeCoPpPragma
 
-  class TknPpLine < TknPpDirective
+  class CeCoPpLine < CeCoPpDirective
 
-    @PICKING_REGEXP = /^#\s*line\s+/
+    @REGEXP = /^#\s*line\s+/
 
-    def expand(env)
+    def pursue_branch(compilation_context, branch)
+      raise "not yet supported"
+    end # pursue_branch
 
-      raise "invalid syntax" unless successor.is_a? TknNumber # fixme: provide appropriate exception
-      @number = Integer(successor.text)
+    #def expand(env)
+    #
+    #  raise "invalid syntax" unless successor.is_a? TknNumber # fixme: provide appropriate exception
+    #  @number = Integer(successor.text)
+    #
+    #  if successor.successor
+    #    raise "invalid syntax" unless successor.is_a? TknStringLitral # fixme: provide appropriate exception
+    #    @filename = successor.successor.text.dup
+    #    @filename[ 0] = ""
+    #    @filename[-1] = ""
+    #  end
+    #
+    #  env.preprocessing[:line_directive] = self
+    #
+    #  env.preprocessing.freeze
+    #  env.preprocessing = env.preprocessing.dup
+    #
+    #end # expand
 
-      if successor.successor
-        raise "invalid syntax" unless successor.is_a? TknStringLitral # fixme: provide appropriate exception
-        @filename = successor.successor.text.dup
-        @filename[ 0] = ""
-        @filename[-1] = ""
-      end
+  end # class CeCoPpLine
 
-      env.preprocessing[:line_directive] = self
+  class CeCoPpConditional < CeCoPpDirective
 
-      env.preprocessing.freeze
-      env.preprocessing = env.preprocessing.dup
-
-    end # expand
-
-  end # class TknPpLine
-
-  class TknPpConditional < TknPpDirective
-
-    THIS_CLASS = TknPpConditional
-    SUBCLASSES = [ TknPpCondIf, TknPpCondElif, TknPpCondElse, TknPpCondEndif ] # fixme(?): use `inherited' hook ?
-    #@PICKING_REGEXP = /^#\s*(if(n?def)?|elif|else|endif)\b/ # TODO_R should not be necessary
+    @PICKING_DELEGATEES = [ CeCoPpCondIf, CeCoPpCondElif, CeCoPpCondElse, CeCoPpCondEndif ]
+    @REGEXP = /^#\s*(if(n?def)?|elif|else|endif)\b/
 
     ##
     # +associated_cond_dirs+ array shared among all conditional
@@ -297,7 +291,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # i.e. represent the same level of preprocessor branching. E.g. an
     # +#if+ directive along with two +#elif+ directives, a +#else+
     # directive and a +#endif+ directive which all belong
-    # together. Stores references to all those TknPpConditional
+    # together. Stores references to all those CeCoPpConditional
     # objects that share the array.
     attr_reader :associated_cond_dirs
 
@@ -305,20 +299,10 @@ module Rocc::CodeElements::CharRepresented::Tokens
       super
       @associated_cond_dirs = nil
     end
-
-    def self.pick!(tokenization_context)
-      if self != THIS_CLASS
-        # allow subclasses to call superclass' method implementation
-        super
-      else
-        tkn = nil
-        SUBCLASSES.find {|c| tkn = c.pick!(tokenization_context)}
-        tkn
-      end
-    end   
     
-    def family_abbrev
-      '#Cond'
+    FAMILY_ABBREV = '#Cond'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
     def pursue_branch(compilation_context, branch)
@@ -336,9 +320,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
       @associated_cond_dirs << self
     end
 
-  end # class TknPpConditional
+  end # class CeCoPpConditional
 
-  # XXX_R? Make an inner module of class TknPpConditional?
+  # XXX_R? Make an inner module of class CeCoPpConditional?
   module PpConditionalMixin
 
     def negated_associated_conditions
@@ -354,7 +338,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
   end # module PpConditionalMixin
 
-  # XXX_R? Make an inner module of class TknPpConditional?
+  # XXX_R? Make an inner module of class CeCoPpConditional?
   module PpConditionalOwnConditionMixin
     include PpConditionalMixin
     
@@ -371,20 +355,21 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
   end # module PpConditionalOwnConditionMixin
 
-  class TknPpCondIf < TknPpConditional
+  class CeCoPpCondIf < CeCoPpConditional
     include PpConditionalOwnConditionMixin
 
-    @PICKING_REGEXP = /^#\s*if(n?def)?\b.*$/
+    @REGEXP = /^#\s*if(n?def)?\b.*$/
 
     def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
       super
       @condition_text = nil
-      # TknPpCondIf starts associated_cond_dirs array
+      # CeCoPpCondIf starts associated_cond_dirs array
       @associated_cond_dirs = [ self ]
     end
 
-    def family_abbrev
-      '#If'
+    FAMILY_ABBREV = '#If'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
     def pursue_branch(compilation_context, branch)
@@ -405,27 +390,28 @@ module Rocc::CodeElements::CharRepresented::Tokens
       super
     end
 
-  end # class TknPpCondIf
+  end # class CeCoPpCondIf
 
-  class TknNonautonomousPpConditional < TknPpConditional
+  class CeCoPpCondNonautonomous < CeCoPpConditional
     def pursue_branch(compilation_context, branch)
       associate(branch.ppcond_stack.last)
       super
     end
-  end # class TknNonautonomousPpConditional
+  end # class CeCoPpCondNonautonomous
 
-  class TknPpCondElif < TknNonautonomousPpConditional
+  class CeCoPpCondElif < CeCoPpCondNonautonomous
     include PpConditionalOwnConditionMixin
 
-    @PICKING_REGEXP = /^#\s*elif\b.*$/
+    @REGEXP = /^#\s*elif\b.*$/
 
     def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
       super
       @condition_text = nil
     end
 
-    def family_abbrev
-      '#Elif'
+    FAMILY_ABBREV = '#Elif'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
     def pursue_branch(compilation_context, branch)
@@ -445,15 +431,16 @@ module Rocc::CodeElements::CharRepresented::Tokens
       super
     end
 
-  end # class TknPpCondElif
+  end # class CeCoPpCondElif
 
-  class TknPpCondElse < TknNonautonomousPpConditional
+  class CeCoPpCondElse < CeCoPpCondNonautonomous
     include PpConditionalMixin
 
-    @PICKING_REGEXP = /^#\s*else\b.*$/
+    @REGEXP = /^#\s*else\b.*$/
 
-    def family_abbrev
-      '#Else'
+    FAMILY_ABBREV = '#Else'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
     # XXX substitute with unit test
@@ -466,13 +453,14 @@ module Rocc::CodeElements::CharRepresented::Tokens
       negated_associated_conditions
     end
     
-  end # class TknPpCondElse
+  end # class CeCoPpCondElse
 
-  class TknPpCondEndif < TknNonautonomousPpConditional
-    @PICKING_REGEXP = /^#\s*endif\b.*$/
+  class CeCoPpCondEndif < CeCoPpCondNonautonomous
+    @REGEXP = /^#\s*endif\b.*$/
 
-     def family_abbrev
-      '#Endif'
+    FAMILY_ABBREV = '#Endif'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
     
    # XXX substitute with unit test
@@ -481,6 +469,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
       super
     end
     
-  end # class TknPpCondEndif
+  end # class CeCoPpCondEndif
 
 end # module Rocc::CodeElements::CharRepresented::Tokens

@@ -11,41 +11,43 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'rocc/code_elements/char_represented/tokens/token'
+require 'rocc/code_elements/char_represented/char_object'
 
 require 'rocc/helpers'
 
-module Rocc::CodeElements::CharRepresented::Tokens
+module Rocc::CodeElements::CharRepresented
 
-  class TknComment < CeToken; end
+  class CeCoComment < CeCharObject; end
 
-  class TknLineComment < TknComment
+  class CeCoLineComment < CeCoComment
     # from // to end of line
-    @PICKING_REGEXP = /^\/\/.*$/
-    def family_abbrev
-      "TknLCmt"
+    @REGEXP = /\/\/.*$/
+    FAMILY_ABBREV = 'LnCmt'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
-  end # class TknLineComment
+  end # class CeCoLineComment
   
-  class TknBlockComment < TknComment
+  class CeCoBlockComment < CeCoComment
     # from /* to the next (non-greedy) */
-    @PICKING_REGEXP = /^\/\*.*?\*\//
-    def family_abbrev
-      "TknBCmt"
+    @REGEXP = /\/\*.*?\*\//
+    FAMILY_ABBREV = 'BlkCmt'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
-  end # class TknBlockComment
+  end # class CeCoBlockComment
 
-  # XXX unclean. (Not a token => shouldn't be subclass of CeToken.)
-  class TknMultiLineBlockCommentEnd < CeToken
-    @PICKING_REGEXP = /^.*?\*\//
-    def family_abbrev
-      "TknMlCmtEnd"
+  class CeCoMultiLineBlockCommentEnd < CeCharObject
+    @REGEXP = /.*?\*\//
+    FAMILY_ABBREV = 'MlCmt*/'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
-  end # class TknMultiLineBlockCommentEnd
+  end # class CeCoMultiLineBlockCommentEnd
 
   # XXX rename MultiLine => Multiline
-  class TknMultiLineBlockComment < TknBlockComment
-    @PICKING_REGEXP = /^\/\*.*$/
+  class CeCoMultiLineBlockComment < CeCoBlockComment
+    @REGEXP = /\/\*.*$/
 
     def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
       super([origin], text + whitespace_after, charpos, '', direct_predecessor)
@@ -58,13 +60,13 @@ module Rocc::CodeElements::CharRepresented::Tokens
     end
 
     ##
-    # Same as CeToken.pick!, but not as a class method that creates an
+    # Same as CeCharObject.pick!, but not as a class method that creates an
     # according class instance when token is found, as an instance
     # method to be invoked on a class instance to extend the instance
     # with matching code sections.
     def pick_more!(tokenization_context)
       @origin << tokenization_context.line
-      str = TknMultiLineBlockCommentEnd.pick_string!(tokenization_context)
+      str = CeCoMultiLineBlockCommentEnd.pick_string!(tokenization_context)
       if str
         tokenization_context.leave_multiline_comment
         @text += str
@@ -76,40 +78,32 @@ module Rocc::CodeElements::CharRepresented::Tokens
       end
     end # pick_more!
 
-    def family_abbrev
-      "TknMlCmt"
+    FAMILY_ABBREV = 'MlCmt'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
-  end # class TknMultiLineBlockComment
+  end # class CeCoMultiLineBlockComment
 
-  class TknComment < CeToken
+  # XXX_R abstract class => forbid initialization
+  class CeCoComment < CeCharObject
 
-    THIS_CLASS = TknComment
-    SUBCLASSES = [ TknLineComment, TknBlockComment, TknMultiLineBlockComment ]
-    #@PICKING_REGEXP = /^(\/\/.*$|\/\*.*?(\*\/|$))/
+    @PICKING_DELEGATEES = [ CeCoLineComment, CeCoBlockComment, CeCoMultiLineBlockComment ]
 
-    def self.pick!(tokenization_context)
-      if self != THIS_CLASS
-        # allow subclasses to call superclass' method implementation
-        super
-      else
-        tkn = nil
-        SUBCLASSES.find {|c| tkn = c.pick!(tokenization_context)}
-        tkn
-      end
-    end   
-    
+    @REGEXP = /\/[\/\*]/
+
     def pursue_branch(compilation_context, branch)
       nil
     end
 
-    def family_abbrev
-      "TknCmt"
+    FAMILY_ABBREV = 'Comment'
+    def self.family_abbrev
+      FAMILY_ABBREV
     end
 
     def text_abbrev
       Rocc::Helpers::String::abbrev(@text)
     end
     
-  end # class TknComment
+  end # class CeCoComment
 
-end # module Rocc::CodeElements::CharRepresented::Tokens
+end # module Rocc::CodeElements::CharRepresented

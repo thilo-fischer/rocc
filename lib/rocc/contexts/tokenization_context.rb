@@ -14,6 +14,8 @@
 require 'rocc/helpers'
 require 'rocc/session/logging'
 
+# FIXME rework tokens --> code objects
+
 module Rocc::Contexts
 
   ##
@@ -66,7 +68,7 @@ module Rocc::Contexts
     end
 
     def pick_comments
-      while Rocc::CodeElements::CharRepresented::Tokens::TknComment.pick!(self); end
+      while Rocc::CodeElements::CharRepresented::CeCoComment.pick!(self); end
     end
     
     def pick_pp_directives
@@ -80,7 +82,7 @@ module Rocc::Contexts
       end
 
       # handle preprocessor directives
-      Rocc::CodeElements::CharRepresented::Tokens::TknPpDirective.pick!(self)
+      Rocc::CodeElements::CharRepresented::CeCoPpDirective.pick!(self)
     end
     
     def add_token(tkn)

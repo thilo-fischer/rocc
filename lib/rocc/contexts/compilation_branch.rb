@@ -481,9 +481,9 @@ module Rocc::Contexts
       raise "programming error :( -> #{ppcond_directive.name_dbg}, associated_cond_dirs: #{ppcond_directive.associated_cond_dirs}" unless ppcond_directive.associated_cond_dirs.include?(ppcond_directive) # XXX defensive programming, substitute with according unit test
 
       case ppcond_directive
-      when Rocc::CodeElements::CharRepresented::Tokens::TknPpCondEndif,
-           Rocc::CodeElements::CharRepresented::Tokens::TknPpCondElif,
-           Rocc::CodeElements::CharRepresented::Tokens::TknPpCondElse
+      when Rocc::CodeElements::CharRepresented::CeCoPpCondEndif,
+           Rocc::CodeElements::CharRepresented::CeCoPpCondElif,
+           Rocc::CodeElements::CharRepresented::CeCoPpCondElse
         # FIXME smells
         if adducer == ppcond_directive.associated_cond_dirs[-2]
           # announce_pp_branch called on branch that was opened to process the previous conditional pp directive
@@ -498,7 +498,7 @@ module Rocc::Contexts
         # FIXME smells
         if adducer != ppcond_directive.associated_cond_dirs[-2]
           # announce_pp_branch called on parent branch
-          if ppcond_directive.is_a? Rocc::CodeElements::CharRepresented::Tokens::TknPpCondEndif
+          if ppcond_directive.is_a? Rocc::CodeElements::CharRepresented::CeCoPpCondEndif
             forks.each do |f|
               unless f.try_join
                 f.activate
@@ -510,9 +510,9 @@ module Rocc::Contexts
       end
       
       case ppcond_directive
-      when Rocc::CodeElements::CharRepresented::Tokens::TknPpCondIf,
-           Rocc::CodeElements::CharRepresented::Tokens::TknPpCondElif,
-           Rocc::CodeElements::CharRepresented::Tokens::TknPpCondElse
+      when Rocc::CodeElements::CharRepresented::CeCoPpCondIf,
+           Rocc::CodeElements::CharRepresented::CeCoPpCondElif,
+           Rocc::CodeElements::CharRepresented::CeCoPpCondElse
         @ppcond_stack << ppcond_directive
         deactivate
         #warn "#{name_dbg}.announce_pp_branch -> #{conditions.complement(ppcond_directive.collected_conditions)}"

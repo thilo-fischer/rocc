@@ -12,8 +12,10 @@
 # approach. See LICENSE.txt from the top-level directory for details.
 
 require 'rocc/code_elements/code_element'
-require 'rocc/code_elements/char_represented/tokens/tokens'
+require 'rocc/code_elements/char_represented/char_object'
 require 'rocc/contexts/tokenization_context'
+
+# FIXME rework tokens --> code objects
   
 module Rocc::CodeElements::CharRepresented
 
@@ -140,15 +142,13 @@ module Rocc::CodeElements::CharRepresented
       tokenization_context.pick_pp_directives
 
       until tokenization_context.finished? do
-        picked = Tokens::PICKING_ORDER.find do |tkn_class|
-          tkn_class.pick!(tokenization_context)
-        end
+        picked = CeCharObject.pick!(tokenization_context)
         raise "Could not dertermine next token in `#{tokenization_context.remainder}'" unless picked
       end
 
       # FIXME enter multiline comment when parsing `/*'
       if tokenization_context.recent_token and
-        tokenization_context.recent_token.class.is_a? Tokens::TknMultiLineBlockComment and
+        tokenization_context.recent_token.class.is_a? CeCoMultiLineBlockComment and
         not tokenization_context.recent_token.complete?
         tokenization_context.announce_multiline_comment(tokenization_context.recent_token)
       end
