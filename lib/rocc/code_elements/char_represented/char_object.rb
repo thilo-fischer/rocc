@@ -14,6 +14,13 @@
 require 'rocc/helpers'
 require 'rocc/code_elements/code_element'
 
+require 'rocc/code_elements/char_represented/char_object_picker'
+
+# forward declaration (sort of ...)
+module Rocc::CodeElements::CharRepresented
+  class CeCharObject < Rocc::CodeElements::CodeElement; end
+end
+
 require 'rocc/code_elements/char_represented/tokens/comment'
 require 'rocc/code_elements/char_represented/tokens/preprocessor'
 require 'rocc/code_elements/char_represented/tokens/token'
@@ -25,7 +32,47 @@ module Rocc::CodeElements::CharRepresented
     
     attr_reader :text, :charpos, :pred_char_obj, :succ_char_obj, :whitespace_after
 
-    @PICKING_DELEGATEES = [ CeCoComment, CeCoPpDirective, Tokens::CeCoToken ]
+    # Delegate to CeCoComment and Tokens::CeCoToken. CeCoPpDirective
+    # will be handled separately as these will always start at the
+    # beginning of a logic line.
+    # 
+    # TODO_R separate CodeObjects base class from definition of
+    # picking delegation
+    @PICKING_DELEGATEES = [ CeCoComment, Tokens::CeCoToken ]
+
+    # XXX_R? Make @PICKING_DELEGATEES and @REGEXP a class instance
+    # variable or a constant? (class instance variable seems more
+    # appropriate as this will not be inherited by subclasses)
+    class << self
+      #attr_reader :PICKING_DELEGATEES
+      attr_reader :REGEXP
+    end
+    
+    # TODO_R Rework relation of CodeObjects and their pickers. Is it a
+    # good idea to separate CodeObjects and their pickers from each
+    # other completely (Single responsibility principle?) or should
+    # those two classes be merged together completely (because they
+    # depend so much on each other)? Of which object should
+    # @PICKING_DELEGATEES, @REGEXP and @PICKING_REGEXP be part of and
+    # where shall these get defined?!
+    #
+    # Should be possible to +require+ some token without enforcing to
+    # require char_object.rb which requires comment, preprocessor and
+    # token which in turn require other files such that in the end
+    # *all* char objects' files are +required+.
+    
+    def self.picker
+      @picker ||= CharObjectPicker.new(self, @PICKING_DELEGATEES)
+    end
+    private_class_method :picker
+    
+    def self.pick!(tokenization_context)
+      picker.pick!(tokenization_context)
+    end
+
+    def self.peek(tokenization_context)
+      picker.peek(tokenization_context)
+    end
 
     ##
     # Conditions that must apply for this char object to "survive"
@@ -99,102 +146,6 @@ module Rocc::CodeElements::CharRepresented
     ##
     # for Tokens, adducer and origin are (usually) the same
     alias adducer origin
-
-    def self.picking_regexp
-      raise "no regexp specified for class #{name}" unless @REGEXP # XXX remove
-      @PICKING_REGEXP ||= Regexp.new("^(#{@REGEXP.source})") if @REGEXP
-      #warn "#{name}: #{@REGEXP.inspect} -> #{@PICKING_REGEXP.inspect}"
-      #@PICKING_REGEXP
-    end
-    
-    ##
-    # If the to be tokenized string in tokenization_context begins
-    # with a char object of this class or one of the classes noted in
-    # the +@PICKING_DELEGATEES+ array, mark the according section in
-    # that string as tokenized and create and return an instance of
-    # the according class created from that section. Else, return nil.
-    def self.pick!(tokenization_context)
-      if @PICKING_DELEGATEES
-        if @REGEXP
-          return nil unless peek(tokenization_context)
-          tkn = delegate_pick!(tokenization_context)
-          raise "`#{tokenization_context.remainder}' should contain #{family_abbrev} according to `#{picking_regexp}', but none of #{@PICKING_DELEGATEES.map {|d| d.family_abbrev}} matched." unless tkn
-          tkn
-        else
-          delegate_pick!(tokenization_context)
-        end
-      else
-        direct_pick!(tokenization_context)
-      end
-    end
-
-    ##
-    # If the to be tokenized string in tokenization_context begins
-    # with a char object of one of the classes noted in the
-    # +@PICKING_DELEGATEES+ array, mark the according section in that
-    # string as tokenized and create and return an instance of the
-    # according class created from that section. Else, return nil.
-    def self.delegate_pick!(tokenization_context)
-      @PICKING_DELEGATEES.find {|d| d.pick!(tokenization_context)}
-    end
-    private_class_method :delegate_pick!
-    
-    ##
-    # If the to be tokenized string in tokenization_context begins
-    # with a char object of this class, mark the according section in
-    # that string as tokenized and create and return an instance of
-    # this class created from that section. Else, return nil.
-    def self.direct_pick!(tokenization_context)
-      str = pick_string!(tokenization_context)
-      if str
-        whitespace_after = pick_whitespace!(tokenization_context)
-        charobj = create(tokenization_context, str, whitespace_after)
-        log.debug{ "pick! `#{str}' + `#{Rocc::Helpers::String::abbrev(Rocc::Helpers::String::no_lbreak(whitespace_after))}', remainder: `#{tokenization_context.remainder}'\n `=> #{charobj.name_dbg}" }
-        charobj
-      end
-    end # direct_pick!
-    private_class_method :direct_pick!
-
-    ##
-    # Test if the to be tokenized string in tokenization_context
-    # begins with a char object of this class. If so, return the
-    # according section of that string which represents the char
-    # object; else, return nil.
-    def self.peek(tokenization_context)
-      tokenization_context.remainder.slice(picking_regexp)
-    end
-
-    ##
-    # If the to be tokenized string in tokenization_context begins
-    # with a char object of this class, mark the according section in
-    # that string which represents the char object as tokenized and
-    # return that section. Else, return nil.  def
-    def self.pick_string!(tokenization_context)
-      # find regexp in string
-      # remove part of string matching regexp
-      # return part of string matching regexp
-      warn "remainder: #{tokenization_context.remainder.inspect}"
-      warn "#{name} -> #{picking_regexp.inspect}"
-      tokenization_context.remainder.slice!(picking_regexp)
-    end # pick_string!
-    # FIXME private_class_method :pick_string!
-    
-    def self.pick_whitespace!(tokenization_context)
-      whitespace = tokenization_context.lstrip! || ''
-      whitespace += "\n" if tokenization_context.finished?
-      whitespace
-    end
-    # FIXME private_class_method :pick_whitespace!
-
-    ##
-    # Create token of this class from and within the given context.
-    def self.create(tokenization_context, text, whitespace_after = nil)
-      pred = tokenization_context.recent_token
-      new_charobj = new(tokenization_context.line, text, tokenization_context.charpos, whitespace_after, pred)
-      tokenization_context.add_token(new_charobj)
-      log.debug{ "new token: #{new_charobj.name_dbg}" }
-      new_charobj
-    end
 
     ##
     # CharObject's implementation of CodeElement#pursue.

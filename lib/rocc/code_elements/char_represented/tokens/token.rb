@@ -14,30 +14,16 @@
 require 'rocc/helpers'
 require 'rocc/code_elements/code_element'
 
-require 'rocc/code_elements/tokens/keywords'
-require 'rocc/code_elements/tokens/misc_tokens'
-
 # forward declaration (sort of ...)
-module Rocc::CodeElements::CharRepresented
-  class CeCharObject < Rocc::CodeElements::CodeElement; end
-  module Tokens
-    class Rocc::CodeElements::CharRepresented::Tokens::CeCoToken; end
-  end
+module Rocc::CodeElements::CharRepresented::Tokens
+  class CeCoToken < Rocc::CodeElements::CharRepresented::CeCharObject; end
+  class TknWord < CeCoToken; end
 end
 
-module Rocc::CodeElements::CharRepresented::Tokens
+require 'rocc/code_elements/char_represented/tokens/keywords'
+require 'rocc/code_elements/char_represented/tokens/misc_tokens'
 
-  # forward declarations
-  class CeCoToken          < Rocc::CodeElements::CharRepresented::CeCharObject; end
-  class TknWord           < CeCoToken; end
-  class TknLiteral        < CeCoToken; end
-  class TknIntegerLiteral < TknLiteral; end
-  class TknFloatLiteral   < TknLiteral; end
-  class TknCharLiteral    < TknLiteral; end
-  class TknStringLiteral  < TknLiteral; end
-  class Tkn3Char          < CeCoToken; end
-  class Tkn2Char          < CeCoToken; end
-  class Tkn1Char          < CeCoToken; end
+module Rocc::CodeElements::CharRepresented::Tokens
 
   # XXX_R abstract class => forbid initialization
   class CeCoToken < Rocc::CodeElements::CharRepresented::CeCharObject

@@ -14,7 +14,8 @@
 require 'singleton' # for CeEmptyCondition
 
 require 'rocc/code_elements/code_element'
-require 'rocc/code_elements/char_represented/tokens/preprocessor.rb'
+require 'rocc/code_elements/char_represented/char_object'
+require 'rocc/code_elements/char_represented/tokens/preprocessor'
 
 require 'rocc/helpers'
 

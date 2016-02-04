@@ -20,7 +20,7 @@ module Rocc::CodeElements::CharRepresented
   class CeCoComment < CeCharObject; end
 
   class CeCoLineComment < CeCoComment
-    # from // to end of line
+    # from `//' to end of line
     @REGEXP = /\/\/.*$/
     FAMILY_ABBREV = 'LnCmt'
     def self.family_abbrev
@@ -29,7 +29,7 @@ module Rocc::CodeElements::CharRepresented
   end # class CeCoLineComment
   
   class CeCoBlockComment < CeCoComment
-    # from /* to the next (non-greedy) */
+    # from `/*' to the next (non-greedy) `*/'
     @REGEXP = /\/\*.*?\*\//
     FAMILY_ABBREV = 'BlkCmt'
     def self.family_abbrev
@@ -38,6 +38,7 @@ module Rocc::CodeElements::CharRepresented
   end # class CeCoBlockComment
 
   class CeCoMultiLineBlockCommentEnd < CeCharObject
+    # to the next (non-greedy) `*/'
     @REGEXP = /.*?\*\//
     FAMILY_ABBREV = 'MlCmt*/'
     def self.family_abbrev
@@ -47,6 +48,7 @@ module Rocc::CodeElements::CharRepresented
 
   # XXX rename MultiLine => Multiline
   class CeCoMultiLineBlockComment < CeCoBlockComment
+    # from `/*' to end of line
     @REGEXP = /\/\*.*$/
 
     def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
@@ -87,6 +89,10 @@ module Rocc::CodeElements::CharRepresented
   # XXX_R abstract class => forbid initialization
   class CeCoComment < CeCharObject
 
+    ##
+    # Order in which to try to delegate picking to other classes is
+    # important: must test for CeCoBlockComment before
+    # CeCoMultiLineBlockComment.
     @PICKING_DELEGATEES = [ CeCoLineComment, CeCoBlockComment, CeCoMultiLineBlockComment ]
 
     @REGEXP = /\/[\/\*]/

@@ -19,10 +19,8 @@ require 'rocc/contexts/lineread_context'
 require 'rocc/contexts/comment_context'
 require 'rocc/contexts/compilation_context'
 
+# forward declaration (sort of ...)
 module Rocc::CodeElements::CharRepresented
-
-  # forward declarations
-  class CeCharObject < Rocc::CodeElements::CodeElement; end
   class CeCoPpDirective   < CeCharObject;     end
   class CeCoPpInclude     < CeCoPpDirective;   end
   class CeCoPpDefine      < CeCoPpDirective;   end
@@ -36,6 +34,9 @@ module Rocc::CodeElements::CharRepresented
   class CeCoPpCondElif    < CeCoPpCondNonautonomous; end
   class CeCoPpCondElse    < CeCoPpCondNonautonomous; end
   class CeCoPpCondEndif   < CeCoPpCondNonautonomous; end
+end
+
+module Rocc::CodeElements::CharRepresented
 
 
   # FIXME_R handling of comments interfering with pp directives

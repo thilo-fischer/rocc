@@ -20,10 +20,16 @@ require 'rocc/semantic/initializer'
 require 'rocc/semantic/macro'
 require 'rocc/semantic/macro_invocation'
 
-module Rocc::CodeElements::CharRepresented::Tokens
+# forward declaration (sort of ...)
+module Rocc::CodeElements::CharRepresented
+  #class CeCharObject < Rocc::CodeElements::CodeElement; end
+  module Tokens; end
+  #class Tokens::CeCoToken < CeCharObject; end
+  class Tokens::TknWord < Tokens::CeCoToken; end
+  class Tokens::TknIdentifier < Tokens::TknWord; end
+end
 
-  # forward declaration
-  class TknIdentifier < TknWord; end
+module Rocc::CodeElements::CharRepresented::Tokens
 
   class TknWord < CeCoToken
 

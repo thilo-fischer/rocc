@@ -12,6 +12,7 @@
 # approach. See LICENSE.txt from the top-level directory for details.
 
 require 'rocc/code_elements/code_element'
+require 'rocc/code_elements/char_represented/char_object'
 require 'rocc/code_elements/char_represented/tokens/misc_tokens'
 
 module Rocc::Semantic

@@ -70,11 +70,12 @@ module Rocc::Contexts
     def pick_comments
       while Rocc::CodeElements::CharRepresented::CeCoComment.pick!(self); end
     end
-    
+
+    # TODO_R smells
     def pick_pp_directives
       # handle comments interfering with preprocessor directives
       pick_comments
-      if @remainder[0] == "#" then
+      if (not @remainder.empty?) and @remainder[0] == "#" then
         @remainder[0] = ""
         lstrip!
         pick_comments

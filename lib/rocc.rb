@@ -102,7 +102,9 @@
 # * test suite
 #   * XXX more tests
 #
-#     Not really an item for a todo list -- you would always want more test. This is just a collection of sources where to find fancy C and C++ code that would be good to have in a test ...
+#     Not really an item for a todo list -- you would always want more
+#     test. This is just a collection of sources where to find fancy C
+#     and C++ code that would be good to have in a test ...
 #
 #     * http://deneke.biz/2014/02/great-presentation-dark-corners-c/
 #     * https://docs.google.com/presentation/d/1h49gY3TSiayLMXYmRMaAEMl05FaJ-Z6jDOWOz3EsqqQ/edit?pli=1#slide=id.gaf50702c_0123
@@ -111,10 +113,6 @@
 # * XXX adjust deprecated names and coding styles
 #   * grep for env, replace with according *_context
 #   * force through meaning and usage of origin & adducers
-# * refactor code
-#   * "forward declarations" needed?
-#     * "implemented"-hook ?
-#   * make some protected methods private ?
 # * exceptions
 #   * TODO provide appropriate exception classes
 #   * TODO review all `raise' expressions and provide appropriate messages and exception classes

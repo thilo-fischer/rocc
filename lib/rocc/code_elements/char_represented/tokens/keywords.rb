@@ -11,26 +11,20 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'rocc/code_elements/char_represented/tokens/token'
-
 require 'rocc/semantic/arising_specification'
 require 'rocc/semantic/statement'
 require 'rocc/semantic/function'
 require 'rocc/semantic/r_value'
 
+# forward declaration (sort of ...)
+module Rocc::CodeElements::CharRepresented
+  module Tokens; end
+  #class Tokens::CeCoToken < CeCharObject; end
+  #class Tokens::TknWord < Tokens::CeCoToken; end
+  class Tokens::TknKeyword < Tokens::TknWord; end
+end
+
 module Rocc::CodeElements::CharRepresented::Tokens
-
-    # forward declarations
-    class CeCoToken               < Rocc::CodeElements::CharRepresented::CeCharObject; end
-    class TknWord               < CeCoToken; end
-    class TknKeyword            < TknWord;        end
-    class TknKwCtrlflow         < TknKeyword;     end
-    class TknKwTagged           < TknKeyword;     end
-    class TknKwTypeSpecifier    < TknKeyword;     end
-    class TknKwTypeQualifier    < TknKeyword;     end
-    class TknKwStorageClassSpecifier < TknKeyword; end
-    class TknKwMisc             < TknKeyword;     end
-
 
     class TknKwCtrlflow < TknKeyword
       @REGEXP = Regexp.union %w(return if else for while do continue break switch case default goto)
