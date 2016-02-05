@@ -59,25 +59,37 @@ module Rocc::Session
   class LogConfig
     include Singleton
 
+    # Set data members to nil to enforce invocation of setup method
+    # before logger usage. (logger usage before setup will trigger
+    # exceptions due to method invokations on nil.) XXX unclean ...
     def initialize
+      @default_logger = nil
+      @specific_loggers = nil
+    end # initialize
+
+    def setup(default_loglevel = DEFAULT_LOGLEVEL)
       @default_logger = create_logger
       @specific_loggers = {}
+      
+      set_default_threshold(default_loglevel)
+
+      @default_logger.debug{"Default log level is #{@default_logger.sev_threshold}."}
 
       # XXX development aid
       if defined? SPECIFIC_LOGLEVELS
-        SPECIFIC_LOGLEVELS.each_pair {|k,v| set_threshold(k,v)}
+        SPECIFIC_LOGLEVELS.each_pair {|k,v| set_logtag_threshold(k,v)}
       end
       #warn "@specific_loggers=#{@specific_loggers}"
-    end # initialize
+    end # setup
 
     def set_default_threshold(level)
       @default_logger.sev_threshold = level
     end # set_default_threshold
 
-    def set_threshold(object, level)
+    def set_logtag_threshold(object, level)
       logtag = logtag_from_object(object)
       @specific_loggers[logtag] = create_logger(level, logtag)
-      @default_logger.info {"set log level #{level} for #{logtag} (-> #{object})"}
+      @default_logger.debug {"Set log level #{level} for #{logtag} (-> #{object})"}
     end # set_threshold
 
     def get_logger(object)
@@ -107,7 +119,7 @@ module Rocc::Session
     # as specified by the Logger::XYZ constants.  Returns the
     # appropriate Logger::XYZ constant or nil if no constant could be
     # associated with the given object.
-    def object_to_loglevel(obj)
+    def self.object_to_loglevel(obj)
       case obj
       when nil
         DEFAULT_LOGLEVEL

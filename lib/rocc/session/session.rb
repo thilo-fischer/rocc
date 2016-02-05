@@ -106,13 +106,13 @@ module Rocc::Session
 
     # +options+ string representing the desired log level.
     def setup_logging(arg)
-      level = LogConfig.instance.object_to_loglevel(arg)
+      level = LogConfig.object_to_loglevel(arg)
       if level
-        LogConfig.instance.set_default_threshold(level)
+        LogConfig.instance.setup(level)
       else
+        LogConfig.instance.setup
         log.warn{"Invalid log level: `#{arg}'. Fall back to default log level `#{log.sev_threshold}'."}
       end
-      log.debug{"Set default log level to #{log.sev_threshold}."}
     end # setup_logging
 
     def parse_input
