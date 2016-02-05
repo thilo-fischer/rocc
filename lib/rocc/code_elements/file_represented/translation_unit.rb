@@ -49,6 +49,11 @@ module Rocc::CodeElements::FileRepresented
       @symbol_idx.announce_symbols(symbol_idx)
     end
 
+    def announce_symbol(symbol)
+      log.debug{"#{name_dbg} -> announce_symbol: #{symbol.name_dbg}"}
+      @symbol_idx.announce_symbol(symbol)
+    end
+
     ##
     # Parse translation unit's main source file. (Implies parsing all
     # files included from the main file with the +#include+

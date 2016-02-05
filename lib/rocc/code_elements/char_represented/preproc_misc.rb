@@ -17,7 +17,7 @@ module Rocc::CodeElements::CharRepresented
     @REGEXP = /^#\s*error\s+.*/  
 
     # TODO_W
-    def pursue_branch(compilation_context, branch)
+    def pursue(compilation_context)
       # remove `#error' from @text
       @text.slice!(/#\s*error\s+/)
       raise "pp#error: `#{@text}'"
@@ -28,7 +28,8 @@ module Rocc::CodeElements::CharRepresented
   class CeCoPpPragma < CeCoPpDirective
     @REGEXP = /^#\s*pragma\s+.*/
     
-    def pursue_branch(compilation_context, branch)
+    # XXX_W?
+    def pursue(compilation_context)
       log.warn{"ignoring #{location}: `#{@text}' "}
     end
     
@@ -38,7 +39,8 @@ module Rocc::CodeElements::CharRepresented
 
     @REGEXP = /^#\s*line\s+/
 
-    def pursue_branch(compilation_context, branch)
+    # TODO_W
+    def pursue(compilation_context)
       raise "not yet supported"
     end # pursue_branch
 

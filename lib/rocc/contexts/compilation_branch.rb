@@ -58,11 +58,11 @@ module Rocc::Contexts
     #
     # +most_recent_scope+ The scope most recently taken from the
     # scope_stack (if any, nil otherwise).
-    attr_reader :pending_tokens, :scope_stack, :most_recent_scope, :ppcond_stack
+    attr_reader :pending_tokens, :scope_stack, :most_recent_scope
 
     # See open_token_request and start_collect_macro_tokens
     attr_reader :token_requester
-      
+    
     ##
     # Should not be called directly. Call
     # CompilationBranch.root_branch or CompilationBranch#fork instead.
@@ -90,14 +90,12 @@ module Rocc::Contexts
         @pending_tokens = []
         @scope_stack = [ parent.translation_unit ]
         @most_recent_scope = nil
-        @ppcond_stack = []
         @token_requester = nil
       else
         @id = nil # will be set after registration at parent
         @pending_tokens = parent.pending_tokens.dup
         @scope_stack = parent.scope_stack.dup
         @most_recent_scope = parent.most_recent_scope
-        @ppcond_stack = parent.ppcond_stack.dup
         @token_requester = parent.token_requester
       end
 
@@ -107,6 +105,10 @@ module Rocc::Contexts
       @cached_conditions = nil
     end
 
+    def name_dbg
+      "CcBr[#{@id}]"
+    end
+    
     ##
     # Is this the main branch directly initiated from the
     # CompilationContext?
@@ -133,20 +135,20 @@ module Rocc::Contexts
       not forks.empty?
     end
 
-    private
+
     def register_fork(fork)
-      fork_id = @id + '-' + @forks.count.to_s
+      fork_id = @id + ':' + @forks.count.to_s
       @forks << fork
       fork_id
     end
+    private :register_fork
 
-    protected
     def id=(arg)
       raise if @id
       @id = arg
     end
+    protected :id=
 
-    public
     ##
     # Conditions that must apply to make those preprocessor
     # conditionals' branches active that correspond to this branch.
@@ -253,7 +255,6 @@ module Rocc::Contexts
       result = find_scope([Rocc::CodeElements::FileRepresented::CeTranslationUnit, Rocc::Semantic::CompoundStatement])
     end
 
-    private
     def scope_name_dbg(scope)
       case scope
       when Rocc::CodeElements::CodeElement, Rocc::Semantic::Temporary::ArisingSpecification
@@ -262,8 +263,8 @@ module Rocc::Contexts
         scope.inspect
       end
     end
+    private :scope_name_dbg
 
-    public
     
     # for debugging
     def scope_stack_trace
@@ -278,11 +279,11 @@ module Rocc::Contexts
       @symbol_idx.announce_symbols(other_symbol_idx)
     end
     
-    # FIXME_R clarify coherence of announce_created_symbol and announce_symbol
-    # FIXME_R? merge announce_created_symbol and announce_symbol?
-    def announce_created_symbol(symbol)
-      @symbol_idx.announce_symbol(symbol)
-    end
+    ## FIXME_R clarify coherence of announce_created_symbol and announce_symbol
+    ## FIXME_R? merge announce_created_symbol and announce_symbol?
+    #def announce_created_symbol(symbol)
+    #  @symbol_idx.announce_symbol(symbol)
+    #end
 
     def announce_symbol(origin, symbol_family, identifier, hashargs = {})
 
@@ -356,11 +357,10 @@ module Rocc::Contexts
     def join_possible?
       return nil if is_root?
       return false unless parent.is_active?
-      @ppcond_stack == parent.ppcond_stack and
-        @pending_tokens == parent.pending_tokens and
+      @pending_tokens == parent.pending_tokens and
         @scope_stack == parent.scope_stack and
         @most_recent_scope == parent.most_recent_scope and
-        @token_requester == parent.token_requester and
+        @token_requester == parent.token_requester
     end
 
     def join
@@ -418,7 +418,7 @@ module Rocc::Contexts
         parent.activate(branch)
       end
     end
-      
+    
     def deactivate(branch = self)
       #warn "~~~ #{branch.name_dbg}.deactivate(#{branch.name_dbg}) <- #{caller[0..1].map {|c| c.sub(/^.*\//, '')}}"
       @active = false if branch == self
@@ -448,7 +448,10 @@ module Rocc::Contexts
       @token_requester
     end
 
+    # FIXME deprecated => remove
     def announce_pp_branch(ppcond_directive)
+      raise "DEPRECATED"
+      
       raise "programming error :( -> #{ppcond_directive.name_dbg}, associated_cond_dirs: #{ppcond_directive.associated_cond_dirs}" unless ppcond_directive.associated_cond_dirs.include?(ppcond_directive) # XXX defensive programming, substitute with according unit test
 
       case ppcond_directive
@@ -493,10 +496,6 @@ module Rocc::Contexts
       
     end # def announce_pp_branch
     
-    def name_dbg
-      "CcBr[#{@id}]"
-    end
-    
   end # class CompilationBranch
 
-end # module Rocc
+end # module Rocc::Contexts

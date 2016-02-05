@@ -21,33 +21,35 @@ module Rocc::Contexts
     
     attr_reader :translation_unit, :active_branches, :fs_element_index
 
+    attr_reader :ppcond_stack
+
     # See open_token_request
     attr_reader :token_requester
     
-    def initialize(translation_unit, fs_element_index, base_branch = nil)
+    def initialize(translation_unit, fs_element_index)
       @translation_unit = translation_unit
-      @main_branch = base_branch || CompilationBranch.root_branch(self)
+      @main_branch = CompilationBranch.root_branch(self)
       @active_branches = [ @main_branch ].to_set
-      @next_active_branches = @active_branches.dup
       @branches_for_deactivation = Set[]
+      @branches_for_activation = Set[]
       @fs_element_index = fs_element_index
+      @ppcond_stack = []
       @token_requester = nil
     end
 
     def activate_branch(branch)
-      @next_active_branches.add(branch)
+      @branches_for_activation << branch
     end
 
     def deactivate_branch(branch)
-      @next_active_branches.delete(branch)
+      @branches_for_deactivation << branch
     end
 
     def sync_branch_activity
-      # TODO_F Set of active branches will be the same for most
-      # tokens, and changes will affect only few branches. Collect and
-      # apply diff of branches to activate and deactivate instead of
-      # altering a copy of the active_branches set.
-      @active_branches = @next_active_branches.dup
+      @active_branches -= @branches_for_deactivation
+      @branches_for_deactivation = Set[]
+      @active_branches |= @branches_for_activation
+      @branches_for_activation = Set[]
     end
 
     def terminate
@@ -59,12 +61,8 @@ module Rocc::Contexts
     end
 
     def finalize_logic_line
-      active_branches.each do |b|
-        if b.collect_macro_tokens?
-          b.stop_collect_macro_tokens
-        elsif b.has_token_request?
-          raise "newline within macro invokation (or programming error)" # FIXME is this an error condition? shouldn't newline characters be allowed withn macro *invokations* (in contrast to macro *definitions*) ?!?
-        end
+      if @token_requester.is_a? Rocc::Semantic::CeMacro # XXX_R smells
+        close_token_request
       end
     end
     
@@ -85,6 +83,26 @@ module Rocc::Contexts
     # See open_token_request
     def has_token_request?
       @token_requester
+    end
+
+    def ppcond_stack_push(arg)
+      @ppcond_stack << arg
+    end
+    
+    def ppcond_stack_pop
+      @ppcond_stack.pop
+    end
+    
+    def ppcond_stack_top
+      @ppcond_stack.last
+    end
+
+    def current_ppcond_conditions
+      if @ppcond_stack.empty?
+        Rocc::Semantic::CeEmptyCondition.instance
+      else
+        @ppcond_stack.ppcond_branch_conditions
+      end
     end
     
   end # class CompilationContext

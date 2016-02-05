@@ -217,7 +217,8 @@ module Rocc::CodeElements
     # pursued the context accordingly or whether +C#pursue+ has still
     # to take some additional steps to finish the processing of the
     # code element.  TODO_R force through this convention for all
-    # implementations of pursue.
+    # implementations of pursue. TODO_R? Use throw-catch instead of
+    # return value?
     #
     # XXX? Question of best practise in Ruby code: Provide dummy
     # implementation at parent class (possibly not working for various

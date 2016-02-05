@@ -62,22 +62,15 @@ module Rocc::CodeElements::CharRepresented
     end # pick!
 
 
-    def pursue_branch(compilation_context, branch)
-
-      d = Rocc::Semantic::CeMacroDefinition.new(self)
-      m = Rocc::Semantic::CeMacro.new(compilation_context.translation_unit, d, @identifier, @parameters)
-      
-      branch.announce_created_symbol(m)
-
-      # XXX? Wouldn't it be sufficient (and more performant) to make
-      # start/stop_collect_macro_tokens part of CompilationContext for
-      # #define directive instead of CompilationBranch?
-      # (open/close_token_request still needs to be part of
-      # CompilationBranch for macro invokations though.)
-      branch.start_collect_macro_tokens(m)
+    def pursue(compilation_context)
+      m_def = Rocc::Semantic::CeMacroDefinition.new(self)
+      macro = Rocc::Semantic::CeMacro.new(compilation_context.translation_unit, m_def, @identifier, @parameters)
+      compilation_context.announce_symbol(macro)
+      compilation_context.open_token_request(macro)
     end # pursue_branch
 
     def tokens
+      # XXX_F room for improvement
       line_tokens = origin(LogicLine).tokens
       own_index = line_tokens.index(self)
       line_tokens[own_index+1..-1]
@@ -88,8 +81,13 @@ module Rocc::CodeElements::CharRepresented
   class CeCoPpUndef < CeCoPpDirective
     @REGEXP = /^#\s*undef\s+/
 
-    def pursue_branch(compilation_context, branch)
-      raise "invalid syntax" unless successor.is_a? TknWord # fixme: provide appropriate exception
+    def pursue(compilation_context)
+      #raise "invalid syntax" unless successor.is_a? TknWord # fixme: provide appropriate exception
+      
+      # TODO_W Add a CeMacroUndef object to the affected
+      # macro(s). Ensure macro symbols will be used only at those
+      # lines in between the CeMacroDefinition and CeMacroUndef of
+      # that macro.
       raise "not yet supported"
     end # pursue_branch
 

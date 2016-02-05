@@ -71,14 +71,14 @@ module Rocc::CodeElements::CharRepresented
       end
     end
 
-    def pursue_branch(compilation_context, branch)
+    def pursue(compilation_context)
       current_dir = logic_line.first_physic_line.file.parent_dir
       path_abs = find_include_file(path, current_dir)
             
       file = compilation_context.fs_element_index.announce_element(Rocc::CodeElements::FileRepresented::CeFile, path_abs, self)
       compilation_context.translation_unit.add_include_file(file)
 
-      lineread_context = Rocc::Contexts::LinereadContext.new(Rocc::Contexts::CommentContext.new(Rocc::Contexts::CompilationContext.new(compilation_context.translation_unit, compilation_context.fs_element_index, branch))) # FIXME
+      lineread_context = Rocc::Contexts::LinereadContext.new(Rocc::Contexts::CommentContext.new(compilation_context)) # TODO should be handled as ParsingContext interal
       file.pursue(lineread_context)
     end
 
