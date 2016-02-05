@@ -20,6 +20,9 @@ module Rocc::CodeElements::CharRepresented
     extend  Rocc::Session::LogClientClassMixin
     include Rocc::Session::LogClientInstanceMixin
 
+    # XXX_R keep @picking_regexp internal, do not provide accessor
+    attr_reader :picking_regexp
+
     def initialize(charobj_class, delegatees = nil)
       @charobj_class = charobj_class
       @delegatees = delegatees

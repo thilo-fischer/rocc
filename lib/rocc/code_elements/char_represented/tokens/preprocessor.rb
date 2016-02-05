@@ -74,7 +74,7 @@ module Rocc::CodeElements::CharRepresented
 
       if tkn
         # TODO_F(pick_captures) Super just did match the @PICKING_REGEXP, and we match it here a second time (redundantly). Consider returning Regexp.last_match in CharObject.peek and CharObject.pick_string! and passing Regexp.last_match.named_captures to the CharObject.create. (=> same performance?)
-        tkn.text =~ picking_regexp
+        tkn.text =~ picker.picking_regexp
 
         tkn.file = $~[:file]
         comments = $~[:comments]
@@ -171,7 +171,7 @@ module Rocc::CodeElements::CharRepresented
 
       if tkn
         # TODO_F(pick_captures)
-        tkn.text =~ picking_regexp
+        tkn.text =~ picker.picking_regexp
 
         tkn.identifier = $~[:identifier]
         
