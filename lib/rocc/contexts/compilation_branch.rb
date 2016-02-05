@@ -62,7 +62,6 @@ module Rocc::Contexts
 
     # See open_token_request and start_collect_macro_tokens
     attr_reader :token_requester
-    attr_reader :greedy_macro
       
     ##
     # Should not be called directly. Call
@@ -93,7 +92,6 @@ module Rocc::Contexts
         @most_recent_scope = nil
         @ppcond_stack = []
         @token_requester = nil
-        @greedy_macro = nil
       else
         @id = nil # will be set after registration at parent
         @pending_tokens = parent.pending_tokens.dup
@@ -101,7 +99,6 @@ module Rocc::Contexts
         @most_recent_scope = parent.most_recent_scope
         @ppcond_stack = parent.ppcond_stack.dup
         @token_requester = parent.token_requester
-        @greedy_macro = parent.greedy_macro
       end
 
       @active = true
@@ -364,7 +361,6 @@ module Rocc::Contexts
         @scope_stack == parent.scope_stack and
         @most_recent_scope == parent.most_recent_scope and
         @token_requester == parent.token_requester and
-        @greedy_macro == parent.greedy_macro
     end
 
     def join
@@ -442,40 +438,15 @@ module Rocc::Contexts
       @token_requester = code_object
     end
 
+    # See open_token_request
     def close_token_request
       @token_requester = nil
     end
 
+    # See open_token_request
     def has_token_request?
       @token_requester
     end
-
-    ##
-    # Redirect all tokens to macro instead of invoking pursue_branch
-    # on the token until invokation of
-    # stop_collect_macro_tokens. Logic to achive redirection is
-    # implemented in CeToken.pursue.
-    #
-    # start/stop_collect_macro_tokens is mostly redundant with
-    # open/close_token_request, but the first could probably be moved
-    # to CompilationContext, while the latter needs to stay as part of
-    # CompilationBranch. TODO Investigate moving
-    # start/stop_collect_macro_tokens to CompilationContext. If
-    # possible, move and rename. If not, merge with
-    # open/close_token_request.
-    def start_collect_macro_tokens(macro)
-      @greedy_macro = macro
-    end
-
-    def stop_collect_macro_tokens
-      @greedy_macro = nil
-    end
-
-    def collect_macro_tokens?
-      @greedy_macro
-    end
-
-
 
     def announce_pp_branch(ppcond_directive)
       raise "programming error :( -> #{ppcond_directive.name_dbg}, associated_cond_dirs: #{ppcond_directive.associated_cond_dirs}" unless ppcond_directive.associated_cond_dirs.include?(ppcond_directive) # XXX defensive programming, substitute with according unit test

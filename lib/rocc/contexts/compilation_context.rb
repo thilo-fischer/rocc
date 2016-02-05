@@ -21,6 +21,9 @@ module Rocc::Contexts
     
     attr_reader :translation_unit, :active_branches, :fs_element_index
 
+    # See open_token_request
+    attr_reader :token_requester
+    
     def initialize(translation_unit, fs_element_index, base_branch = nil)
       @translation_unit = translation_unit
       @main_branch = base_branch || CompilationBranch.root_branch(self)
@@ -28,6 +31,7 @@ module Rocc::Contexts
       @next_active_branches = @active_branches.dup
       @branches_for_deactivation = Set[]
       @fs_element_index = fs_element_index
+      @token_requester = nil
     end
 
     def activate_branch(branch)
@@ -62,6 +66,25 @@ module Rocc::Contexts
           raise "newline within macro invokation (or programming error)" # FIXME is this an error condition? shouldn't newline characters be allowed withn macro *invokations* (in contrast to macro *definitions*) ?!?
         end
       end
+    end
+    
+    ##
+    # Redirect all CeCharObjects to code_object instead of invoking
+    # pursue on the CeCharObjects until invokation of
+    # close_token_request. Logic to achive redirection is implemented
+    # in CeCharObjects#pursue.
+    def open_token_request(code_object)
+      @token_requester = code_object
+    end
+
+    # See open_token_request
+    def close_token_request
+      @token_requester = nil
+    end
+
+    # See open_token_request
+    def has_token_request?
+      @token_requester
     end
     
   end # class CompilationContext

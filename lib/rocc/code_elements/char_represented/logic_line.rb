@@ -125,7 +125,7 @@ module Rocc::CodeElements::CharRepresented
     def tokenize(comment_context)
 
       tokenization_context = Rocc::Contexts::TokenizationContext.new(comment_context, self)
-    
+      
       if tokenization_context.in_multiline_comment?
         # handle ongoing multi line comment
         cmt = tokenization_context.ongoing_multiline_comment
@@ -142,15 +142,15 @@ module Rocc::CodeElements::CharRepresented
         raise "Could not dertermine next token in `#{tokenization_context.remainder}'" unless picked
       end
       
-      # FIXME enter multiline comment when parsing `/*'
+      # enter multiline comment when parsing `/*'
       if tokenization_context.recent_token and
         tokenization_context.recent_token.is_a? CeCoMultiLineBlockComment
         tokenization_context.announce_multiline_comment(tokenization_context.recent_token)
       end
-        
-     tokenization_context.terminate
+      
+      tokenization_context.terminate
 
-     @tokens = tokenization_context.tokens
+      @tokens = tokenization_context.tokens
 
     end # tokenize
 

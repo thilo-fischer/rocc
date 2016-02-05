@@ -55,6 +55,57 @@ module Rocc::CodeElements::CharRepresented::Tokens
       FAMILY_ABBREV
     end
     
+    ##
+    # CeCoToken's implementation of CodeElement#pursue.
+    def pursue(compilation_context)
+      raise "Child classes of CeCoToken shall not override pursue, override pursue_branch instead." unless self.class == CeCoToken # XXX(ut)
+
+      super_duty = super
+      return nil if super_duty.nil?
+      
+      if compilation_context.has_token_request?
+        log.debug{"#{compilation_context.token_requester.name_dbg}.process_token\nToken: #{path_dbg}"} # TODO loglevel trace ?! log with specific log tag?
+        compilation_context.token_requester.process_token(compilation_context, self)
+        # Achieved all operations necessary to pursue the
+        # context. Chaining child class' method implementation does
+        # not need to take any further steps. Thus, return nil.
+        return nil
+      end
+
+      active_branches = compilation_context.active_branches
+      raise "no active branches" if active_branches.empty? # XXX(ut)
+
+      # pursue all active branches
+      active_branches.each do |b|
+        if b.has_token_request?
+          log.debug{"#{b.token_requester.name_dbg}.process_token\nToken: #{path_dbg}"} # TODO loglevel trace ?! log with specific log tag?
+          b.token_requester.process_token(compilation_context, b, self)
+        else
+          log.debug{"#{name_dbg}.pursue_branch #{b.id}\nToken: #{path_dbg}\n#{b.scope_stack_trace}"} # TODO loglevel trace ?! log with specific log tag?
+          pursue_branch(compilation_context, b)
+        end
+      end
+
+      # join as many branches as possible
+      active_branches.each {|b| b.try_join}
+
+      log.debug{ "active branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}" }
+      
+      # adapt set of active branches according to the branch
+      # activations and deactivations that may have happened from this
+      # token
+      compilation_context.sync_branch_activity
+    end
+
+    ##
+    # Process this token within the given compilation context.
+    # Default implementation suitable for all tokens that can't do
+    # anything better: Add token to the list of pending tokens.
+    # Concrete token classes shall override this method when possible.
+    def pursue_branch(compilation_context, branch)
+      branch.push_pending(self)
+    end
+
   end # CeCoToken
 
 end # module Rocc::CodeElements::CharRepresented::Tokens

@@ -1,7 +1,22 @@
-/html
-*.bak
-\#*\#
+# temporary and backup files from emacs
+*~
+\#*#
 .\#*
-*.*~
+
+# files created from git merges
+*.orig
+
+# mess from misc operating systems
 .DS_Store
 
+# rdoc output dir
+/html/
+
+# Cucumber results
+/results.html
+
+# local dir for half-baked working-state copies
+/deprecated/
+
+# dir keeping old versions of VCSed files locally for reference
+outdated.bak/

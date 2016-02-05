@@ -206,6 +206,19 @@ module Rocc::CodeElements
     # accordingly. To be overridden by those subclasses that support
     # according operations.
     #
+    # Returns the "duty" left to invoking method: returns nil if all
+    # operations necessary to pursue the context according to the
+    # current code element could be achieved by the method directly,
+    # returns true or another use case specific value if further
+    # operations are necessary. This way, a child class C of a class B
+    # derived from CodeElement (i.e. +C < B < ... < CodeElement+)
+    # chaining pursue (i.e. +C#pursue+ invokes +B#pursue+ using
+    # +super+) can get feedback from B whether +B#pursue+ already
+    # pursued the context accordingly or whether +C#pursue+ has still
+    # to take some additional steps to finish the processing of the
+    # code element.  TODO_R force through this convention for all
+    # implementations of pursue.
+    #
     # XXX? Question of best practise in Ruby code: Provide dummy
     # implementation at parent class (possibly not working for various
     # child classes and possibly throwing an exception) and override
@@ -215,7 +228,7 @@ module Rocc::CodeElements
     # E.g. CeFile and CeLogicLine define +content+ and invoke this
     # implementation.
     def pursue(context)
-      content.map {|c| c.pursue(context)}
+      content.map {|c| c.pursue(context)}.find {|r| not r.nil?}
     end
     
 #    def <=>(other)

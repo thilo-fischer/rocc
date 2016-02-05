@@ -104,7 +104,12 @@ module Rocc::CodeElements::CharRepresented
 
     @REGEXP = /\/[\/\*]/
 
-    def pursue_branch(compilation_context, branch)
+    ##
+    # CeCoComment's implementation of CodeElement#pursue.
+    def pursue(compilation_context)
+      super_duty = super
+      return if super_duty.nil?
+      log.debug{ "#{name_dbg}.pursue" }
       nil
     end
 
