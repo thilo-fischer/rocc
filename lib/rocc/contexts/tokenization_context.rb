@@ -57,6 +57,8 @@ module Rocc::Contexts
     
     ##
     # Return the most recently picked token or nil if no tokens have been picked so far.
+    #--
+    # FIXME rename most_recent_token or last_token
     def recent_token
       @tokens.last
     end

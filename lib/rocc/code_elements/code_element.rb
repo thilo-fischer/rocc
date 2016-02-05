@@ -139,7 +139,9 @@ module Rocc::CodeElements
     ##
     # Overridden +inspect+ as ruby's original inspect results in several hundred characters for a usual CodeElement.
     def inspect
-      original_to_s.chop + " " + path_dbg + ">"
+      orig_to_s = original_to_s
+      raise unless orig_to_s[-1] == '>'
+      orig_to_s.chop + " " + path_dbg + '>'
     end
 
     ##

@@ -24,7 +24,7 @@ module Rocc::CodeElements::CharRepresented
       @charobj_class = charobj_class
       @delegatees = delegatees
       @picking_regexp = Regexp.new("^(#{charobj_class.REGEXP.source})") if charobj_class.REGEXP
-      warn "XXX init charobj picker for #{@charobj_class}, regexp: #{@picking_regexp.inspect}, delegatees: #{@delegatees.inspect}"
+      #warn "XXX init charobj picker for #{@charobj_class}, regexp: #{@picking_regexp.inspect}, delegatees: #{@delegatees.inspect}"
     end # initialize
 
     ##
@@ -34,7 +34,7 @@ module Rocc::CodeElements::CharRepresented
     # that string as tokenized and create and return an instance of
     # the according class created from that section. Else, return nil.
     def pick!(tokenization_context)
-      warn "pick!: Class: #{@charobj_class}, regexp: #{@picking_regexp.inspect}, delegatees: #{@delegatees.inspect}"
+      #warn "pick!: Class: #{@charobj_class}, regexp: #{@picking_regexp.inspect}, delegatees: #{@delegatees.inspect}"
       if @delegatees
         if @picking_regexp
           return nil unless peek(tokenization_context)
@@ -94,7 +94,7 @@ module Rocc::CodeElements::CharRepresented
       # find regexp in string
       # remove part of string matching regexp
       # return part of string matching regexp
-      warn "pick_string!: Class: #{@charobj_class}, regexp: #{@picking_regexp.inspect}, delegatees: #{@delegatees.inspect}"
+      #warn "pick_string!: Class: #{@charobj_class}, regexp: #{@picking_regexp.inspect}, delegatees: #{@delegatees.inspect}"
       tokenization_context.remainder.slice!(@picking_regexp)
     end # pick_string!
     # FIXME private :pick_string!
@@ -111,6 +111,7 @@ module Rocc::CodeElements::CharRepresented
     def create_charobj(tokenization_context, text, whitespace_after = nil)
       pred = tokenization_context.recent_token
       new_charobj = @charobj_class.new(tokenization_context.line, text, tokenization_context.charpos, whitespace_after, pred)
+      warn "XXXXXXXXXXX"
       tokenization_context.add_token(new_charobj)
       log.debug{ "new char object: #{new_charobj.name_dbg}" }
       new_charobj

@@ -70,17 +70,13 @@ module Rocc::CodeElements::CharRepresented
     # Skip direct origin (CePhysicLine or Range of) in path. See
     # rdoc-ref:Rocc::CodeElements::CodeElement#path
     def path
-      physic_line = origin
-      physic_line.begin if physic_line.is_a? Range
-      physic_line.origin.path + path_separator + name
+      first_physic_line.origin.path + path_separator + name
     end
 
     # Skip direct origin (CePhysicLine or Range of) in path. See
     # rdoc-ref:Rocc::CodeElements::CodeElement#path_full
     def path_full
-      physic_line = origin
-      physic_line.begin if physic_line.is_a? Range
-      physic_line.origin.path_full + path_separator + name
+      first_physic_line.origin.path_full + path_separator + name
     end
 
     # See rdoc-ref:Rocc::CodeElements::CodeElement#location
@@ -145,11 +141,10 @@ module Rocc::CodeElements::CharRepresented
         picked = CeCharObject.pick!(tokenization_context)
         raise "Could not dertermine next token in `#{tokenization_context.remainder}'" unless picked
       end
-
+      
       # FIXME enter multiline comment when parsing `/*'
       if tokenization_context.recent_token and
-        tokenization_context.recent_token.class.is_a? CeCoMultiLineBlockComment and
-        not tokenization_context.recent_token.complete?
+        tokenization_context.recent_token.is_a? CeCoMultiLineBlockComment
         tokenization_context.announce_multiline_comment(tokenization_context.recent_token)
       end
         

@@ -51,6 +51,8 @@ module Rocc::CodeElements::CharRepresented
     # from `/*' to end of line
     @REGEXP = /\/\*.*$/
 
+    # XXX_R? origin Range instead of Array ?
+    
     def initialize(origin, text, charpos, whitespace_after = '', direct_predecessor = nil)
       super([origin], text + whitespace_after, charpos, '', direct_predecessor)
     end
@@ -68,11 +70,11 @@ module Rocc::CodeElements::CharRepresented
     # with matching code sections.
     def pick_more!(tokenization_context)
       @origin << tokenization_context.line
-      str = CeCoMultiLineBlockCommentEnd.pick_string!(tokenization_context)
+      str = CeCoMultiLineBlockCommentEnd.picker.pick_string!(tokenization_context)
       if str
         tokenization_context.leave_multiline_comment
         @text += str
-        @whitespace_after = self.class.pick_whitespace!(tokenization_context)
+        @whitespace_after = self.class.picker.pick_whitespace!(tokenization_context)
         log.debug{ "picked `#{name_dbg}' + `#{Rocc::Helpers::String::no_lbreak(@whitespace_after)}', remainder: `#{tokenization_context.remainder}'" }
       else
         @text += tokenization_context.remainder
@@ -84,6 +86,11 @@ module Rocc::CodeElements::CharRepresented
     def self.family_abbrev
       FAMILY_ABBREV
     end
+
+    # XXX_R Implement path, path_dbg, path_full etc. in a way that we
+    # get something like `Dir/File:FirstLineNr..LastLineNr' instead of
+    # `[Dir/File:FirstLineNr, ..., Dir/File:LastLineNr]'
+    
   end # class CeCoMultiLineBlockComment
 
   # XXX_R abstract class => forbid initialization

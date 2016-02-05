@@ -64,7 +64,7 @@ module Rocc::CodeElements::CharRepresented
     def self.picker
       @picker ||= CharObjectPicker.new(self, @PICKING_DELEGATEES)
     end
-    private_class_method :picker
+    # FIXME_R private_class_method :picker
     
     def self.pick!(tokenization_context)
       picker.pick!(tokenization_context)
