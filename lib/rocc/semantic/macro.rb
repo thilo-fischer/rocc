@@ -54,7 +54,7 @@ module Rocc::Semantic
       @parameters != nil
     end
 
-    def add_token(arg)
+    def process_token(compilation_context, arg)
       @tokens << arg
     end
 

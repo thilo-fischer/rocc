@@ -57,9 +57,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
     
     ##
     # CeCoToken's implementation of CodeElement#pursue.
+    #
+    # Shall not overridden in child classes, override pursue_branch instead.
     def pursue(compilation_context)
-      raise "Child classes of CeCoToken shall not override pursue, override pursue_branch instead." unless self.class == CeCoToken # XXX(ut)
-
       super_duty = super
       return nil if super_duty.nil?
       
