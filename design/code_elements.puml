@@ -21,6 +21,9 @@ note as N1
   The rocc architecture is work in progress.
   Deviations of the diagram from the actual
   source code (or vice versa) must be expected.
+
+  FIXME update according to newly introduced
+  CharObject and CharObjectPicker methods.
 end note
 
 '      =============

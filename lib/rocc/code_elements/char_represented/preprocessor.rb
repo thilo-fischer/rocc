@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+# FIXME_R split to several files: outsource e.g. CeCoPpConditional and its subclasses
+
 require 'rocc/semantic/macro'
 require 'rocc/semantic/macro_definition'
 

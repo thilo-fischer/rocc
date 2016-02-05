@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+# FIXME_R split to several files
+
 require 'rocc/semantic/arising_specification'
 require 'rocc/semantic/statement'
 require 'rocc/semantic/expression'

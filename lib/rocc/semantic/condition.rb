@@ -14,8 +14,7 @@
 require 'singleton' # for CeEmptyCondition
 
 require 'rocc/code_elements/code_element'
-require 'rocc/code_elements/char_represented/char_object'
-require 'rocc/code_elements/char_represented/tokens/preprocessor'
+require 'rocc/code_elements/char_represented/char_object' # TODO_R(pickers) `require 'rocc/code_elements/char_represented/preprocessor'' would be sufficient if only preprocessor.rb would not depend on char_object.rb and vice versa (because CeCoPpDirective is subclass of CodeObject and CodeObject references CeCoPpDirective)
 
 require 'rocc/helpers'
 

@@ -21,8 +21,8 @@ module Rocc::CodeElements::CharRepresented
   class CeCharObject < Rocc::CodeElements::CodeElement; end
 end
 
-require 'rocc/code_elements/char_represented/tokens/comment'
-require 'rocc/code_elements/char_represented/tokens/preprocessor'
+require 'rocc/code_elements/char_represented/comment'
+require 'rocc/code_elements/char_represented/preprocessor'
 require 'rocc/code_elements/char_represented/tokens/token'
 
 module Rocc::CodeElements::CharRepresented
@@ -48,13 +48,13 @@ module Rocc::CodeElements::CharRepresented
       attr_reader :REGEXP
     end
     
-    # TODO_R Rework relation of CodeObjects and their pickers. Is it a
-    # good idea to separate CodeObjects and their pickers from each
-    # other completely (Single responsibility principle?) or should
-    # those two classes be merged together completely (because they
-    # depend so much on each other)? Of which object should
-    # @PICKING_DELEGATEES, @REGEXP and @PICKING_REGEXP be part of and
-    # where shall these get defined?!
+    # TODO_R(pickers) Rework relation of CodeObjects and their
+    # pickers. Is it a good idea to separate CodeObjects and their
+    # pickers from each other completely (Single responsibility
+    # principle?) or should those two classes be merged together
+    # completely (because they depend so much on each other)? Of which
+    # object should @PICKING_DELEGATEES, @REGEXP and @PICKING_REGEXP
+    # be part of and where shall these get defined?!
     #
     # Should be possible to +require+ some token without enforcing to
     # require char_object.rb which requires comment, preprocessor and

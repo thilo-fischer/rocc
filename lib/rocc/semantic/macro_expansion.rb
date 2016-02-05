@@ -12,8 +12,7 @@
 # approach. See LICENSE.txt from the top-level directory for details.
 
 require 'rocc/code_elements/code_element'
-require 'rocc/code_elements/char_represented/char_object'
-require 'rocc/code_elements/char_represented/tokens/misc_tokens'
+require 'rocc/code_elements/char_represented/char_object' # TODO_R(pickers) `require 'rocc/code_elements/char_represented/tokens/misc_tokens'' would be sufficient if only misc_tokens.rb would not depend on char_object.rb and vice versa (because TknWord < CeCoToken < CodeObject and CodeObject references CeCoToken)
 
 module Rocc::Semantic
 
