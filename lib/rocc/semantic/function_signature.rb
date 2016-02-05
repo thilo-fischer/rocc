@@ -33,6 +33,12 @@ module Rocc::Semantic
       @complete = false
     end
 
+    alias function origin
+
+    def name_dbg
+      "FSig[#{function.identifier}(#{@param_names.count})]"
+    end    
+
     def add_param(tokens, type, name, storage_class_specifier = nil)
       @adducer += tokens
       

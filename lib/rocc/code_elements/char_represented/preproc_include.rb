@@ -72,6 +72,10 @@ module Rocc::CodeElements::CharRepresented
     end
 
     def pursue(compilation_context)
+
+      super_duty = super
+      return nil if super_duty.nil?
+
       current_dir = logic_line.first_physic_line.file.parent_dir
       path_abs = find_include_file(path, current_dir)
             

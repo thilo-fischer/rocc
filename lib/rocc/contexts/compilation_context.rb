@@ -60,6 +60,11 @@ module Rocc::Contexts
       @translation_unit.announce_symbols(symbols)
     end
 
+    def find_symbols(criteria)
+      #warn "XXXX CompilationContext#find_symbols#{criteria}"
+      @translation_unit.find_symbols(criteria)
+    end
+
     def finalize_logic_line
       if @token_requester.is_a? Rocc::Semantic::CeMacro # XXX_R smells
         close_token_request

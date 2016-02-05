@@ -114,7 +114,6 @@ module Rocc::CodeElements::CharRepresented
     def create_charobj(tokenization_context, text, whitespace_after = nil)
       pred = tokenization_context.recent_token
       new_charobj = @charobj_class.new(tokenization_context.line, text, tokenization_context.charpos, whitespace_after, pred)
-      warn "XXXXXXXXXXX"
       tokenization_context.add_token(new_charobj)
       log.debug{ "new char object: #{new_charobj.name_dbg}" }
       new_charobj

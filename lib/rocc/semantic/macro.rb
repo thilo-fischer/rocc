@@ -38,7 +38,7 @@ module Rocc::Semantic
     end
     
     def name_dbg
-      '#M[#{@identifier}]'
+      "#M[#{@identifier}]"
     end
 
     # FIXME? define constant instead of function?

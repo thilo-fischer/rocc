@@ -60,18 +60,42 @@ module Rocc::CodeElements
     # included or similar.
     alias adducer origin
 
+    alias original_to_s to_s
+    alias original_inspect inspect
+
+    def to_s
+      name_dbg
+    end
+
+    def to_s_shortclassname
+      original_to_s.slice(/:[^:]+:[^:]+$/).sub(':', '#<')
+    end
+    private :to_s_shortclassname
+
+    ##
+    # Overridden +inspect+ as ruby's original inspect results in several hundred characters for a usual CodeElement.
+    def inspect
+      orig_to_s = original_to_s
+      raise unless orig_to_s[-1] == '>'
+      orig_to_s.chop + " " + path_dbg + '>'
+    end
+
+    #def class_basename
+    #  self.class.to_s.split('::').last
+    #end
+
     ##
     # String to represent this element in rocc debugging and internal
     # error messages. Shall include an indication of the element's
     # nature (i.e. the CodeElement's subclass the element is an
     # instance of).
     def name_dbg
-      class_s = self.class.to_s.split('::').last
-      disp = name
-      if (class_s == name)
-        name
+      s = to_s_shortclassname
+      n = name
+      if (n == s)
+        s
       else
-        class_s + "(" + name + ")"
+        "#{s.chop} - #{n}>"
       end
     end
 
@@ -81,7 +105,7 @@ module Rocc::CodeElements
     # nature shall become clear from the context where +name+ is being
     # used.
     def name
-      self.class.to_s.split('::').last
+      to_s_shortclassname
     end
 
     ##
@@ -130,18 +154,6 @@ module Rocc::CodeElements
       else
         name_dbg
       end
-    end
-
-    alias original_to_s to_s
-    alias to_s name_dbg
-    alias original_inspect inspect
-
-    ##
-    # Overridden +inspect+ as ruby's original inspect results in several hundred characters for a usual CodeElement.
-    def inspect
-      orig_to_s = original_to_s
-      raise unless orig_to_s[-1] == '>'
-      orig_to_s.chop + " " + path_dbg + '>'
     end
 
     ##
@@ -245,6 +257,7 @@ module Rocc::CodeElements
 #    end
 
     def conditions
+      warn "XXX CodeElement#conditions on #{name_dbg} (#{self.class}) -> same conditions as #{adducer}"
       case adducer
       when CodeElement
         adducer.conditions

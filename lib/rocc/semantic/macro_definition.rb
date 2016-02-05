@@ -22,14 +22,14 @@ module Rocc::Semantic
   class CeMacroDefinition < Rocc::CodeElements::CodeElement
 
     ##
-    # +origin+ of a +MacroDefinition+ shall be the +#define+ token of
-    # the preprocessor directive that defines it.
+    # +origin+ of a +MacroDefinition+ shall be the CeCoPpDefine object
+    # representing the preprocessor directive that defines it.
     def initialize(origin)
       super
     end
 
     def name_dbg
-      '#define'
+      "#MDef[#{origin.identifier}]"
     end
 
   end # class CeMacroDefinition

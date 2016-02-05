@@ -18,6 +18,9 @@ module Rocc::CodeElements::CharRepresented
 
     # TODO_W
     def pursue(compilation_context)
+      super_duty = super
+      return nil if super_duty.nil?
+
       # remove `#error' from @text
       @text.slice!(/#\s*error\s+/)
       raise "pp#error: `#{@text}'"
@@ -30,6 +33,9 @@ module Rocc::CodeElements::CharRepresented
     
     # XXX_W?
     def pursue(compilation_context)
+      super_duty = super
+      return nil if super_duty.nil?
+
       log.warn{"ignoring #{location}: `#{@text}' "}
     end
     
@@ -41,6 +47,9 @@ module Rocc::CodeElements::CharRepresented
 
     # TODO_W
     def pursue(compilation_context)
+      super_duty = super
+      return nil if super_duty.nil?
+
       raise "not yet supported"
     end # pursue_branch
 

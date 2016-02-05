@@ -66,6 +66,7 @@ module Rocc::Semantic
     end
 
     def block=(arg)
+      #warn "*** assign block #{arg.name_dbg} to #{name_dbg} (current: #{@block.inspect})"
       if @block
         if @block.conditions.equivalent?(arg.conditions)
           warn "XX block #{@block.conditions} #{@block.conditions.class}"

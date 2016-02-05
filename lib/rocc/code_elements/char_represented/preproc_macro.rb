@@ -63,11 +63,15 @@ module Rocc::CodeElements::CharRepresented
 
 
     def pursue(compilation_context)
+      
+      super_duty = super
+      return nil if super_duty.nil?
+
       m_def = Rocc::Semantic::CeMacroDefinition.new(self)
       macro = Rocc::Semantic::CeMacro.new(compilation_context.translation_unit, m_def, @identifier, @parameters)
       compilation_context.translation_unit.announce_symbol(macro)
       compilation_context.open_token_request(macro)
-    end # pursue_branch
+    end # pursue
 
     def tokens
       # XXX_F room for improvement
@@ -82,6 +86,10 @@ module Rocc::CodeElements::CharRepresented
     @REGEXP = /^#\s*undef\s+/
 
     def pursue(compilation_context)
+
+      super_duty = super
+      return nil if super_duty.nil?
+
       #raise "invalid syntax" unless successor.is_a? TknWord # fixme: provide appropriate exception
       
       # TODO_W Add a CeMacroUndef object to the affected

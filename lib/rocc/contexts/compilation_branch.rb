@@ -313,10 +313,13 @@ module Rocc::Contexts
 
       symbols = find_symbols(:identifier => identifier, :symbol_family => symbol_family)
 
+      #warn "@@@ symbols #{symbols}"
+      
       if symbols.empty?
 
         # symbol detected for the first time
         symbol = symbol_family.new(origin, identifier, hashargs)
+        #warn "@@@ new symbol: #{symbol}/#{symbol.name_dbg}"
         @symbol_idx.announce_symbol(symbol)
 
       else
@@ -333,11 +336,16 @@ module Rocc::Contexts
     end # announce_symbol
 
     def find_symbols(criteria)
-      result = []
-      c = criteria.clone
+      #warn "XX #{name_dbg}.find_symbols#{criteria}"
+
+      c = criteria.clone # XXX_F
+      result = parent.find_symbols(c)
+      c = criteria.clone # XXX_F
       result += @symbol_idx.find_symbols(c)
-      c = criteria.clone
+      c = criteria.clone # XXX_F
       result += @parent.find_symbols(c) if not is_root?
+
+      #warn "XX `-> found: #{result}"
       result
     end
 

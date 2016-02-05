@@ -56,26 +56,26 @@ module Rocc::CodeElements::CharRepresented::Tokens
     def pursue_branch(compilation_context, branch)
       # FIXME_R why is symbols data member instead of function local variable?!
       @symbols = branch.find_symbols(:identifier => @text)
-      #warn "XXXX found #{@symbols.count} symbols for identifier `#{@text}'"
+      warn "XXXX found #{@symbols.count} symbols for identifier `#{@text}': #{@symbols.map {|s| s.name_dbg}}"
       macro_without_additional_conditions = 0 # XXX(ut) defensive programming. remove when according (unit) tests are in place
-      @symbols.each do |s|
-        case s
+      @symbols.each do |sym|
+        case sym
         when Rocc::Semantic::CeMacro
-          #warn "XXXX branch #{branch.conditions}"
-          #warn "XXXX s      #{s.conditions}"
-          if branch.conditions.imply?(s.conditions)
-            #warn "XXXX A"
+          warn "XXXX branch #{branch.conditions}"
+          warn "XXXX sym    #{sym.conditions.inspect}"
+          if branch.conditions.imply?(sym.conditions)
+            warn "XXXX A"
             # XXX(ut)>
             macro_without_additional_conditions += 1
             raise if macro_without_additional_conditions > 1
             # <XXX(ut)
             macro_branch = branch
           else
-            #warn "XXXX B"
-            macro_branch = branch.fork(branch.conditions.complement(s.conditions), s)
+            warn "XXXX B"
+            macro_branch = branch.fork(branch.conditions.complement(sym.conditions), sym)
           end
-            #warn "XXXX #{macro_branch}"          
-          minvoc = Rocc::Semantic::CeMacroInvokation.new(self, s)
+          warn "XXXX #{macro_branch}"
+          minvoc = Rocc::Semantic::CeMacroInvokation.new(self, sym)
           minvoc.pursue_branch(compilation_context, macro_branch)
         #when CeTypedef
         end

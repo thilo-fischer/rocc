@@ -66,6 +66,7 @@ module Rocc::Semantic::Temporary
     end
 
     def create_symbol(branch)
+      warn "ArisingSpecification#create_symbol(#{branch.name_dbg}) <- #{@identifier}"
       raise "missing identifier" unless @identifier
       raise "missing symbol_family" unless @symbol_family
       raise "Already created symbol from this #{self.class}!" if @symbol
