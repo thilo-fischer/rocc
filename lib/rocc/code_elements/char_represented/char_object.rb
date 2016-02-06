@@ -79,7 +79,7 @@ module Rocc::CodeElements::CharRepresented
     # preprocessing.
     #
     # Will  be set when pursuing this char object.
-    attr_reader :conditions
+    attr_reader :existence_conditions
 
     EMPTY_WHITESPACE = ''
 
@@ -105,7 +105,7 @@ module Rocc::CodeElements::CharRepresented
       @whitespace_after = whitespace_after
       @pred_char_obj = pred_char_obj
       @pred_char_obj.succ_char_obj = self if @pred_char_obj
-      @conditions = nil
+      @existence_conditions = nil
     end # initialize
 
     # Define a constant containing the string to be given as
@@ -150,10 +150,10 @@ module Rocc::CodeElements::CharRepresented
     ##
     # CharObject's implementation of CodeElement#pursue.
     def pursue(compilation_context)
-      # Set conditions for this char object. Conditions of a char
-      # object depend only on the preprocessor conditional directives
-      # and on nothing else.
-      @conditions = compilation_context.current_ppcond_conditions
+      # Set existence_conditions for this char
+      # object. Existence_Conditions of a char object depend only on
+      # the preprocessor conditional directives and on nothing else.
+      @existence_conditions = compilation_context.current_ppcond_induced_conditions
       true
     end
 

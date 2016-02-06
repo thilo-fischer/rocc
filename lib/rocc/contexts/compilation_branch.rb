@@ -545,7 +545,7 @@ module Rocc::Contexts
         @ppcond_stack << ppcond_directive
         deactivate
         #warn "#{name_dbg}.announce_pp_branch -> #{conditions.complement(ppcond_directive.collected_conditions)}"
-        f = fork(conditions.complement(ppcond_directive.collected_conditions), ppcond_directive)
+        f = fork(conditions.complement(ppcond_directive.ppcond_branch_conditions), ppcond_directive)
         f.activate
       end
       

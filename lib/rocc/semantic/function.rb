@@ -68,9 +68,9 @@ module Rocc::Semantic
     def block=(arg)
       #warn "*** assign block #{arg.name_dbg} to #{name_dbg} (current: #{@block.inspect})"
       if @block
-        if @block.conditions.equivalent?(arg.conditions)
-          warn "XX block #{@block.conditions} #{@block.conditions.class}"
-          warn "XX arg   #{arg.conditions} #{arg.conditions.class}"
+        if @block.existence_conditions.equivalent?(arg.existence_conditions)
+          warn "XX block #{@block.existence_conditions} #{@block.existence_conditions.class}"
+          warn "XX arg   #{arg.existence_conditions} #{arg.existence_conditions.class}"
           raise "multiple definitions for #{path_dbg}" if @block
         else
           @block = [ @block, arg ] # FIXME smells

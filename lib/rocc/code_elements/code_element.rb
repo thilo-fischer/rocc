@@ -256,13 +256,13 @@ module Rocc::CodeElements
 #      end
 #    end
 
-    def conditions
-      warn "XXX CodeElement#conditions on #{name_dbg} (#{self.class}) -> same conditions as #{adducer}"
+    def existence_conditions
+      warn "XXX CodeElement#existence_conditions on #{name_dbg}/#{original_to_s} (#{self.class}) -> same conditions as #{adducer}"
       case adducer
       when CodeElement
-        adducer.conditions
+        adducer.existence_conditions
       when Array
-        @cached_conditions ||= Rocc::Semantic::CeConjunctiveCondition.new(adducer.map {|a| a.conditions})
+        @cached_conditions ||= Rocc::Semantic::CeConjunctiveCondition.new(adducer.map {|a| a.existence_conditions})
       else
         raise
       end

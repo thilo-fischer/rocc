@@ -194,7 +194,7 @@ module Rocc::Semantic
     end
 
     def to_s
-      '(' + @conditions.map {|c| c.to_s}.join(' <&> ') + ')'
+      '<' + @conditions.map {|c| c.to_s}.join(' <&> ') + '>'
     end
 
     ##
@@ -285,7 +285,7 @@ module Rocc::Semantic
 
     ##
     # Return the conjunction of +self+ and +other+, i.e. the set of
-    # conditions that implies +self+ *and* +other+.
+    # conditions that *implies* +self+ *and* +other+.
     def conjunction(other)
       if other.is_a?(CeConjunctiveCondition)
         c_dup = @conditions.dup
@@ -296,6 +296,19 @@ module Rocc::Semantic
       end
     end
     
+    ##
+    # Return the disjunction of +self+ and +other+, i.e. the set of
+    # conditions that is common in +self+ and +other+ or *is implied
+    # by* +self+ *and* +other+.
+    #--
+    # TODO_W
+    # TODO_F
+    def disjunction(other)
+      raise "not yet supported" unless other.is_a?(CeConjunctiveCondition)
+      raise "not yet supported" unless other.conditions.map{|c| c.negate}.to_set.subset?(@conditions.to_set)
+      (@conditions.to_set - other.conditions.map{|c| c.negate}).to_a
+    end
+
   end # class CeConjunctiveCondition    
 
 end # module Rocc::Semantic

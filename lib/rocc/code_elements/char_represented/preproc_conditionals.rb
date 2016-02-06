@@ -93,20 +93,20 @@ module Rocc::CodeElements::CharRepresented
 
     alias adducer directives
 
-    # Conjunction of negations of the conditions of those directives
-    # in the group. If +until_directive+ is given, take into account
-    # only those directives before +until_directive+.
+    # Conjunction of negations of the conditions induced by those
+    # directives in the group. If +until_directive+ is given, take
+    # into account only those directives before +until_directive+.
     #
     # E.g. if group consists of #ifdef FOO #elif defined(BAR) #elif
-    # BAZ == 42 #else #endif then negated_conditions until +#elif BAZ
-    # == 42+ is +!defined(FOO) && !defined(BAR)+, negated_conditions
+    # BAZ == 42 #else #endif then negated_induced_conditions until +#elif BAZ
+    # == 42+ is +!defined(FOO) && !defined(BAR)+, negated_induced_conditions
     # until +#else+, +#endif+ or without any limit is +!defined(FOO)
     # && !defined(BAR) && !(BAZ == 42)+.
-    def negated_conditions(until_directive = nil)
+    def negated_induced_conditions(until_directive = nil)
       until_directive ||= @else_directive || @end_directive
       directives.inject(Rocc::Semantic::CeEmptyCondition.instance) do |conj, c|
         return conj if c == until_directive
-        conj.conjunction(c.own_condition.negate)
+        conj.conjunction(c.own_induced_condition.negate)
       end
     end
     
@@ -160,38 +160,38 @@ module Rocc::CodeElements::CharRepresented
       @ppcond_group.add(self)
     end
 
-    alias char_object_conditions conditions
-    def conditions
-      raise "method shall not be used on instances of CeCoPpConditional, it is ambiguous. Use char_object_conditions, ppcond_fromgroup_conditions or ppcond_own_condition instead." # XXX(assert)
-    end
-    attr_reader :ppcond_fromgroup_conditions
-    attr_reader :ppcond_own_condition
+    attr_reader :fromgroup_induced_conditions
+    attr_reader :own_induced_condition
 
     def ppcond_branch_conditions
-      char_object_conditions.
-        conjunction(ppcond_fromgroup_conditions).
-        conjunction(ppcond_own_condition)
+      existence_conditions.
+        conjunction(fromgroup_induced_conditions).
+        conjunction(own_induced_condition)
     end
 
     private
     
     def make_stack_top(compilation_context)
-      compilation_context.ppcond_stack.push(self)
+      compilation_context.ppcond_stack_push(self)
+      #warn "!!! TOP #{compilation_context.ppcond_stack}"
     end
 
     def replace_stack_top(compilation_context)
       pred = pop_stack(compilation_context)
-      summit_stack(compilation_context)
+      make_stack_top(compilation_context)
+      #warn "!!! SUB #{compilation_context.ppcond_stack} (#{pred})"
       pred
     end
 
     def pop_stack(compilation_context)
-      popped = compilation_context.ppcond_stack.pop
-      raise unless popped == @ppcond_group[-2] # XXX(assert)
+      popped = compilation_context.ppcond_stack_pop
+      #warn "!!! POP #{compilation_context.ppcond_stack} (#{popped})"
+      raise unless popped == @ppcond_group.directives[-2] # XXX(assert)
+      popped
     end
 
     def branch_out(compilation_context)
-      branching_condition = @ppcond_group.negated_conditions(self).conjunction(ppcond_own_condition)
+      branching_condition = @ppcond_group.negated_induced_conditions(self).conjunction(own_induced_condition)
       @ccbranches = []
       @ppcond_group.affected_branches.each do |branch|
         @ccbranches << branch.fork(branching_condition, self)
@@ -201,12 +201,14 @@ module Rocc::CodeElements::CharRepresented
     def pause_branches
       @ccbranches.each {|b| b.deactivate}
     end
+    protected :pause_branches
 
     def release_branches
       @ccbranches.each {|b| b.activate} if @ccbranches
       @ccbranches = nil # to allow garbage collection of otherwise unreferenced branches
     end
-
+    protected :release_branches
+    
   end # class CeCoPpConditional
 
 
@@ -233,6 +235,7 @@ module Rocc::CodeElements::CharRepresented
       group = CePpCondGroup.new(compilation_context)
       associate(group)
 
+      # XXX_R(condition_text)? move to private condition_text method?
       case text
       when /^#\s*if(?<negation>n)?def\s+(?<identifier>\w+)\s*$/,
            /^#\s*if\s*(\s|(?<negation>!))\s*defined\s*[\s\(]\s*(?<identifier>\w+)\s*[\s\)]\s*$/
@@ -248,7 +251,7 @@ module Rocc::CodeElements::CharRepresented
         raise "error while parsing #{logic_line.path_dbg}"
       end
       
-      @ppcond_own_condition = Rocc::Semantic::CeAtomicCondition.new(@condition_text, self)
+      @own_induced_condition = Rocc::Semantic::CeAtomicCondition.new(@condition_text, self)
 
       make_stack_top(compilation_context)
 
@@ -257,7 +260,7 @@ module Rocc::CodeElements::CharRepresented
       nil
     end
 
-    def ppcond_fromgroup_conditions
+    def fromgroup_induced_conditions
       Rocc::Semantic::CeEmptyCondition.instance
     end
 
@@ -271,10 +274,10 @@ module Rocc::CodeElements::CharRepresented
       super_duty = super
       return nil if super_duty.nil?
 
-      associate(compilation_context.ppcond_stack.top)
-      @ppcond_fromgroup_condition = @ppcond_group.negated_group_conditions(self)
+      associate(compilation_context.ppcond_stack_top)
+      @fromgroup_induced_conditions = @ppcond_group.negated_induced_conditions(self)
 
-      :handle_own_condition
+      :handle_own_induced_condition
     end
 
   end # class CeCoPpCondNonautonomous
@@ -298,8 +301,10 @@ module Rocc::CodeElements::CharRepresented
 
       super_duty = super
       return nil if super_duty.nil?
-      raise unless super_duty == :handle_own_condition # XXX(assert)
+
+      raise unless super_duty == :handle_own_induced_condition # XXX(assert)
       
+      # XXX_R(condition_text)?
       case text
       when /^#\s*elif\s*(\s|(?<negation>!))\s*defined\s*[\s\(]\s*(?<identifier>\w+)\s*[\s\)]\s*$/
         if $~[:negation]
@@ -314,7 +319,7 @@ module Rocc::CodeElements::CharRepresented
         raise "error while parsing #{logic_line.path_dbg}"
       end
 
-      @ppcond_own_condition = Rocc::Semantic::CeAtomicCondition.new(@condition_text, self)
+      @own_induced_condition = Rocc::Semantic::CeAtomicCondition.new(@condition_text, self)
 
       pred = replace_stack_top(compilation_context)
       pred.pause_branches
@@ -335,9 +340,11 @@ module Rocc::CodeElements::CharRepresented
     end
     
     def pursue(compilation_context)
+      
       super_duty = super
       return nil if super_duty.nil?
-      raise unless super_duty == :handle_own_condition # XXX(assert)
+      
+      raise unless super_duty == :handle_own_induced_condition # XXX(assert)
       
       pred = replace_stack_top(compilation_context)
       pred.pause_branches
@@ -346,7 +353,7 @@ module Rocc::CodeElements::CharRepresented
       nil
     end
 
-    def ppcond_own_condition
+    def own_induced_condition
       Rocc::Semantic::CeEmptyCondition.instance
     end
 
@@ -361,9 +368,11 @@ module Rocc::CodeElements::CharRepresented
     end
     
     def pursue(compilation_context)
+      
       super_duty = super
       return nil if super_duty.nil?
-      raise unless super_duty == :handle_own_condition # XXX(assert)
+
+      raise unless super_duty == :handle_own_induced_condition # XXX(assert)
 
       pred = pop_stack(compilation_context)
 
@@ -380,10 +389,10 @@ module Rocc::CodeElements::CharRepresented
       nil
     end
 
-    # XXX_R useless @ppcond_fromgroup_condition (=> mixin for CeCoPpCondElif and CeCoPpCondElse?)
+    # XXX_R useless @fromgroup_induced_condition (=> mixin for CeCoPpCondElif and CeCoPpCondElse?)
 
-    # XXX_R redundant CeCoPpCondElse#ppcond_own_condition and CeCoPpCondEndif#ppcond_own_condition (=> mixin?)
-    def ppcond_own_condition
+    # XXX_R redundant CeCoPpCondElse#own_induced_condition and CeCoPpCondEndif#own_induced_condition (=> mixin?)
+    def own_induced_condition
       Rocc::Semantic::CeEmptyCondition.instance
     end
 

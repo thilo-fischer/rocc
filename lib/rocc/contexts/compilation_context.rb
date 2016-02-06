@@ -21,8 +21,6 @@ module Rocc::Contexts
     
     attr_reader :translation_unit, :active_branches, :fs_element_index
 
-    attr_reader :ppcond_stack
-
     # See open_token_request
     attr_reader :token_requester
     
@@ -119,6 +117,8 @@ module Rocc::Contexts
       @token_requester
     end
 
+    #attr_reader :ppcond_stack # FIXME remove, for debugging only
+
     def ppcond_stack_push(arg)
       @ppcond_stack << arg
     end
@@ -135,7 +135,7 @@ module Rocc::Contexts
       @ppcond_stack.last
     end
 
-    def current_ppcond_conditions
+    def current_ppcond_induced_conditions
       if ppcond_stack_empty?
         Rocc::Semantic::CeEmptyCondition.instance
       else

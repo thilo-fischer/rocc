@@ -35,13 +35,14 @@ module Rocc::Semantic
 
     # Returns an array of all symbols found in this index that match
     # the given critaria. Returns an empty array if no such symbol
-    # found. family specifies whether the
-    # symbol shall be a variable/function/macro/typedef/..., argument
-    # shall be the according subclass of CeSymbol corresponding to the
-    # appropriate familiy. linkage may specifiy the desired linkage of
-    # the symbol if applicable (elements from some families don't have
-    # any linkage). conditions specifies the conditions to be assumed
-    # for preprocessor conditionals.
+    # found. family specifies whether the symbol shall be a
+    # variable/function/macro/typedef/..., argument shall be the
+    # according subclass of CeSymbol corresponding to the appropriate
+    # familiy. linkage may specifiy the desired linkage of the symbol
+    # if applicable (elements from some families don't have any
+    # linkage). conditions specifies the conditions to be assumed for
+    # preprocessor conditionals (+existence_conditions+ of the
+    # symbol).
     def find_symbols(criteria)
       identifier = criteria.delete(:identifier)
 

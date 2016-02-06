@@ -62,8 +62,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
         case sym
         when Rocc::Semantic::CeMacro
           warn "XXXX branch #{branch.conditions}"
-          warn "XXXX sym    #{sym.conditions.inspect}"
-          if branch.conditions.imply?(sym.conditions)
+          warn "XXXX sym    #{sym.existence_conditions.inspect}"
+          if branch.conditions.imply?(sym.existence_conditions)
             warn "XXXX A"
             # XXX(ut)>
             macro_without_additional_conditions += 1
@@ -72,7 +72,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
             macro_branch = branch
           else
             warn "XXXX B"
-            macro_branch = branch.fork(branch.conditions.complement(sym.conditions), sym)
+            macro_branch = branch.fork(branch.conditions.complement(sym.existence_conditions), sym)
           end
           warn "XXXX #{macro_branch}"
           minvoc = Rocc::Semantic::CeMacroInvokation.new(self, sym)
