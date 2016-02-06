@@ -86,15 +86,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
         end
       end
 
-      # join as many branches as possible
-      active_branches.each {|b| b.try_join}
-
       log.debug{ "active branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}" }
       
-      # adapt set of active branches according to the branch
-      # activations and deactivations that may have happened from this
-      # token
-      compilation_context.sync_branch_activity
+      compilation_context.consolidate_branches
     end
 
     ##

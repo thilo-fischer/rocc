@@ -157,15 +157,6 @@ module Rocc::CodeElements::CharRepresented
       true
     end
 
-    ##
-    # Process this token within the given compilation context.
-    # Default implementation suitable for all tokens that can't do
-    # anything better: Add token to the list of pending tokens.
-    # Concrete token classes shall override this method when possible.
-    def pursue_branch(compilation_context, branch)
-      branch.push_pending(self)
-    end
-
     protected
 
     def succ_char_obj=(s)

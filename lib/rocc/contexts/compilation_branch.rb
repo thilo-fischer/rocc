@@ -126,20 +126,26 @@ module Rocc::Contexts
     # compilation done when +branching_condition+ applies.
     def fork(branching_condition, adducer)
       f = self.class.new(self, branching_condition, adducer)
-      f.id = register_fork(f)
+      register_fork(f)
       #warn "XXXXXXXX #{name_dbg}.fork(#{branching_condition.inspect}, #{adducer.name_dbg}) => #{f.name_dbg}"
-      f      
+      #f
     end
 
     def has_forks?
       not forks.empty?
     end
 
-
     def register_fork(fork)
-      fork_id = @id + ':' + @forks.count.to_s
-      @forks << fork
-      fork_id
+      if self == fork.parent
+        fork.id = @id + ':' + @forks.count.to_s
+        @forks << fork
+      end
+      if is_root?
+        parent.add_branch(fork)
+      else
+        parent.register_fork(fork)
+      end
+      fork
     end
     private :register_fork
 
@@ -356,6 +362,8 @@ module Rocc::Contexts
     def try_join
       if join_possible? 
         join
+      else
+        false
       end
     end
 
@@ -363,55 +371,61 @@ module Rocc::Contexts
     # - #else branch must always join with the parent branch ??
     # - pursue parent branch with additional conditions as #else branch ??
     def join_possible?
-      return nil if is_root?
-      return false unless parent.is_active?
-      @pending_tokens == parent.pending_tokens and
-        @scope_stack == parent.scope_stack and
-        @most_recent_scope == parent.most_recent_scope and
-        @token_requester == parent.token_requester
+      if is_root?
+        @forks.empty? and
+          @pending_tokens.empty? and
+          @scope_stack == [ parent.translation_unit ] and
+          @token_requester.nil?
+      else
+        return false unless parent.is_active?
+        @forks.empty? and
+          @pending_tokens == parent.pending_tokens and
+          @scope_stack == parent.scope_stack and
+          @most_recent_scope == parent.most_recent_scope and # XXX_R keeps forks open slightly longer than necessary
+          @token_requester == parent.token_requester
+      end
     end
 
     def join
       @parent.announce_symbols(@symbol_idx)
-      deactivate
+      @parent.terminate(self) unless is_root?
       @parent
     end
     private :join
     
-    def terminate
-      if has_pending?
-        fail{"Branch terminated while still having pending tokens."}
-        log.debug{"Pending tokens: #{pending_to_s}"}
-        raise
+    def terminate(branch)
+      raise "invalid parameter, use join instead" if (branch == self) # XXX(assert)
+      idx = @forks.index(branch)
+      if idx
+        @forks.delete_at(idx)
       end
-      @forks.each {|c| c.terminate }
       if is_root?
-        @parent.announce_symbols(@symbol_idx)
-      else        
-        raise unless join_possible?
-        join
+        parent.terminate_branch(branch)
+      else
+        parent.terminate(branch)
       end
     end
+    private :terminate
 
-    ##
-    # Mark this compilation branch as dead end. Log according message
-    # if logging level is set accrodingly. If a block is passed to
-    # the method, that block must evaluate to a String object and the
-    # String object will be included in the message being logged.
-    def fail
-      deactivate
-      log.warn do
-        message = yield
-        "Failed processing branch #{@id}" +
-          if message
-            ": #{message}"
-          else
-            "."
-          end
-      end
-      log.info "Conditions of failed branch: #{@conditions.dbg_name}"
-      raise
-    end # def fail
+    ###
+    ## Mark this compilation branch as dead end. Log according message
+    ## if logging level is set accrodingly. If a block is passed to
+    ## the method, that block must evaluate to a String object and the
+    ## String object will be included in the message being logged.
+    #def fail
+    #  deactivate
+    #  log.warn do
+    #    message = yield
+    #    "Failed processing branch #{@id}" +
+    #      if message
+    #        ": #{message}"
+    #      else
+    #        "."
+    #      end
+    #  end
+    #  log.info "Conditions of failed branch: #{@conditions.dbg_name}"
+    #  raise
+    #end # def fail
 
     def is_active?
       @active

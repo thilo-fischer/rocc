@@ -100,6 +100,13 @@ module Rocc::CodeElements::CharRepresented
       raise unless popped == @ppcond_group[-2] # XXX(assert)
     end
 
+    def branch_out(compilation_context)
+      branching_condition = ppcond_fromgroup_conditions.conjunction(ppcond_own_condition)
+      compilation_context.active_branches.each do |branch|
+        branch.fork(branching_condifion, self)
+      end
+    end
+
   end # class CeCoPpConditional
 
 
@@ -143,6 +150,8 @@ module Rocc::CodeElements::CharRepresented
       @ppcond_own_condition = Rocc::Semantic::CeAtomicCondition.new(@condition_text, self)
 
       make_stack_top
+
+      branch_out(compilation_context)
       
       nil
     end

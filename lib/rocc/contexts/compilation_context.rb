@@ -30,33 +30,63 @@ module Rocc::Contexts
       @translation_unit = translation_unit
       @main_branch = CompilationBranch.root_branch(self)
       @active_branches = [ @main_branch ].to_set
-      @branches_for_deactivation = Set[]
-      @branches_for_activation = Set[]
+      @all_branches = @active_branches.dup
+      @branches_new = Set[]
+      @branches_deactivated = Set[]
+      @branches_activated = Set[]
+      @branches_terminated = Set[]
       @fs_element_index = fs_element_index
       @ppcond_stack = []
       @token_requester = nil
     end
 
-    def activate_branch(branch)
-      @branches_for_activation << branch
+    def add_branch(branch)
+      @branches_new << branch
     end
 
     def deactivate_branch(branch)
-      @branches_for_deactivation << branch
+      @branches_deactivated << branch
     end
 
-    def sync_branch_activity
-      @active_branches -= @branches_for_deactivation
-      @branches_for_deactivation = Set[]
-      @active_branches |= @branches_for_activation
-      @branches_for_activation = Set[]
+    def activate_branch(branch)
+      @branches_activated << branch
+    end
+
+    def terminate_branch(branch)
+      @branches_terminated << branch
+    end
+
+    # adapt set of active branches according to the pending branch
+    # activations and deactivations
+    def sync_branch_statuses
+      @active_branches -= @branches_deactivated
+      @branches_deactivated = Set[]
+      @active_branches |= @branches_activated
+      @branches_activated = Set[]
+
+      @active_branches -= @branches_terminated
+      @all_branches    -= @branches_terminated
+      @branches_terminated = Set[]
+
+      @active_banches |= @branches_new.select {|b| b.is_active?}
+      @all_branches   |= @branches_new
+      @branches_new = Set[]
+    end
+    private :sync_branch_statuses
+
+    # join as many (active) branches as possible and sync branch statuses
+    def consolidate_branches
+      active_branches.each {|b| b.try_join unless b == @main_branch}
+      sync_branch_statuses
     end
 
     def terminate
-      @main_branch.terminate
+      mb_join = @main_branch.try_join
+      raise "unexpected termination of #{name_dbg}" unless mb_join
     end
 
     def announce_symbols(symbols)
+      #warn "XXXXXXXXXXXX announce_symbols \n\t#{caller[0..6].join("\n\t")}"
       @translation_unit.announce_symbols(symbols)
     end
 
