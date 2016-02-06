@@ -127,16 +127,20 @@ module Rocc::Contexts
     def ppcond_stack_pop
       @ppcond_stack.pop
     end
+
+    def ppcond_stack_empty?
+      @ppcond_stack.empty?
+    end
     
     def ppcond_stack_top
       @ppcond_stack.last
     end
 
     def current_ppcond_conditions
-      if @ppcond_stack.empty?
+      if ppcond_stack_empty?
         Rocc::Semantic::CeEmptyCondition.instance
       else
-        @ppcond_stack.ppcond_branch_conditions
+        ppcond_stack_top.ppcond_branch_conditions
       end
     end
     

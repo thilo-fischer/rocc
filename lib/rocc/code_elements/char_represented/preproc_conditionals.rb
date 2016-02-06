@@ -11,6 +11,12 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+
+# TODO_R classes in this file are classes with some aspects which make
+# them CeCharObjects and some aspects which go beyond the scope of
+# typical CharObjects and would be more suitable for classes from the
+# (current) Rocc::Semantics module.
+
 module Rocc::CodeElements::CharRepresented
 
   # forward declaration (sort of ...)
@@ -20,8 +26,92 @@ module Rocc::CodeElements::CharRepresented
   class CeCoPpCondElif    < CeCoPpCondNonautonomous; end
   class CeCoPpCondElse    < CeCoPpCondNonautonomous; end
   class CeCoPpCondEndif   < CeCoPpCondNonautonomous; end
-
   
+  class CePpCondGroup < Rocc::CodeElements::CodeElement
+
+    attr_reader :if_directive, :elif_directives, :else_directive, :end_directive
+
+    attr_reader :affected_branches
+
+    ##
+    # origin is the enclosing CeCoPpConditional if any, or translation
+    # unit otherwise.
+    #
+    # adducer is an array of all CeCoPpConditionals part of the group.
+    def initialize(compilation_context)
+      if compilation_context.ppcond_stack_empty?
+        super(compilation_context.translation_unit)
+      else
+        super(compilation_context.ppcond_stack_top)
+      end
+      @affected_branches = compilation_context.active_branches.dup
+    end
+
+    # XXX_R smells
+    def add(arg)
+      case arg
+      when CeCoPpCondIf
+        add_if(arg)
+      when CeCoPpCondElif
+        add_elif(arg)
+      when CeCoPpCondElse
+        add_else(arg)
+      when CeCoPpCondEndif
+        add_end(arg)
+      else
+        raise "invalid argument"
+      end
+    end
+    
+    def add_if(arg)
+      raise if @if_directive # XXX(assert)
+      @if_directive = arg
+    end
+    
+    def add_elif(arg)
+      @elif_directives = [] unless @elif
+      @elif_directives << arg
+    end
+
+    def add_else(arg)
+      raise if @else_directive # XXX(assert)
+      @else_directive = arg
+    end
+
+    def add_end(arg)
+      raise if @end_directive # XXX(assert)
+      @end_directive = arg
+    end
+
+    def directives
+      result = [@if_directive]
+      result += @elif_directives if @elif_directives
+      result << @else_directive if @else_directive
+      result << @end_directive if @end_directive
+      result
+    end
+
+    alias adducer directives
+
+    # Conjunction of negations of the conditions of those directives
+    # in the group. If +until_directive+ is given, take into account
+    # only those directives before +until_directive+.
+    #
+    # E.g. if group consists of #ifdef FOO #elif defined(BAR) #elif
+    # BAZ == 42 #else #endif then negated_conditions until +#elif BAZ
+    # == 42+ is +!defined(FOO) && !defined(BAR)+, negated_conditions
+    # until +#else+, +#endif+ or without any limit is +!defined(FOO)
+    # && !defined(BAR) && !(BAZ == 42)+.
+    def negated_conditions(until_directive = nil)
+      until_directive ||= @else_directive || @end_directive
+      directives.inject(Rocc::Semantic::CeEmptyCondition.instance) do |conj, c|
+        return conj if c == until_directive
+        conj.conjunction(c.own_condition.negate)
+      end
+    end
+    
+  end # class CePpCondGroup
+
   # abstract base class
   class CeCoPpConditional < CeCoPpDirective
 
@@ -59,16 +149,15 @@ module Rocc::CodeElements::CharRepresented
     # to that array.
     def associate(arg)
       raise if @ppcond_group # XXX(assert) Code to check the method is
-      # used the right way to catch programming
-      # errors as early as possible. Should be
-      # substituted with according unit
-      # tests. Can be removed in stable,
-      # productive code to increase runtime
-      # performane.
-      ppcond_group = arg.is_a?(Array) ? arg : arg.ppcond_group
-      #warn "XXXX #{name_dbg}.associate(#{ppcond_directive.name_dbg})"
+                             # used the right way to catch programming
+                             # errors as early as possible. Should be
+                             # substituted with according unit
+                             # tests. Can be removed in stable,
+                             # productive code to increase runtime
+                             # performane.
+      ppcond_group = arg.is_a?(CePpCondGroup) ? arg : arg.ppcond_group
       @ppcond_group = ppcond_group
-      @ppcond_group << self
+      @ppcond_group.add(self)
     end
 
     alias char_object_conditions conditions
@@ -86,25 +175,36 @@ module Rocc::CodeElements::CharRepresented
 
     private
     
-    def make_stack_top
+    def make_stack_top(compilation_context)
       compilation_context.ppcond_stack.push(self)
     end
 
-    def replace_stack_top
-      pop_stack
-      summit_stack
+    def replace_stack_top(compilation_context)
+      pred = pop_stack(compilation_context)
+      summit_stack(compilation_context)
+      pred
     end
 
-    def pop_stack
+    def pop_stack(compilation_context)
       popped = compilation_context.ppcond_stack.pop
       raise unless popped == @ppcond_group[-2] # XXX(assert)
     end
 
     def branch_out(compilation_context)
-      branching_condition = ppcond_fromgroup_conditions.conjunction(ppcond_own_condition)
-      compilation_context.active_branches.each do |branch|
-        branch.fork(branching_condifion, self)
+      branching_condition = @ppcond_group.negated_conditions(self).conjunction(ppcond_own_condition)
+      @ccbranches = []
+      @ppcond_group.affected_branches.each do |branch|
+        @ccbranches << branch.fork(branching_condition, self)
       end
+    end
+
+    def pause_branches
+      @ccbranches.each {|b| b.deactivate}
+    end
+
+    def release_branches
+      @ccbranches.each {|b| b.activate} if @ccbranches
+      @ccbranches = nil # to allow garbage collection of otherwise unreferenced branches
     end
 
   end # class CeCoPpConditional
@@ -129,8 +229,9 @@ module Rocc::CodeElements::CharRepresented
       super_duty = super
       return nil if super_duty.nil?
       
-      # CeCoPpCondIf starts ppcond_group array
-      associate([])
+      # CeCoPpCondIf starts CePpCondGroup
+      group = CePpCondGroup.new(compilation_context)
+      associate(group)
 
       case text
       when /^#\s*if(?<negation>n)?def\s+(?<identifier>\w+)\s*$/,
@@ -149,7 +250,7 @@ module Rocc::CodeElements::CharRepresented
       
       @ppcond_own_condition = Rocc::Semantic::CeAtomicCondition.new(@condition_text, self)
 
-      make_stack_top
+      make_stack_top(compilation_context)
 
       branch_out(compilation_context)
       
@@ -170,29 +271,10 @@ module Rocc::CodeElements::CharRepresented
       super_duty = super
       return nil if super_duty.nil?
 
-      # collect negated_group_conditions before associate might be a
-      # little more performant XXX test whether it really is,
-      # otherwise associate first as that would be more convenient
-      @ppcond_fromgroup_condition = negated_group_conditions
-
       associate(compilation_context.ppcond_stack.top)
+      @ppcond_fromgroup_condition = @ppcond_group.negated_group_conditions(self)
 
       :handle_own_condition
-    end
-
-    private
-    
-    def negated_group_conditions
-      if @ppcond_group.last == self
-        # negate conditions of all ppcond_group except for the
-        # last one because the last element in that array is self.
-        @ppcond_group[0..-2]
-      else
-        @ppcond_group
-      end.inject(Rocc::Semantic::CeEmptyCondition.instance) do |conj, c|
-        #warn "#{name_dbg}.negated_associated_conditions -> #{c.name_dbg}"
-        conj.conjunction(c.own_condition.negate)
-      end
     end
 
   end # class CeCoPpCondNonautonomous
@@ -234,8 +316,10 @@ module Rocc::CodeElements::CharRepresented
 
       @ppcond_own_condition = Rocc::Semantic::CeAtomicCondition.new(@condition_text, self)
 
-      replace_stack_top
-
+      pred = replace_stack_top(compilation_context)
+      pred.pause_branches
+      branch_out(compilation_context)
+      
       nil
     end
 
@@ -255,7 +339,9 @@ module Rocc::CodeElements::CharRepresented
       return nil if super_duty.nil?
       raise unless super_duty == :handle_own_condition # XXX(assert)
       
-      replace_stack_top
+      pred = replace_stack_top(compilation_context)
+      pred.pause_branches
+      branch_out(compilation_context)
 
       nil
     end
@@ -279,7 +365,17 @@ module Rocc::CodeElements::CharRepresented
       return nil if super_duty.nil?
       raise unless super_duty == :handle_own_condition # XXX(assert)
 
-      pop_stack
+      pred = pop_stack(compilation_context)
+
+      unless pred.is_a?(CeCoPpCondElse)
+        # no +#else+ directive in this group => need another branch to
+        # handle the path where none of the previous coditions applied
+        branch_out(compilation_context)
+      end
+
+      @ppcond_group.directives.each {|d| d.release_branches}
+
+      compilation_context.consolidate_branches
       
       nil
     end

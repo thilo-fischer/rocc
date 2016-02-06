@@ -126,28 +126,18 @@ module Rocc::Contexts
     # compilation done when +branching_condition+ applies.
     def fork(branching_condition, adducer)
       f = self.class.new(self, branching_condition, adducer)
-      register_fork(f)
+      f.id = @id + ':' + @forks.count.to_s
+      @forks << f
+      compilation_context.add_branch(f)
+      deactivate
+      f.activate
       #warn "XXXXXXXX #{name_dbg}.fork(#{branching_condition.inspect}, #{adducer.name_dbg}) => #{f.name_dbg}"
-      #f
+      f
     end
 
     def has_forks?
       not forks.empty?
     end
-
-    def register_fork(fork)
-      if self == fork.parent
-        fork.id = @id + ':' + @forks.count.to_s
-        @forks << fork
-      end
-      if is_root?
-        parent.add_branch(fork)
-      else
-        parent.register_fork(fork)
-      end
-      fork
-    end
-    private :register_fork
 
     def id=(arg)
       raise if @id
@@ -431,25 +421,33 @@ module Rocc::Contexts
       @active
     end
 
-    def activate(branch = self)      
-      #warn "~~~ #{branch.name_dbg}.activate(#{branch.name_dbg}) <- #{caller[0..1].map {|c| c.sub(/^.*\//, '')}}"
-      @active = true if branch == self
-      if is_root?
-        parent.activate_branch(branch)
+    def activate
+      if has_forks?
+        @forks.each {|f| f.activate}
       else
-        parent.activate(branch)
+        @active = true
+        compilation_context.activate_branch(self)
       end
     end
     
-    def deactivate(branch = self)
-      #warn "~~~ #{branch.name_dbg}.deactivate(#{branch.name_dbg}) <- #{caller[0..1].map {|c| c.sub(/^.*\//, '')}}"
-      @active = false if branch == self
-      if is_root?
-        parent.deactivate_branch(branch)
+    def deactivate
+      if has_forks?
+        @forks.each {|f| f.deactivate}
       else
-        parent.deactivate(branch)
+        @active = false
+        compilation_context.deactivate_branch(self)
       end
     end
+
+    # TODO_F
+    def compilation_context
+      if is_root?
+        parent
+      else
+        parent.compilation_context
+      end
+    end
+    protected :compilation_context
 
     ##
     # Redirect all tokens to code_object instead of invoking
