@@ -68,7 +68,7 @@ module Rocc::Contexts
     # CompilationBranch.root_branch or CompilationBranch#fork instead.
     # FIXME? make protected, private?
     #
-    # New branch that branches out from +parent+ and is active when
+    # New branch that branches out from +parent+ and is active while
     # the parent's conditions plus the given +branching_condition+
     # apply.
     #
@@ -76,11 +76,17 @@ module Rocc::Contexts
     # branches, it is the current CompilationContext for the root
     # branch.
     #
+    # +master+ is the branch from which to derive the current
+    # compilation progress' state information. For a regular fork,
+    # +master+ is the same as +parent+, but when creating a branch
+    # when joining two child branches of the same parent, master and
+    # parent may differ. +nil+ for root branch.
+    #
     # +branching_condition+ refers to a +CeCondition+ object for
     # regular branches, it is nil for the initial branch.
     #
     # +adducer+ The CodeElement that caused to fork this branch.
-    def initialize(parent, branching_condition, adducer)
+    def initialize(parent, master, branching_condition, adducer)
       @parent = parent
       @branching_condition = branching_condition
       @adducer = adducer
@@ -93,10 +99,10 @@ module Rocc::Contexts
         @token_requester = nil
       else
         @id = nil # will be set after registration at parent
-        @pending_tokens = parent.pending_tokens.dup
-        @scope_stack = parent.scope_stack.dup
-        @most_recent_scope = parent.most_recent_scope
-        @token_requester = parent.token_requester
+        @pending_tokens = master.pending_tokens.dup
+        @scope_stack = master.scope_stack.dup
+        @most_recent_scope = master.most_recent_scope
+        @token_requester = master.token_requester
       end
 
       @active = true
@@ -118,16 +124,20 @@ module Rocc::Contexts
 
     def self.root_branch(compilation_context)
       # XXX? use compilation_context as adducer instead of as parent?
-      self.new(compilation_context, Rocc::Semantic::CeEmptyCondition.instance, nil)
+      self.new(compilation_context, nil, Rocc::Semantic::CeEmptyCondition.instance, nil)
+    end
+
+    def register(forked_branch)
+     forked_branch.id = @id + ':' + @forks.count.to_s
+     @forks << forked_branch
     end
 
     ##
     # Derive a new branch from this branch that processes the
     # compilation done when +branching_condition+ applies.
     def fork(branching_condition, adducer)
-      f = self.class.new(self, branching_condition, adducer)
-      f.id = @id + ':' + @forks.count.to_s
-      @forks << f
+      f = self.class.new(self, self, branching_condition, adducer)
+      register(f)
       compilation_context.add_branch(f)
       deactivate
       f.activate
@@ -349,9 +359,15 @@ module Rocc::Contexts
     #  @forks.each {|f| f.try_join}
     #end
 
-    def try_join
-      if join_possible? 
-        join
+    ##
+    # If compilation branches +self+ and +other+ can be merged into a
+    # single branch, do so. Joint branch will be the common parent
+    # branch if both branches share the same parent branch and
+    # conditions of the joint branch are the same as the parent
+    # branch's conditions, or a newly created branch otherwise.
+    def try_join(other)
+      if join_possible?(other)
+        join(other)
       else
         false
       end
@@ -360,42 +376,61 @@ module Rocc::Contexts
     # FIXME_R when an #else directive exists, it might happen that forks never get to a point where join_poissible?. E.g., assume parent has pending tokens and/or an arising specification on the scope stack and both get resolved in the #if- and the #else-fork. join_possible? will (very likely) not be true until the end of the program and parent branch might fail, though the code is absolutely correct. Resolution(?):
     # - #else branch must always join with the parent branch ??
     # - pursue parent branch with additional conditions as #else branch ??
-    def join_possible?
-      if is_root?
-        @forks.empty? and
-          @pending_tokens.empty? and
-          @scope_stack == [ parent.translation_unit ] and
-          @token_requester.nil?
-      else
-        return false unless parent.is_active?
-        @forks.empty? and
-          @pending_tokens == parent.pending_tokens and
-          @scope_stack == parent.scope_stack and
-          @most_recent_scope == parent.most_recent_scope and # XXX_R keeps forks open slightly longer than necessary
-          @token_requester == parent.token_requester
-      end
+    def join_possible?(other)
+      raise "function shall not be invoked on root branch" if is_root? # XXX(assert)
+      raise "programming error" unless other.is_active? # XXX(assert)
+      return false unless @parent == other.parent
+      not has_forks? and not other.has_forks? and
+        @pending_tokens == other.pending_tokens and
+        @scope_stack == other.scope_stack and
+        @most_recent_scope == other.most_recent_scope and # XXX_R keeps forks open slightly longer than necessary
+        @token_requester == other.token_requester
     end
 
-    def join
-      @parent.announce_symbols(@symbol_idx)
-      @parent.terminate(self) unless is_root?
-      @parent
+    def join(other)
+      bc = @branching_conditions.disjunction(other.branching_conditions)
+      if bc.empty?
+        joint = self.class.new(@parent, self, bc, [self, other])
+        joint.announce_symbols(@symbol_idx)
+        joint.announce_symbols(other.symbol_idx)
+
+        @parent.terminate_fork(self)
+        @parent.terminate_fork(other)
+        @parent.register(joint)
+        joint.activate
+        
+        joint
+      else
+        raise unless @parent.forks.count > 2
+        @parent.announce_symbols(@symbol_idx)
+        @parent.announce_symbols(other.symbol_idx)
+        @parent.terminate_fork(self)
+        @parent.terminate_fork(other)
+        @parent.activate
+        @parent
+      end
     end
     private :join
     
-    def terminate(branch)
-      raise "invalid parameter, use join instead" if (branch == self) # XXX(assert)
-      idx = @forks.index(branch)
-      if idx
-        @forks.delete_at(idx)
-      end
-      if is_root?
-        parent.terminate_branch(branch)
+    def terminate_fork(forked_branch)
+      idx = @forks.index(forked_branch)
+      raise unless idx
+      @forks.delete_at(idx)
+      compilation_context.terminate_branch(forked_branch)
+    end
+    private :terminate_fork
+
+    def finalize
+      raise "function shall not be invoked on any non-root branch" unless is_root? # XXX(assert)
+      if @forks.empty? and
+         @pending_tokens.empty? and
+         @scope_stack == [ parent.translation_unit ] and
+         @token_requester.nil?
+        compilation_context.announce_symbols(@symbol_idx)
       else
-        parent.terminate(branch)
+        raise "unexpected end of root branch"
       end
     end
-    private :terminate
 
     ###
     ## Mark this compilation branch as dead end. Log according message

@@ -81,8 +81,7 @@ module Rocc::Contexts
     end
 
     def terminate
-      mb_join = @main_branch.try_join
-      raise "unexpected termination of #{name_dbg}" unless mb_join
+      raise "unexpected termination of #{name_dbg}" unless @main_branch.finalize
     end
 
     def announce_symbols(symbols)
