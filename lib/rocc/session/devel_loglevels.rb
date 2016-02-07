@@ -32,7 +32,10 @@ module Rocc::Session
   SPECIFIC_LOGLEVELS = {
     "Rocc::CodeElements::CharRepresented::Tokens" => 0,
     "Rocc::CodeElements::CharRepresented" => 0,
+    /Rocc::CodeElements::CharRepresented::.*Comment/ => 0,
     "Rocc::CodeElements" => 0,
+    /pursue/ => 0,
+    "tkn_pursue" => 1,
   }
 
 end

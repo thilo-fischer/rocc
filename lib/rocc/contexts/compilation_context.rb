@@ -17,6 +17,9 @@ module Rocc::Contexts
 
   class CompilationContext
 
+    extend  Rocc::Session::LogClientClassMixin
+    include Rocc::Session::LogClientInstanceMixin
+
     # XXX implement active_branches as method returning an iterator that recursively iterates the branches tree (performance improvement?)
     
     attr_reader :translation_unit, :active_branches, :fs_element_index
@@ -74,8 +77,10 @@ module Rocc::Contexts
 
     # join as many (active) branches as possible and sync branch statuses
     def consolidate_branches
+      log.debug{"active branches:       #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
       active_branches.each {|b| b.try_join unless b == @main_branch}
       sync_branch_statuses
+      log.info{"consolidated branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
     end
 
     def terminate

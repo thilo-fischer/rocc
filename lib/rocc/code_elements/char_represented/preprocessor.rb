@@ -16,6 +16,8 @@ module Rocc::CodeElements::CharRepresented
   class CeCoPpDirective   < CeCharObject;     end
 end
 
+# TODO_R replace '$' in child classes Regexp with '\Z'
+
 require 'rocc/code_elements/char_represented/preproc_conditionals'
 require 'rocc/code_elements/char_represented/preproc_include'
 require 'rocc/code_elements/char_represented/preproc_macro'

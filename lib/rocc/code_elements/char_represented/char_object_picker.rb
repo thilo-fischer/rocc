@@ -27,7 +27,7 @@ module Rocc::CodeElements::CharRepresented
       @charobj_class = charobj_class
       @delegatees = delegatees
       @picking_regexp = Regexp.new("\\A#{charobj_class.REGEXP.to_s}") if charobj_class.REGEXP
-      warn "XXX init charobj picker for #{@charobj_class}, regexp: #{@picking_regexp.inspect}, delegatees: #{@delegatees.inspect}"
+      #warn "XXX init charobj picker for #{@charobj_class}, regexp: #{@picking_regexp.inspect}, delegatees: #{@delegatees.inspect}"
     end # initialize
 
     ##

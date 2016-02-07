@@ -56,7 +56,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
     def pursue_branch(compilation_context, branch)
       # FIXME_R why is symbols data member instead of function local variable?!
       @symbols = branch.find_symbols(:identifier => @text)
-      warn "XXXX found #{@symbols.count} symbols for identifier `#{@text}': #{@symbols.map {|s| s.name_dbg}}"
+      #warn "XXXX found #{@symbols.count} symbols for identifier `#{@text}': #{@symbols.map {|s| s.name_dbg}}"
       macro_without_additional_conditions = 0 # XXX(ut) defensive programming. remove when according (unit) tests are in place
       @symbols.each do |sym|
         case sym

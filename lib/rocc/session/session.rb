@@ -106,6 +106,7 @@ module Rocc::Session
 
     # +options+ string representing the desired log level.
     def setup_logging(arg)
+      # TODO_R(private object_to_loglevel)? move to LogConfig?
       level = LogConfig.object_to_loglevel(arg)
       if level
         LogConfig.instance.setup(level)

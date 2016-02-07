@@ -58,13 +58,17 @@ module Rocc::CodeElements::CharRepresented::Tokens
     ##
     # CeCoToken's implementation of CodeElement#pursue.
     #
-    # Shall not overridden in child classes, override pursue_branch instead.
+    # Shall not overridden in child classes, override pursue_branch
+    # instead.
+    #
+    # TODO_R super_duty mechanism smells and does not seem necessary
+    # anymore. remove?
     def pursue(compilation_context)
       super_duty = super
       return nil if super_duty.nil?
       
       if compilation_context.has_token_request?
-        log.debug{"#{compilation_context.token_requester.name_dbg}.process_token\nToken: #{path_dbg}"} # TODO loglevel trace ?! log with specific log tag?
+        log(:tkn_pursue).info{"#{compilation_context.token_requester.name_dbg}.process_token\n\u21AA #{path_dbg}"}
         compilation_context.token_requester.process_token(compilation_context, self)
         # Achieved all operations necessary to pursue the
         # context. Chaining child class' method implementation does
@@ -78,16 +82,15 @@ module Rocc::CodeElements::CharRepresented::Tokens
       # pursue all active branches
       active_branches.each do |b|
         if b.has_token_request?
-          log.debug{"#{b.token_requester.name_dbg}.process_token\nToken: #{path_dbg}"} # TODO loglevel trace ?! log with specific log tag?
+          log(:tkn_pursue).info{"#{b.token_requester.name_dbg}.process_token\n\u21AA #{path_dbg}"}
           b.token_requester.process_token(compilation_context, b, self)
         else
-          log.debug{"#{name_dbg}.pursue_branch #{b.id}\nToken: #{path_dbg}\n#{b.scope_stack_trace}"} # TODO loglevel trace ?! log with specific log tag?
+          log(:tkn_pursue).info {"#{name_dbg}.pursue_branch #{b.id}"}
+          log(:tkn_pursue).debug{"\u21AA #{path_dbg}\n#{b.scope_stack_trace}"}
           pursue_branch(compilation_context, b)
         end
       end
 
-      log.debug{ "active branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}" }
-      
       compilation_context.consolidate_branches
     end
 

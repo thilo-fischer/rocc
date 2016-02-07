@@ -36,6 +36,11 @@ module Rocc::CodeElements::FileRepresented
       @include_files << file
     end
 
+    # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
+    def name_dbg
+      "TU[#{name}]"
+    end
+
     def name
       main_file.basename + ".o"
     end

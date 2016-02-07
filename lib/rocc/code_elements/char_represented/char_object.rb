@@ -149,6 +149,11 @@ module Rocc::CodeElements::CharRepresented
 
     ##
     # CharObject's implementation of CodeElement#pursue.
+    #
+    # TODO_R? Make pursue methods of CeCharObject's subclasses
+    # private, rename it to char_object_subclass_specific_pursue (or
+    # alike) and call it from CeCharObject#pursue instead of assuming
+    # derived classes call super in their pursue method?
     def pursue(compilation_context)
       # Set existence_conditions for this char
       # object. Existence_Conditions of a char object depend only on

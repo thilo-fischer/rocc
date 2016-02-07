@@ -24,21 +24,14 @@ module Rocc::Session
 
   module LogClientClassMixin
 
-    def log
-      @logger ||= LogConfig.instance.get_logger(logtag)
-      #warn "#{self}.log (class) => threshold: #{@logger.sev_threshold}"
-      @logger
+    def log(logtag = self)
+      @logger ||= Hash.new
+      #l = 
+      @logger[logtag] ||= LogConfig.instance.get_logger(logtag)
+      #warn "#{self}.log (class) => threshold: #{l.sev_threshold}"
+      #l
     end
 
-    def logtag
-      @logtag || name
-    end
-
-    def logtag=(arg)
-      @logtag = arg
-      update_logger
-    end
-    
     def update_logger
       @logger = nil
       log
@@ -48,10 +41,11 @@ module Rocc::Session
 
   module LogClientInstanceMixin
 
-    def log
-      l = self.class.log
+    def log(logtag = self.class)
+      #l =
+      self.class.log(logtag)
       #warn "#{self}.log (instance) => threshold: #{l.sev_threshold}"
-      l
+      #l
     end
 
   end
@@ -87,30 +81,36 @@ module Rocc::Session
     end # set_default_threshold
 
     def set_logtag_threshold(object, level)
-      logtag = logtag_from_object(object)
-      @specific_loggers[logtag] = create_logger(level, logtag)
-      @default_logger.debug {"Set log level #{level} for #{logtag} (-> #{object})"}
+      pattern = logtag_pattern_from_object(object)
+      progname = pattern.to_s.sub(/\A\(\?-mix:\\A/, '').sub(/\\b\)\Z/, '')
+      logger = @specific_loggers[pattern] ||= create_logger(level, progname)
+      @default_logger.debug {"Set log level #{level} for #{pattern} (-> #{object})"}
     end # set_threshold
 
+    ##
+    # Returns the logger associated with the longest pattern matching
+    # the logtag induced by +object+ if such exists, the default
+    # logger otherwise.
     def get_logger(object)
       logtag = logtag_from_object(object)
       
       best_match = nil
-      @specific_loggers.keys.each do |k|
-        if logtag.start_with?(k)
-          if best_match.nil? or best_match.length < k.length
-            best_match = k
+      best_match_length = 0
+      best_match_pattern = nil # XXX for debugging message only, remove
+      @specific_loggers.each do |pattern, logger|
+        if logtag =~ pattern
+          match_length = Regexp.last_match.to_s.length
+          if best_match.nil? or best_match_length < match_length
+            best_match = logger
+            best_match_length = match_length
+            best_match_pattern = pattern
           end
         end
       end
 
-      result = if best_match
-                 @specific_loggers[best_match]
-               else
-                 @default_logger
-               end
-      #warn "get_logger for #{object} -> logtag=#{logtag} -> best_match=#{best_match.inspect} -> logger: #{result.progname}, lvl#{result.level}"
-      
+      result =
+      best_match || @default_logger
+      warn "get_logger for #{object} -> logtag=#{logtag} -> best_match=#{best_match_pattern.inspect} -> logger: #{result.progname}, lvl#{result.level}"
       result
     end # get_logger
 
@@ -119,6 +119,8 @@ module Rocc::Session
     # as specified by the Logger::XYZ constants.  Returns the
     # appropriate Logger::XYZ constant or nil if no constant could be
     # associated with the given object.
+    #--
+    # XXX_R(private object_to_loglevel) make private?
     def self.object_to_loglevel(obj)
       case obj
       when nil
@@ -174,6 +176,17 @@ module Rocc::Session
       when Symbol
         object.to_s
       when String
+        object
+      else
+        raise "invalid argument: #{object.inspect}"
+      end
+    end # def logtag_from_object
+
+    def logtag_pattern_from_object(object)
+      case object
+      when LogClientClassMixin, LogClientInstanceMixin, Symbol, String
+        Regexp.new("\\A#{Regexp.escape(object)}\\b")
+      when Regexp
         object
       else
         raise "invalid argument: #{object.inspect}"
