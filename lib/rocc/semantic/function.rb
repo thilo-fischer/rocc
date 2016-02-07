@@ -19,7 +19,7 @@ module Rocc::Semantic
 
     attr_reader :parameters, :signatures, :block
 
-    def initialize(origin, identifier, hashargs)
+    def initialize(origin, identifier, conditions, hashargs)
       super
       @parameters = []
       @param_list_complete = false

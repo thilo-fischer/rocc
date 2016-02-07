@@ -104,10 +104,7 @@ module Rocc::Contexts
         @token_requester = nil
       else
         parent.register(self) # will set @id
-        @pending_tokens = master.pending_tokens.dup
-        @scope_stack = master.scope_stack.dup
-        @most_recent_scope = master.most_recent_scope
-        @token_requester = master.token_requester
+        derive_progress_info(master)
       end
 
       log.debug{"new cc_branch: #{self} from #{master}, child of #{parent}"}
@@ -116,6 +113,14 @@ module Rocc::Contexts
     def name_dbg
       "CcBr[#{@id}]"
     end
+
+    def derive_progress_info(master)
+      @pending_tokens = master.pending_tokens.dup
+      @scope_stack = master.scope_stack.dup
+      @most_recent_scope = master.most_recent_scope
+      @token_requester = master.token_requester
+    end
+    private :derive_progress_info
     
     ##
     # Is this the main branch directly initiated from the
@@ -141,10 +146,9 @@ module Rocc::Contexts
       f = self.class.new(self, self, branching_condition, adducer)
       log.info{"fork #{f} from #{self} due to #{adducer}"}
       compilation_context.add_branch(f)
-      deactivate
+      deactivate_self
       f.activate
-      #warn "XXXXXXXX #{name_dbg}.fork(#{branching_condition.inspect}, #{adducer.name_dbg}) => #{f.name_dbg}"
-      #f
+      f
     end
 
     def has_forks?
@@ -319,20 +323,28 @@ module Rocc::Contexts
       raise "programming error" unless linkage
       hashargs[:linkage] = linkage
 
-      symbols = find_symbols(:identifier => identifier, :symbol_family => symbol_family)
+      warn "#{self}.announce_symbol conditions `#{conditions}'"
+      warn "#{self}.announce_symbol `#{identifier}'"
+      warn Rocc::Helpers::Debug.dbg_backtrace
+      
+      symbols = find_symbols(
+        :identifier => identifier,
+        :symbol_family => symbol_family,
+        :conditions => conditions
+      )
 
       #warn "@@@ symbols #{symbols}"
       
       if symbols.empty?
 
         # symbol detected for the first time
-        symbol = symbol_family.new(origin, identifier, hashargs)
+        symbol = symbol_family.new(origin, identifier, conditions, hashargs)
         #warn "@@@ new symbol: #{symbol}/#{symbol.name_dbg}"
         @symbol_idx.announce_symbol(symbol)
 
       else
         
-        raise if symbols.count > 1 # XXX
+        raise "double defined symbol" if symbols.count > 1 # XXX
         symbol = symbols.first
 
         # FIXME compare linkage, storage_class, type_qualifiers and type_specifiers of the annonced and the indexed symbol => must be compatible
@@ -407,6 +419,7 @@ module Rocc::Contexts
         raise unless @parent.forks.count > 2
         @parent.announce_symbols(@symbol_idx)
         @parent.announce_symbols(other.symbol_idx)
+        @parent.derive_progress_info(self)
         @parent.terminate_fork(self)
         @parent.terminate_fork(other)
         @parent.activate
@@ -462,24 +475,54 @@ module Rocc::Contexts
       @active
     end
 
+    ##
+    # If branch has no fork, set branch as active branch. Else,
+    # propagate activation to the branch's forks.
+    #
+    # Returns true if the branch itself got activated, false
+    # otherwise.
     def activate
       if has_forks?
         @forks.each {|f| f.activate}
+        false
       else
-        @active = true
-        compilation_context.activate_branch(self)
-      end
-    end
-    
-    def deactivate
-      if has_forks?
-        @forks.each {|f| f.deactivate}
-      else
-        @active = false
-        compilation_context.deactivate_branch(self)
+        activate_self
+        true
       end
     end
 
+    def activate_self
+      @active = true
+      compilation_context.activate_branch(self)
+      log.debug{"Activate #{self}"}
+      #log.debug{Rocc::Helpers::Debug.dbg_backtrace(12, 4)}
+    end
+    private :activate_self
+    
+    ##
+    # If branch has no fork, set branch as inactive branch. Else,
+    # propagate deactivation to the branch's forks.
+    #
+    # Returns true if the branch itself got deactivated, false
+    # otherwise.
+    def deactivate
+      if has_forks?
+        @forks.each {|f| f.deactivate}
+        false
+      else
+        deactivate_self
+        true
+      end
+    end
+
+    def deactivate_self
+      @active = false
+      compilation_context.deactivate_branch(self)
+      log.debug{"Deactivate #{self}"}
+      #log.debug{Rocc::Helpers::Debug.dbg_backtrace(12, 4)}
+    end
+    private :deactivate_self
+    
     # TODO_F
     def compilation_context
       if is_root?

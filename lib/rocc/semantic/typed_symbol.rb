@@ -19,7 +19,7 @@ module Rocc::Semantic
 
     attr_reader :linkage
     
-    def initialize(origin, identifier, hashargs)
+    def initialize(origin, identifier, conditions, hashargs)
       @linkage = pick_from_hashargs(hashargs, :linkage)
       @type_specifiers = pick_from_hashargs(hashargs, :type_specifiers) # FIXME not yet processed
       if hashargs.key?(:type_qualifiers)
@@ -28,7 +28,7 @@ module Rocc::Semantic
       if hashargs.key?(:storage_class)
         @storage_class = pick_from_hashargs(hashargs, :storage_class) # FIXME not yet processed
       end
-      super # XXX defensive progamming => replace some day with # super(origin, identifier)
+      super # XXX defensive progamming => replace some day with # super(origin, conditions, identifier)
       @adducers = []
     end
 

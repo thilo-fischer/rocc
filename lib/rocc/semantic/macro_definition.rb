@@ -25,9 +25,15 @@ module Rocc::Semantic
     # +origin+ of a +MacroDefinition+ shall be the CeCoPpDefine object
     # representing the preprocessor directive that defines it.
     def initialize(origin)
-      super
+      super(origin)
     end
 
+    alias define_directive origin
+
+    def existence_conditions
+      define_directive.existence_conditions
+    end
+    
     def name_dbg
       "#MDef[#{origin.identifier}]"
     end

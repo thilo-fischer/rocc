@@ -257,6 +257,8 @@ module Rocc::CodeElements::CharRepresented
 
       branch_out(compilation_context)
       
+      compilation_context.sync_branch_statuses
+      
       nil
     end
 
@@ -324,6 +326,8 @@ module Rocc::CodeElements::CharRepresented
       pred = replace_stack_top(compilation_context)
       pred.pause_branches
       branch_out(compilation_context)
+
+      compilation_context.sync_branch_statuses
       
       nil
     end
@@ -350,6 +354,8 @@ module Rocc::CodeElements::CharRepresented
       pred.pause_branches
       branch_out(compilation_context)
 
+      compilation_context.sync_branch_statuses
+      
       nil
     end
 

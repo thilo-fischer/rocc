@@ -87,6 +87,7 @@ module Rocc::CodeElements::CharRepresented
 
     # See rdoc-ref:Rocc::CodeElements::CodeElement#pursue
     def pursue(lineread_context)
+      log.info{"==> Processing line#{origin.is_a?(Range)?'s':''} #{name} --> `#{Rocc::Helpers::String.str_abbrev_inline(text, 60)}'"}
       cmt_ctx = lineread_context.comment_context
       tokenize(cmt_ctx)
       cc_ctx = cmt_ctx.compilation_context

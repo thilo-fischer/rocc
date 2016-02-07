@@ -21,10 +21,12 @@ module Rocc::Semantic
 
     # origin is the unit the symbol lives in, e.g. the translation
     # unit it belongs to.  identifier is the symbols name.
-    def initialize(origin, identifier, hashargs)
+    def initialize(origin, identifier, conditions, hashargs)
       raise "unprocessed hashargs: #{hashargs.inspect}" unless hashargs.empty? # XXX defensive progamming => remove some day
       super(origin)
       @identifier = identifier
+      @existence_conditions = conditions
+      log.fatal{"new symbol #{self} in #{origin} given #{conditions}"}
     end # initialize
 
     def name
@@ -76,6 +78,16 @@ module Rocc::Semantic
         return false unless @origin.is_a? origin
       else
         raise "invalid argument: :origin => #{origin.inspect}"
+      end
+
+      conditions = criteria.delete(:conditions)
+      case conditions
+      when nil
+         # nothing to test then
+      when Rocc::Semantic::CeCondition
+        return false unless @existence_conditions.imply?(conditions)
+      else
+        raise "invalid argument: :condition => #{condition.inspect}"
       end
 
       #warn "#{name_dbg} -> match: #{criteria} => true"

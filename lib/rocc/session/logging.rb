@@ -110,7 +110,7 @@ module Rocc::Session
 
       result =
       best_match || @default_logger
-      warn "get_logger for #{object} -> logtag=#{logtag} -> best_match=#{best_match_pattern.inspect} -> logger: #{result.progname}, lvl#{result.level}"
+      @default_logger.debug{"get_logger for #{object} -> logtag=#{logtag} -> best_match=#{best_match_pattern.inspect} -> logger: #{result.progname}, lvl#{result.level}"}
       result
     end # get_logger
 
@@ -156,7 +156,7 @@ module Rocc::Session
     FORMATTER = proc do |severity, datetime, progname, msg|
       "#{severity.to_s[0]} #{datetime.strftime(DATETIME_FORMAT)} > #{progname}: #{msg.gsub("\n", "\n\t")}\n"
     end
-    DEFAULT_LOGLEVEL = Logger::INFO
+    DEFAULT_LOGLEVEL = Logger::WARN
     DEFAULT_PROGNAME = 'rocc'
 
     def create_logger(level = DEFAULT_LOGLEVEL, progname = DEFAULT_PROGNAME)

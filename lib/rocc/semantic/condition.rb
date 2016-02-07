@@ -30,15 +30,27 @@ module Rocc::Semantic
       @adducer = adducer
     end
     
+    # Define a constant containing the string to be given as
+    # FAMILY_ABBREV to avoid repeated recreation of string object from
+    # string literal.
+    FAMILY_ABBREV = 'Cond'
+    # Return a short string giving information on the kind of the
+    # character object. Return the string constant defined by the
+    # current class or -- if not defined by that class -- its
+    # closest ancestor defining it.
+    def self.family_abbrev
+      FAMILY_ABBREV
+    end
+    
     def name_dbg
-      "#{original_to_s}{#{str_abbrev(to_s, 64)}}"
+      "#{self.class.family_abbrev}[#{str_abbrev(to_s, 32)}]"
     end
 
     ##
     # Return the conjunction of +self+ and +other+, i.e. the set of
     # conditions that implies +self+ *and* +other+.
     def conjunction(other)
-      log.debug{"#{name_dbg}.conjunction(#{other} -> #{other.class})"}
+      log.debug{"#{name_dbg}.conjunction(#{other.name_dbg})"}
       if other.is_a?(CeEmptyCondition) or
         self == other or
         self.imply?(other)
@@ -65,6 +77,18 @@ module Rocc::Semantic
       super(nil, nil)
     end
 
+    # Define a constant containing the string to be given as
+    # FAMILY_ABBREV to avoid repeated recreation of string object from
+    # string literal.
+    FAMILY_ABBREV = 'ECond'
+    # Return a short string giving information on the kind of the
+    # character object. Return the string constant defined by the
+    # current class or -- if not defined by that class -- its
+    # closest ancestor defining it.
+    def self.family_abbrev
+      FAMILY_ABBREV
+    end
+    
     def to_s
       "<always true>"
     end
@@ -110,6 +134,18 @@ module Rocc::Semantic
       @text = text
     end
 
+    # Define a constant containing the string to be given as
+    # FAMILY_ABBREV to avoid repeated recreation of string object from
+    # string literal.
+    FAMILY_ABBREV = 'ACond'
+    # Return a short string giving information on the kind of the
+    # character object. Return the string constant defined by the
+    # current class or -- if not defined by that class -- its
+    # closest ancestor defining it.
+    def self.family_abbrev
+      FAMILY_ABBREV
+    end
+    
     def to_s
       @text
     end
@@ -195,6 +231,18 @@ module Rocc::Semantic
       super(@conditions, adducer)
     end
 
+    # Define a constant containing the string to be given as
+    # FAMILY_ABBREV to avoid repeated recreation of string object from
+    # string literal.
+    FAMILY_ABBREV = 'CCond'
+    # Return a short string giving information on the kind of the
+    # character object. Return the string constant defined by the
+    # current class or -- if not defined by that class -- its
+    # closest ancestor defining it.
+    def self.family_abbrev
+      FAMILY_ABBREV
+    end
+    
     def to_s
       '<' + @conditions.map {|c| c.to_s}.join(' <&> ') + '>'
     end

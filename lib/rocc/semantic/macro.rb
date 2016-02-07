@@ -27,12 +27,17 @@ module Rocc::Semantic
     # +parameters+ is array with parameter names, empty array for
     # function-like macro without parameters, nil for "plain" macros
     def initialize(origin, adducer, identifier, parameters = nil)
-      super(origin, identifier, {})
+      super(origin, identifier, adducer.existence_conditions, {})
       @adducer = adducer
       @parameters = parameters
       @tokens = []
+      log.debug{"new macro #{self}, parameters: #{@parameters.inspect}"}
+      warn Rocc::Helpers::Debug.dbg_backtrace
     end
 
+    alias translation_unit origin
+    alias definition adducer
+    
     def name
       "macro `#{@identifier}'"
     end
@@ -54,8 +59,9 @@ module Rocc::Semantic
       @parameters != nil
     end
 
-    def process_token(compilation_context, arg)
+    def process_token(compilation_context, arg)      
       @tokens << arg
+      log.debug{"#{self}.tokens: #{@tokens}"}
     end
 
   end # class CeMacro

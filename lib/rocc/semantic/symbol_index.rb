@@ -20,16 +20,13 @@ module Rocc::Semantic
     end
     
     def announce_symbol(symbol)
-      #warn "SymbolIndex::announce_symbol: #{symbol.name_dbg}"
-      if @symbols.key?(symbol.identifier)
-        @symbols[symbol.identifier] << symbol
-      else
-        @symbols[symbol.identifier] = [ symbol ]
-      end
+      warn "SymbolIndex#announce_symbol: #{symbol}"
+      id_array = @symbols[symbol.identifier] ||= []
+      id_array << symbol
     end
 
     def announce_symbols(other_idx)
-      # XXX room for improvement ...
+      # TODO_F room for improvement ...
       other_idx.find_symbols({}).each {|s| announce_symbol(s)}
     end
 
@@ -59,14 +56,14 @@ module Rocc::Semantic
                               raise
                             end
 
-      #warn "id.count: #{symbols_matching_id.count}"
-      #unless symbols_matching_id.empty?
-      #  #warn "symbols_matching_id.first #{symbols_matching_id.first}"
-      #  warn "symbols_matching_id.first.count #{symbols_matching_id.first.count}"
-      #  unless symbols_matching_id.first.empty?
-      #    warn "symbols_matching_id.first.first #{symbols_matching_id.first.first.name_dbg}"
-      #  end
-      #end
+      warn "id.count: #{symbols_matching_id.count}"
+      unless symbols_matching_id.empty?
+        #warn "symbols_matching_id.first #{symbols_matching_id.first}"
+        warn "symbols_matching_id.count #{symbols_matching_id.count}"
+        unless symbols_matching_id.empty?
+          warn "symbols_matching_id.first #{symbols_matching_id.first.name_dbg}"
+        end
+      end
 
       result = symbols_matching_id.select do |s|
         #warn "symbols with according identifier: #{s.name_dbg}"

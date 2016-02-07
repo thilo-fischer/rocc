@@ -257,7 +257,7 @@ module Rocc::CodeElements
 #    end
 
     def existence_conditions
-      warn "XXX CodeElement#existence_conditions on #{name_dbg}/#{original_to_s} (#{self.class}) -> same conditions as #{adducer}"
+      #warn "XXX CodeElement#existence_conditions on #{name_dbg}/#{original_to_s} (#{self.class}) -> same conditions as #{adducer}"
       case adducer
       when CodeElement
         adducer.existence_conditions

@@ -59,6 +59,12 @@ module Rocc::Contexts
 
     # adapt set of active branches according to the pending branch
     # activations and deactivations
+    #
+    # FIXME_R Most invokations of
+    # CompilationBranch#activate/deactivate happen/fork/join/terminate
+    # while *not* iterating @active_branches. The according operations
+    # could be processed right away from the according functions then
+    # and would not require a downstream status synchronization then.
     def sync_branch_statuses
       @active_branches -= @branches_deactivated
       @branches_deactivated = Set[]
@@ -73,12 +79,16 @@ module Rocc::Contexts
       @all_branches   |= @branches_new
       @branches_new = Set[]
     end
-    private :sync_branch_statuses
 
     # join as many (active) branches as possible and sync branch statuses
     def consolidate_branches
       log.debug{"active branches:       #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
-      active_branches.each {|b| b.try_join unless b == @main_branch}
+      active_branches.each do |b|
+        next if b == @main_branch
+        join_candidate = b.parent.forks.last
+        next if b == join_candidate
+        b.try_join(join_candidate)
+      end
       sync_branch_statuses
       log.info{"consolidated branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
     end
