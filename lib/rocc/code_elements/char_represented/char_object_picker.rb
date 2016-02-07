@@ -20,6 +20,8 @@ module Rocc::CodeElements::CharRepresented
     extend  Rocc::Session::LogClientClassMixin
     include Rocc::Session::LogClientInstanceMixin
 
+    include Rocc::Helpers::String
+
     # XXX_R keep @picking_regexp internal, do not provide accessor
     attr_reader :picking_regexp
 
@@ -73,7 +75,14 @@ module Rocc::CodeElements::CharRepresented
       if str
         whitespace_after = pick_whitespace!(tokenization_context)
         charobj = create_charobj(tokenization_context, str, whitespace_after)
-        log.debug{ "pick! `#{str}' + `#{Rocc::Helpers::String::abbrev(Rocc::Helpers::String::no_lbreak(whitespace_after))}', remainder: `#{tokenization_context.remainder}'\n `=> #{charobj.name_dbg}" }
+        log.info{
+          'pick! ' +
+            ('%-12s' % "`#{str_abbrev(str, 12)}'") + ' + ' +
+            ('%-5s'  % "`#{str_abbrev_inline(whitespace_after, 5)}'") +
+            ', remainder: ' +
+            ('% 40s' % "`#{str_abbrev_inline(tokenization_context.remainder, 40)}'")
+            } # FIXME_R why is no "\n" getting logged at the end of remainder ?!
+        log.debug{"\u21AA #{charobj.name_dbg}"}
         charobj
       end
     end # direct_pick!
@@ -115,7 +124,7 @@ module Rocc::CodeElements::CharRepresented
       pred = tokenization_context.recent_token
       new_charobj = @charobj_class.new(tokenization_context.line, text, tokenization_context.charpos, whitespace_after, pred)
       tokenization_context.add_token(new_charobj)
-      log.debug{ "new char object: #{new_charobj.name_dbg}" }
+      log.debug{"new char object: #{new_charobj.name_dbg}"}
       new_charobj
     end
 

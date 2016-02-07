@@ -15,31 +15,46 @@ module Rocc; end
 
 module Rocc::Helpers
 
-  def self.backtrace(depth = -1, skip = 1)
-    stack = caller(skip)[0..(depth>0?depth-1:depth)]
-    stack.inject("Backtrace:\n") {|result, element| result + "\t#{element}\n" }
-  end # def backtrace
+  module Debug
+    
+    module_function
+
+    def dbg_backtrace(depth = -1, skip = 1)
+      stack = caller(skip)[0..(depth>0?depth-1:depth)]
+      stack.inject("Backtrace:\n") {|result, element| result + "\t#{element}\n" }
+    end # def backtrace
+
+  end # module Debug
 
   module String
-  
-  ##
-  # replace all line breaks in string with unicode character "symbol
-  # for newline"
-  def self.no_lbreak(str)
-    str.gsub("\n", "\u2424")
-  end
 
-  ##
-  # If +str+ is less than +length+ long, return string. Return an
-  # abbreviated +str+ representation otherwise: the first +length - 1+
-  # plus unicode character `horizontal ellipsis' otherwise.
-  def self.abbrev(str, length = 12)
-    if str.length > length
-      str[0..(length-2)] + "\u2026"
-    else
-      str
+    ##
+    # replace all line breaks in string with unicode character "symbol
+    # for newline"
+    def str_no_lbreak(str)
+      str.gsub("\n", "\u2424")
     end
-  end
 
+    ##
+    # If +str+ is less than +length+ long, return string. Return an
+    # abbreviated +str+ representation otherwise: the first +length - 1+
+    # plus unicode character `horizontal ellipsis' otherwise.
+    def str_abbrev(str, length = 12)
+      if str.length > length
+        str[0..(length-2)] + "\u2026"
+      else
+        str
+      end
+    end
+
+    ##
+    # apply str_no_lbreak and str_abbrev to +str+
+    def str_abbrev_inline(str, length = 12)
+      str_no_lbreak(str_abbrev(str, length))
+    end
+
+    module_function :str_no_lbreak, :str_abbrev, :str_abbrev_inline
+    
   end # module String
+  
 end # module Rocc::Helpers

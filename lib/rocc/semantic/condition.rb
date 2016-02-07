@@ -22,6 +22,8 @@ module Rocc::Semantic
 
   class CeCondition < Rocc::CodeElements::CodeElement
 
+    include Rocc::Helpers::String
+
     attr_reader :adducer
 
     def initialize(origin, adducer)
@@ -29,7 +31,7 @@ module Rocc::Semantic
     end
     
     def name_dbg
-      "#{original_to_s}{#{Rocc::Helpers::String::abbrev(to_s, 64)}}"
+      "#{original_to_s}{#{str_abbrev(to_s, 64)}}"
     end
 
     ##

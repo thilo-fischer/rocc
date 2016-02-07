@@ -48,6 +48,9 @@ module Rocc::CodeElements::CharRepresented
 
   # XXX rename MultiLine => Multiline
   class CeCoMultiLineBlockComment < CeCoBlockComment
+
+    include Rocc::Helpers::String
+    
     # from `/*' to end of line
     @REGEXP = /\/\*.*$/
 
@@ -75,7 +78,7 @@ module Rocc::CodeElements::CharRepresented
         tokenization_context.leave_multiline_comment
         @text += str
         @whitespace_after = self.class.picker.pick_whitespace!(tokenization_context)
-        log.debug{ "picked `#{name_dbg}' + `#{Rocc::Helpers::String::no_lbreak(@whitespace_after)}', remainder: `#{tokenization_context.remainder}'" }
+        log.debug{ "picked `#{name_dbg}' + `#{str_no_lbreak(@whitespace_after)}', remainder: `#{tokenization_context.remainder}'" }
       else
         @text += tokenization_context.remainder
         tokenization_context.remainder.clear
@@ -119,7 +122,7 @@ module Rocc::CodeElements::CharRepresented
     end
 
     def text_abbrev
-      Rocc::Helpers::String::abbrev(@text)
+      str_abbrev(@text)
     end
     
   end # class CeCoComment

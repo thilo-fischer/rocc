@@ -30,6 +30,8 @@ module Rocc::CodeElements::CharRepresented
   # XXX_R abstract class => forbid initialization
   class CeCharObject < Rocc::CodeElements::CodeElement
     
+    include Rocc::Helpers::String
+
     attr_reader :text, :charpos, :pred_char_obj, :succ_char_obj, :whitespace_after
 
     # Delegate to CeCoComment and Tokens::CeCoToken. CeCoPpDirective
@@ -122,7 +124,7 @@ module Rocc::CodeElements::CharRepresented
     
     # See rdoc-ref:Rocc::CodeElements::CodeElement#name_dbg
     def name_dbg
-      "#{self.class.family_abbrev}[#{Rocc::Helpers::String::abbrev(Rocc::Helpers::String::no_lbreak(@text), 24)}]"
+      "#{self.class.family_abbrev}[#{str_abbrev_inline(@text, 24)}]"
     end
 
     # See rdoc-ref:Rocc::CodeElements::CodeElement#name

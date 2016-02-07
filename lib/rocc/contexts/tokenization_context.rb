@@ -46,7 +46,7 @@ module Rocc::Contexts
     # line (tokenization reached end of logic line), false otherwise.
     def finished?
       #log.debug{ "TokenizationContext.finished? => #{@remainder.empty?}, remainder: `#{@remainder}'" }
-      #log.debug{ Rocc::Helpers.backtrace(8) }
+      #log.debug{ Rocc::Helpers::Debug.dbg_backtrace(8) }
       @remainder.empty?
     end
 
