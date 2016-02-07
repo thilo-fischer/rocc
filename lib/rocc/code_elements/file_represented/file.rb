@@ -70,7 +70,7 @@ module Rocc::CodeElements::FileRepresented
       unless @lines and up_to_date?
         update_changedetection
         File.open(path_full, "r") do |file|
-          @lines = file.readlines.map(&:chomp!)
+          @lines = file.readlines
         end
       end
       @lines

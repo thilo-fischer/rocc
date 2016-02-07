@@ -77,11 +77,11 @@ module Rocc::CodeElements::CharRepresented
         charobj = create_charobj(tokenization_context, str, whitespace_after)
         log.info{
           'pick! ' +
-            ('%-12s' % "`#{str_abbrev(str, 12)}'") + ' + ' +
-            ('%-5s'  % "`#{str_abbrev_inline(whitespace_after, 5)}'") +
+            ('%-14s' % "`#{str_abbrev(str, 12)}'") + ' + ' +
+            ('%-6s'  % "`#{str_abbrev_inline(whitespace_after, 4)}'") +
             ', remainder: ' +
-            ('% 40s' % "`#{str_abbrev_inline(tokenization_context.remainder, 40)}'")
-            } # FIXME_R why is no "\n" getting logged at the end of remainder ?!
+            ('% 42s' % "`#{str_abbrev_inline(tokenization_context.remainder, 40)}'")
+            }
         log.debug{"\u21AA #{charobj.name_dbg}"}
         charobj
       end
@@ -113,8 +113,6 @@ module Rocc::CodeElements::CharRepresented
     
     def pick_whitespace!(tokenization_context)
       whitespace = tokenization_context.lstrip! || ''
-      whitespace += "\n" if tokenization_context.finished?
-      whitespace
     end
     # FIXME private :pick_whitespace!
 
