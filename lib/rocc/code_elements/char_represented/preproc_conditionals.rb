@@ -103,10 +103,14 @@ module Rocc::CodeElements::CharRepresented
     # until +#else+, +#endif+ or without any limit is +!defined(FOO)
     # && !defined(BAR) && !(BAZ == 42)+.
     def negated_induced_conditions(until_directive = nil)
+      warn "until 1: #{until_directive}, if: #{@if_directive}, elif: #{@elif_directives}, else: #{@else_directive}, end: #{@end_directive}"
       until_directive ||= @else_directive || @end_directive
-      directives.inject(Rocc::Semantic::CeEmptyCondition.instance) do |conj, c|
-        return conj if c == until_directive
-        conj.conjunction(c.own_induced_condition.negate)
+      until_directive = @else_directive if until_directive == @end_directive && @else_directive # TODO_R unclean special case handling
+      warn "until 2: #{until_directive}"
+      directives.inject(Rocc::Semantic::CeEmptyCondition.instance) do |conj, dir|
+        return conj if dir == until_directive
+        warn "dir: #{dir}"
+        conj.conjunction(dir.own_induced_condition.negate)
       end
     end
     
@@ -390,6 +394,8 @@ module Rocc::CodeElements::CharRepresented
 
       @ppcond_group.directives.each {|d| d.release_branches}
 
+      # TODO_R unclean
+      compilation_context.sync_branch_statuses
       compilation_context.consolidate_branches
       
       nil

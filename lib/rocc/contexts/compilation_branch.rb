@@ -55,11 +55,8 @@ module Rocc::Contexts
     # +scope_stack+ Stack of the semantic contexts that could be
     # identified and within which the interpretation of the following
     # tokens must be done.
-    #
-    # +most_recent_scope+ The scope most recently taken from the
-    # scope_stack (if any, nil otherwise).
-    attr_reader :pending_tokens, :scope_stack, :most_recent_scope
-
+    attr_reader :pending_tokens, :scope_stack
+    
     # See open_token_request and start_collect_macro_tokens
     attr_reader :token_requester
     
@@ -100,7 +97,6 @@ module Rocc::Contexts
         @id = '*'
         @pending_tokens = []
         @scope_stack = [ parent.translation_unit ]
-        @most_recent_scope = nil
         @token_requester = nil
       else
         parent.register(self) # will set @id
@@ -117,7 +113,6 @@ module Rocc::Contexts
     def derive_progress_info(master)
       @pending_tokens = master.pending_tokens.dup
       @scope_stack = master.scope_stack.dup
-      @most_recent_scope = master.most_recent_scope
       @token_requester = master.token_requester
     end
     private :derive_progress_info
@@ -241,7 +236,7 @@ module Rocc::Contexts
 
     def leave_scope
       #warn "leave scope: #{"  " * (@scope_stack.count - 1)}< #{scope_name_dbg(@scope_stack.last)}"
-      @most_recent_scope = @scope_stack.pop
+      @scope_stack.pop
     end
 
     def find_scope(symbol_family)
@@ -380,7 +375,9 @@ module Rocc::Contexts
     # conditions of the joint branch are the same as the parent
     # branch's conditions, or a newly created branch otherwise.
     def try_join(other)
-      if join_possible?(other)
+      possible = join_possible?(other)
+      log.debug{"#{self}.try_join(#{other}) -> #{possible ? 'possible' : 'not possible'}"}
+      if possible
         join(other)
       else
         false
@@ -393,16 +390,16 @@ module Rocc::Contexts
     def join_possible?(other)
       raise "function shall not be invoked on root branch" if is_root? # XXX(assert)
       raise "programming error" unless other.is_active? # XXX(assert)
+      log.debug{"forks? #{has_forks?}, other.forks? #{other.has_forks?}, pending: #{@pending_tokens == other.pending_tokens}, scope: #{@scope_stack == other.scope_stack}, tkn_rq: #{@token_requester == other.token_requester}"}
       return false unless @parent == other.parent
       not has_forks? and not other.has_forks? and
         @pending_tokens == other.pending_tokens and
         @scope_stack == other.scope_stack and
-        @most_recent_scope == other.most_recent_scope and # XXX_R keeps forks open slightly longer than necessary
         @token_requester == other.token_requester
     end
 
     def join(other)
-      bc = @branching_conditions.disjunction(other.branching_conditions)
+      bc = @branching_condition.disjunction(other.branching_condition)
       if bc.empty?
         joint = self.class.new(@parent, self, bc, [self, other])
         joint.announce_symbols(@symbol_idx)

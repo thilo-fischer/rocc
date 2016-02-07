@@ -55,10 +55,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
           s.expression = rv
           
         when :else
-          bmrs = branch.most_recent_scope
-          raise "programming error" unless bmrs.is_a?(Rocc::Semantic::IfStatement)
-          s = Rocc::Semantic::ElseStatement.new(branch.current_scope, self, bmrs)
-          branch.enter_scope(s)
+          raise "not yet supported"
+          #bmrs = branch.most_recent_scope
+          #raise "programming error" unless bmrs.is_a?(Rocc::Semantic::IfStatement)
+          #s = Rocc::Semantic::ElseStatement.new(branch.current_scope, self, bmrs)
+          #branch.enter_scope(s)
           
         when :while
           if branch.current_scope.is_a?(Rocc::Semantic::DoWhileStatement)
