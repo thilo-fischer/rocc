@@ -22,7 +22,7 @@ require 'rocc/semantic/function'
 
 module Rocc::Contexts
 
-  class CompilationBranch
+  class CompilationBranch < Rocc::CodeElements::CodeElement
 
     extend  Rocc::Session::LogClientClassMixin
     include Rocc::Session::LogClientInstanceMixin
@@ -91,6 +91,11 @@ module Rocc::Contexts
       @branching_condition = branching_condition
       @adducer = adducer
 
+      @active = true
+      @symbol_idx = Rocc::Semantic::SymbolIndex.new
+      @forks = []
+      @cached_conditions = nil
+
       if is_root?
         @id = '*'
         @pending_tokens = []
@@ -98,17 +103,14 @@ module Rocc::Contexts
         @most_recent_scope = nil
         @token_requester = nil
       else
-        @id = nil # will be set after registration at parent
+        parent.register(self) # will set @id
         @pending_tokens = master.pending_tokens.dup
         @scope_stack = master.scope_stack.dup
         @most_recent_scope = master.most_recent_scope
         @token_requester = master.token_requester
       end
 
-      @active = true
-      @symbol_idx = Rocc::Semantic::SymbolIndex.new
-      @forks = []
-      @cached_conditions = nil
+      log.debug{"new cc_branch: #{self} from #{master}, child of #{parent}"}
     end
 
     def name_dbg
@@ -137,12 +139,12 @@ module Rocc::Contexts
     # compilation done when +branching_condition+ applies.
     def fork(branching_condition, adducer)
       f = self.class.new(self, self, branching_condition, adducer)
-      register(f)
+      log.info{"fork #{f} from #{self} due to #{adducer}"}
       compilation_context.add_branch(f)
       deactivate
       f.activate
       #warn "XXXXXXXX #{name_dbg}.fork(#{branching_condition.inspect}, #{adducer.name_dbg}) => #{f.name_dbg}"
-      f
+      #f
     end
 
     def has_forks?
@@ -396,8 +398,9 @@ module Rocc::Contexts
 
         @parent.terminate_fork(self)
         @parent.terminate_fork(other)
-        @parent.register(joint)
         joint.activate
+
+        log.info{"joined #{self} and #{other} into #{joint}"}
         
         joint
       else
@@ -407,6 +410,9 @@ module Rocc::Contexts
         @parent.terminate_fork(self)
         @parent.terminate_fork(other)
         @parent.activate
+
+        log.info{"joined #{self} and #{other} into #{@parent}"}
+
         @parent
       end
     end

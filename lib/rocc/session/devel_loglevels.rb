@@ -30,12 +30,13 @@ module Rocc::Session
   #  1 => Logger::INFO
   #  0 => Logger::DEBUG
   SPECIFIC_LOGLEVELS = {
-    "Rocc::CodeElements::CharRepresented::CharObjectPicker" => 1,
-    "Rocc::CodeElements::CharRepresented::Tokens" => 0,
-    "Rocc::CodeElements::CharRepresented::" => 0,
-    /Rocc::CodeElements::CharRepresented::.*Comment/ => 0,
-    "Rocc::CodeElements" => 0,
-    /pursue/ => 0,
+    #"Rocc::CodeElements::CharRepresented::CharObjectPicker" => 1,
+    #"Rocc::CodeElements::CharRepresented::Tokens" => 0,
+    #"Rocc::CodeElements::CharRepresented::" => 0,
+    #/Rocc::CodeElements::CharRepresented::.*Comment/ => 0,
+    "Rocc::CodeElements" => 1,
+    "Rocc::Contexts" => 0,
+    #/pursue/ => 0,
     "tkn_pursue" => 1,
   }
 

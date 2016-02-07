@@ -82,7 +82,7 @@ module Rocc::CodeElements::CharRepresented
             ', remainder: ' +
             ('% 42s' % "`#{str_abbrev_inline(tokenization_context.remainder, 40)}'")
             }
-        log.debug{"\u21AA #{charobj.name_dbg}"}
+        log.info{" \u21AA #{charobj.name_dbg}"}
         charobj
       end
     end # direct_pick!

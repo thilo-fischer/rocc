@@ -68,7 +68,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       return nil if super_duty.nil?
       
       if compilation_context.has_token_request?
-        log(:tkn_pursue).info{"#{compilation_context.token_requester.name_dbg}.process_token\n\u21AA #{path_dbg}"}
+        log(:tkn_pursue).info{"#{compilation_context.token_requester.name_dbg}.process_token\n \u21AA #{path_dbg}"}
         compilation_context.token_requester.process_token(compilation_context, self)
         # Achieved all operations necessary to pursue the
         # context. Chaining child class' method implementation does
@@ -82,11 +82,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
       # pursue all active branches
       active_branches.each do |b|
         if b.has_token_request?
-          log(:tkn_pursue).info{"#{b.token_requester.name_dbg}.process_token\n\u21AA #{path_dbg}"}
+          log(:tkn_pursue).info{"#{b.token_requester.name_dbg}.process_token\n \u21AA #{path_dbg}"}
           b.token_requester.process_token(compilation_context, b, self)
         else
-          log(:tkn_pursue).info {"#{name_dbg}.pursue_branch #{b.id}"}
-          log(:tkn_pursue).debug{"\u21AA #{path_dbg}\n#{b.scope_stack_trace}"}
+          log(:tkn_pursue).info {"#{name_dbg}.pursue_branch #{b}"}
+          log(:tkn_pursue).debug{" \u21AA #{path_dbg}\n#{b.scope_stack_trace}"}
           pursue_branch(compilation_context, b)
         end
       end
