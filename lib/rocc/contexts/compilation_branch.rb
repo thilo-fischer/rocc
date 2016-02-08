@@ -308,10 +308,6 @@ module Rocc::Contexts
       raise "programming error" unless linkage
       hashargs[:linkage] = linkage
 
-      warn "#{self}.announce_symbol conditions `#{conditions}'"
-      warn "#{self}.announce_symbol `#{identifier}'"
-      warn Rocc::Helpers::Debug.dbg_backtrace
-      
       symbols = find_symbols(
         :identifier => identifier,
         :symbol_family => symbol_family,
@@ -370,7 +366,7 @@ module Rocc::Contexts
     def join_possible?(other)
       raise "function shall not be invoked on root branch" if is_root? # XXX(assert)
       raise "programming error" unless other.is_active? # XXX(assert)
-      log.debug{"forks? #{has_forks?}, other.forks? #{other.has_forks?}, pending: #{@pending_tokens == other.pending_tokens}, scope: #{@scope_stack == other.scope_stack}, tkn_rq: #{@token_requester == other.token_requester}"}
+      #warn "forks? #{has_forks?}, other.forks? #{other.has_forks?}, pending: #{@pending_tokens == other.pending_tokens}, scope: #{@scope_stack == other.scope_stack}, tkn_rq: #{@token_requester == other.token_requester}"
       return false unless @parent == other.parent
       not has_forks? and not other.has_forks? and
         @pending_tokens == other.pending_tokens and

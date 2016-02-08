@@ -75,14 +75,19 @@ module Rocc::CodeElements::CharRepresented
       if str
         whitespace_after = pick_whitespace!(tokenization_context)
         charobj = create_charobj(tokenization_context, str, whitespace_after)
-        log.info{
-          "%-16s \u21D0 pick! %-14s + %-6s, remainder: %42s" % [
+        log.info do
+          (
+            "%-16s \u21D0 pick! %-14s + %-6s, " +
+            (tokenization_context.remainder.empty? ?
+               "no remainder." : "remainder: %42s")
+          ) % [
             str_abbrev(charobj.name_dbg, 16),
             "`#{str_abbrev(str, 12)}'",
             "`#{str_abbrev_inline(whitespace_after, 4)}'",
             "`#{str_abbrev_inline(tokenization_context.remainder, 40)}'"
           ]
-        }
+        end
+        
         charobj
       end
     end # direct_pick!
