@@ -13,6 +13,8 @@
 
 require 'rocc/session/logging'
 
+require 'rocc/code_elements/code_element'
+
 module Rocc::Semantic
 
   class SymbolIndex
@@ -72,9 +74,21 @@ module Rocc::Semantic
         match
       end
 
-      log.info{"SymbolInex#find_symbols: #{result.count} out of #{symbols_matching_id.count} symbols matching identifier #{original_criteria[:identifier].inspect} match #{original_criteria}"}
-      log.debug{" \u21AA #{result.map {|s| s.name_dbg}}"}
-      
+      log.info do
+        crit_str = original_criteria.map do |key, value|
+          "#{key}: " +
+            case value
+            when Array
+              "[#{value.map {|e| e.to_s}.join(', ')}]"
+            when Rocc::CodeElements::CodeElement
+              value.name_dbg
+            else
+              value.to_s
+            end
+        end.join(', ')
+        "Idx#find_symbols: #{result.count} symbols (of #{symbols_matching_id.count} with id match) matching {#{crit_str}}"
+      end
+      log.debug{" \u21AA #{result.map {|s| s.name_dbg}}"} unless result.empty?
       result
     end
 

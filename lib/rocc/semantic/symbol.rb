@@ -46,10 +46,14 @@ module Rocc::Semantic
       case
       when family == nil
         # nothing to test then
-      when family <= CeSymbol
-         return false unless self.is_a?(family)
-      when family <= Array
-        return false unless family.find {|f| self.is_a?(f)}
+      when family.is_a?(Class)
+        if family <= CeSymbol
+          return false unless self.is_a?(family)
+        else
+          raise "invalid argument: :symbol_family => #{family.inspect}"
+        end
+      when family.is_a?(Array)
+        return false unless family.find {|f| self.is_a?(f)}        
       else
         raise "invalid argument: :symbol_family => #{family.inspect}"
       end

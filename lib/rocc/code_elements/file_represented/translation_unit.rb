@@ -109,6 +109,10 @@ module Rocc::CodeElements::FileRepresented
       not @include_files.find { |incfile| not incfile.up_to_date? }
     end
 
+    def existence_conditions
+      Rocc::Semantic::CeEmptyCondition.instance
+    end
+
   end # class CeTranslationUnit
 
 end # module Rocc::CodeElements::FileRepresented

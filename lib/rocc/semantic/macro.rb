@@ -32,7 +32,6 @@ module Rocc::Semantic
       @parameters = parameters
       @tokens = []
       log.debug{"new macro #{self}, parameters: #{@parameters.inspect}"}
-      warn Rocc::Helpers::Debug.dbg_backtrace
     end
 
     alias translation_unit origin

@@ -69,7 +69,7 @@ module Rocc::CodeElements::CharRepresented
 
       m_def = Rocc::Semantic::CeMacroDefinition.new(self)
       macro = Rocc::Semantic::CeMacro.new(compilation_context.translation_unit, m_def, @identifier, @parameters)
-      compilation_context.translation_unit.announce_symbol(macro)
+      compilation_context.announce_symbol(macro)
       compilation_context.open_token_request(macro)
     end # pursue
 

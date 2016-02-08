@@ -157,8 +157,8 @@ module Rocc::CodeElements
     end
 
     ##
-    # Like path, but discard any file information, i.e. start the path only
-    # inside the translation unit.
+    # Like path, but discard any file information, i.e. start the path
+    # only inside the translation unit.
     #
     # XXX? Question of best practise in Ruby code: Provide dummy
     # implementation at parent class (possibly not working for various

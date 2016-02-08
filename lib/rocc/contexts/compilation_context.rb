@@ -11,11 +11,13 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/code_elements/code_element'
+
 require 'rocc/contexts/compilation_branch'
 
 module Rocc::Contexts
 
-  class CompilationContext
+  class CompilationContext < Rocc::CodeElements::CodeElement
 
     extend  Rocc::Session::LogClientClassMixin
     include Rocc::Session::LogClientInstanceMixin
@@ -28,7 +30,8 @@ module Rocc::Contexts
     attr_reader :token_requester
     
     def initialize(translation_unit, fs_element_index)
-      @translation_unit = translation_unit
+      super(translation_unit)
+      @translation_unit = translation_unit # XXX_R redundant to CodeElement#origin
       @main_branch = CompilationBranch.root_branch(self)
       @active_branches = [ @main_branch ].to_set
       @all_branches = @active_branches.dup
@@ -39,6 +42,10 @@ module Rocc::Contexts
       @fs_element_index = fs_element_index
       @ppcond_stack = []
       @token_requester = nil
+    end
+
+    def name_dbg
+      "CcCtx[#{@translation_unit.name}]"
     end
 
     def add_branch(branch)
@@ -98,13 +105,15 @@ module Rocc::Contexts
       raise "unexpected termination of #{name_dbg}" unless @main_branch.finalize
     end
 
+    def announce_symbol(symbol)
+      @translation_unit.announce_symbol(symbol)
+    end
+
     def announce_symbols(symbols)
-      #warn "XXXXXXXXXXXX announce_symbols \n\t#{caller[0..6].join("\n\t")}"
       @translation_unit.announce_symbols(symbols)
     end
 
     def find_symbols(criteria)
-      #warn "XXXX CompilationContext#find_symbols#{criteria}"
       @translation_unit.find_symbols(criteria)
     end
 

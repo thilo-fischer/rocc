@@ -15,7 +15,6 @@ require 'rocc/session/logging'
 
 require 'rocc/code_elements/code_element'
 
-require 'rocc/semantic/symbol_index'
 require 'rocc/semantic/condition'
 
 require 'rocc/semantic/function'
@@ -60,9 +59,8 @@ module Rocc::Contexts
     # See open_token_request and start_collect_macro_tokens
     attr_reader :token_requester
 
-    attr_reader :symbol_idx
-    protected   :symbol_idx
-    
+    attr_reader :compilation_context
+
     ##
     # Should not be called directly. Call
     # CompilationBranch.root_branch or CompilationBranch#fork instead.
@@ -87,22 +85,24 @@ module Rocc::Contexts
     #
     # +adducer+ The CodeElement that caused to fork this branch.
     def initialize(parent, master, branching_condition, adducer)
-      @parent = parent
+      super(parent)
+      @parent = parent # XXX_R redundant to CodeElement#origin
       @branching_condition = branching_condition
       @adducer = adducer
 
       @active = true
-      @symbol_idx = Rocc::Semantic::SymbolIndex.new
       @forks = []
       @cached_conditions = nil
 
       if is_root?
         @id = '*'
+        @compilation_context = parent
         @pending_tokens = []
         @scope_stack = [ parent.translation_unit ]
         @token_requester = nil
       else
         parent.register(self) # will set @id
+        @compilation_context = master.compilation_context
         derive_progress_info(master)
       end
 
@@ -285,21 +285,8 @@ module Rocc::Contexts
       result
     end
 
-    def announce_symbols(other_symbol_idx)
-      @symbol_idx.announce_symbols(other_symbol_idx)
-    end
-    
-    ## FIXME_R clarify coherence of announce_created_symbol and announce_symbol
-    ## FIXME_R? merge announce_created_symbol and announce_symbol?
-    #def announce_created_symbol(symbol)
-    #  @symbol_idx.announce_symbol(symbol)
-    #end
-
     def announce_symbol(origin, symbol_family, identifier, hashargs = {})
-
       log.debug{"#{name_dbg}.announce_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"}
-      #warn caller
-      #warn scope_stack_trace
 
       linkage = nil
       
@@ -337,8 +324,7 @@ module Rocc::Contexts
 
         # symbol detected for the first time
         symbol = symbol_family.new(origin, identifier, conditions, hashargs)
-        #warn "@@@ new symbol: #{symbol}/#{symbol.name_dbg}"
-        @symbol_idx.announce_symbol(symbol)
+        compilation_context.announce_symbol(symbol)
 
       else
         
@@ -354,17 +340,8 @@ module Rocc::Contexts
     end # announce_symbol
 
     def find_symbols(criteria)
-      #warn "XX #{name_dbg}.find_symbols#{criteria}"
-
       c = criteria.clone # XXX_F
-      result = parent.find_symbols(c)
-      c = criteria.clone # XXX_F
-      result += @symbol_idx.find_symbols(c)
-      c = criteria.clone # XXX_F
-      result += @parent.find_symbols(c) if not is_root?
-
-      #warn "XX `-> found: #{result}"
-      result
+      compilation_context.find_symbols(c)
     end
 
     #def collect_forks
@@ -405,8 +382,6 @@ module Rocc::Contexts
       bc = @branching_condition.disjunction(other.branching_condition)
       if bc.empty?
         joint = self.class.new(@parent, self, bc, [self, other])
-        joint.announce_symbols(@symbol_idx)
-        joint.announce_symbols(other.symbol_idx)
 
         @parent.terminate_fork(self)
         @parent.terminate_fork(other)
@@ -417,8 +392,6 @@ module Rocc::Contexts
         joint
       else
         raise unless @parent.forks.count > 2
-        @parent.announce_symbols(@symbol_idx)
-        @parent.announce_symbols(other.symbol_idx)
         @parent.derive_progress_info(self)
         @parent.terminate_fork(self)
         @parent.terminate_fork(other)
@@ -445,7 +418,7 @@ module Rocc::Contexts
          @pending_tokens.empty? and
          @scope_stack == [ parent.translation_unit ] and
          @token_requester.nil?
-        compilation_context.announce_symbols(@symbol_idx)
+        true
       else
         raise "unexpected end of root branch"
       end
@@ -523,15 +496,6 @@ module Rocc::Contexts
     end
     private :deactivate_self
     
-    # TODO_F
-    def compilation_context
-      if is_root?
-        parent
-      else
-        parent.compilation_context
-      end
-    end
-    protected :compilation_context
 
     ##
     # Redirect all tokens to code_object instead of invoking
