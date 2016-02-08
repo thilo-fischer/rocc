@@ -42,6 +42,8 @@ module Rocc::Contexts
     # +adducer+ The CodeElement that caused to fork this branch.
     attr_reader :parent, :branching_condition, :forks, :id, :adducer
 
+    # XXX_R? make @forks private?
+
     ##
     # Data members wrt interpreting the tokens within a specific
     # branch.
@@ -93,7 +95,8 @@ module Rocc::Contexts
       @active = true
       @forks = []
       @cached_conditions = nil
-
+      @next_fork_id = 1
+      
       if is_root?
         @id = '*'
         @compilation_context = parent
@@ -133,8 +136,9 @@ module Rocc::Contexts
     end
 
     def register(forked_branch)
-     forked_branch.id = @id + ':' + @forks.count.to_s
-     @forks << forked_branch
+      forked_branch.id = @id + ':' + @next_fork_id.to_s
+      @next_fork_id += 1
+      @forks << forked_branch
     end
 
     ##
@@ -375,18 +379,10 @@ module Rocc::Contexts
     end
 
     def join(other)
+      raise "not yet supported" unless @parent == other.parent
       bc = @branching_condition.disjunction(other.branching_condition)
-      if bc.empty?
-        joint = self.class.new(@parent, self, bc, [self, other])
-
-        @parent.terminate_fork(self)
-        @parent.terminate_fork(other)
-        joint.activate
-
-        log.info{"joined #{self} and #{other} into #{joint}"}
-        
-        joint
-      else
+      if bc.empty? and @parent.forks.count == 2
+        warn "XXXXX B #{bc} #{@parent.forks.count}"
         raise unless @parent.forks.count > 2
         @parent.derive_progress_info(self)
         @parent.terminate_fork(self)
@@ -396,6 +392,17 @@ module Rocc::Contexts
         log.info{"joined #{self} and #{other} into #{@parent}"}
 
         @parent
+      else
+        warn "XXXXX A #{bc} #{@parent.forks.count}"
+        joint = self.class.new(@parent, self, bc, [self, other])
+
+        @parent.terminate_fork(self)
+        @parent.terminate_fork(other)
+        joint.activate
+
+        log.info{"joined #{self} and #{other} into #{joint}"}
+        
+        joint
       end
     end
     private :join
@@ -512,54 +519,6 @@ module Rocc::Contexts
       @token_requester
     end
 
-    # FIXME deprecated => remove
-    def announce_pp_branch(ppcond_directive)
-      raise "DEPRECATED"
-      
-      raise "programming error :( -> #{ppcond_directive.name_dbg}, associated_cond_dirs: #{ppcond_directive.associated_cond_dirs}" unless ppcond_directive.associated_cond_dirs.include?(ppcond_directive) # XXX defensive programming, substitute with according unit test
-
-      case ppcond_directive
-      when Rocc::CodeElements::CharRepresented::CeCoPpCondEndif,
-           Rocc::CodeElements::CharRepresented::CeCoPpCondElif,
-           Rocc::CodeElements::CharRepresented::CeCoPpCondElse
-        # FIXME smells
-        if adducer == ppcond_directive.associated_cond_dirs[-2]
-          # announce_pp_branch called on branch that was opened to process the previous conditional pp directive
-          deactivate
-          parent.activate
-          parent.announce_pp_branch(ppcond_directive)
-        end
-
-        prev = @ppcond_stack.pop
-        raise "programming error" unless prev.associated_cond_dirs == ppcond_directive.associated_cond_dirs # XXX defensive programming, substitute with according unit test
-
-        # FIXME smells
-        if adducer != ppcond_directive.associated_cond_dirs[-2]
-          # announce_pp_branch called on parent branch
-          if ppcond_directive.is_a? Rocc::CodeElements::CharRepresented::CeCoPpCondEndif
-            forks.each do |f|
-              unless f.try_join
-                f.activate
-              end
-            end
-          end
-        end        
-
-      end
-      
-      case ppcond_directive
-      when Rocc::CodeElements::CharRepresented::CeCoPpCondIf,
-           Rocc::CodeElements::CharRepresented::CeCoPpCondElif,
-           Rocc::CodeElements::CharRepresented::CeCoPpCondElse
-        @ppcond_stack << ppcond_directive
-        deactivate
-        #warn "#{name_dbg}.announce_pp_branch -> #{conditions.complement(ppcond_directive.collected_conditions)}"
-        f = fork(conditions.complement(ppcond_directive.ppcond_branch_conditions), ppcond_directive)
-        f.activate
-      end
-      
-    end # def announce_pp_branch
-    
   end # class CompilationBranch
 
 end # module Rocc::Contexts

@@ -233,8 +233,13 @@ module Rocc::Semantic
     end # complement
 
     def negate
-      # XXX pass origin? same origin for both conditions?
-      @negated ||= self.class.new("!(#{@text})", origin)
+      if @text.start_with?('!(') and @text.end_with?(')')
+        # TODO_W quick and dirty, not working for all cases
+        @negated ||= self.class.new(@text[2..-2], origin)
+      else
+        # XXX_W pass origin? same origin for both conditions?
+        @negated ||= self.class.new("!(#{@text})", origin)
+      end
     end
       
     ##
@@ -258,9 +263,22 @@ module Rocc::Semantic
       when CeConjunctiveCondition
         if other.imply?(self)
           other
+        elsif self.imply?(other)
+          self
         elsif other.imply?(self.negate)
           self.negate.complement(other)
+        elsif self.negate.imply?(other)
+          if other.conditions.count == 1
+            # TODO_R quick and dirty
+            other.conditions.first.negate.complement(self)
+          else
+            warn "self : #{self}"
+            warn "other: #{other}, #{other.conditions.count}"
+            raise "not yet implemented"
+          end           
         else
+          warn "self : #{self}"
+          warn "other: #{other}, #{other.conditions.count}"
           raise "not yet implemented"
           CeDisjunctiveCondition.new([self, other])
         end
@@ -424,6 +442,9 @@ module Rocc::Semantic
       # way around: call CeConjunctiveCondition#conjunction from
       # CeAtomicCondition#conjunction. Align these approaches.
       when CeConjunctiveCondition
+        warn "self : #{self}"
+        warn "other: #{other}, #{other.conditions.count}"
+        return disjunction(other.conditions.first) if other.conditions.count == 1 # XXX_R quick and dirty
         raise "not yet supported" unless other.conditions.map{|c| c.negate}.to_set.subset?(@conditions.to_set)
         (@conditions.to_set - other.conditions.map{|c| c.negate}).to_a
       else
