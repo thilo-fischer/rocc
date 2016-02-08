@@ -54,11 +54,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # handling of keywords and identifiers is implemented in the
     # according subclasses.
     def pursue_branch(compilation_context, branch)
-      # FIXME_R why is symbols data member instead of function local variable?!
-      @symbols = branch.find_symbols(:identifier => @text)
-      #warn "XXXX found #{@symbols.count} symbols for identifier `#{@text}': #{@symbols.map {|s| s.name_dbg}}"
+      symbols = branch.find_symbols(:identifier => @text)#, :family => Rocc::Semantic::CeMacro)
       macro_without_additional_conditions = 0 # XXX(ut) defensive programming. remove when according (unit) tests are in place
-      @symbols.each do |sym|
+      symbols.each do |sym|
         case sym
         when Rocc::Semantic::CeMacro
           #warn "XXXX branch #{branch.conditions}"
@@ -73,12 +71,12 @@ module Rocc::CodeElements::CharRepresented::Tokens
             macro_branch = branch.fork(branch.conditions.complement(sym.existence_conditions), sym)
           end
           #warn "XXXX #{macro_branch}"
-          minvoc = Rocc::Semantic::CeMacroInvokation.new(self, sym)
-          minvoc.pursue_branch(compilation_context, macro_branch)
+          m_invoc = Rocc::Semantic::CeMacroInvokation.new(self, sym)
+          m_invoc.pursue_branch(compilation_context, macro_branch)
         #when CeTypedef
         end
       end
-      return macro_without_additional_conditions != 0
+      return macro_without_additional_conditions != 0 # TODO_R is it that simple? should require additional branching also if macros with additinal conditions were found.
     end # pursue_branch
 
     FAMILY_ABBREV = 'TknWord'

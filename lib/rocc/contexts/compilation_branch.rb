@@ -59,6 +59,9 @@ module Rocc::Contexts
     
     # See open_token_request and start_collect_macro_tokens
     attr_reader :token_requester
+
+    attr_reader :symbol_idx
+    protected   :symbol_idx
     
     ##
     # Should not be called directly. Call
@@ -115,7 +118,7 @@ module Rocc::Contexts
       @scope_stack = master.scope_stack.dup
       @token_requester = master.token_requester
     end
-    private :derive_progress_info
+    protected :derive_progress_info
     
     ##
     # Is this the main branch directly initiated from the
@@ -434,7 +437,7 @@ module Rocc::Contexts
       @forks.delete_at(idx)
       compilation_context.terminate_branch(forked_branch)
     end
-    private :terminate_fork
+    protected :terminate_fork
 
     def finalize
       raise "function shall not be invoked on any non-root branch" unless is_root? # XXX(assert)

@@ -16,6 +16,21 @@ require 'singleton' # for CeEmptyCondition
 require 'rocc/code_elements/code_element'
 require 'rocc/code_elements/char_represented/char_object' # TODO_R(pickers) `require 'rocc/code_elements/char_represented/preprocessor'' would be sufficient if only preprocessor.rb would not depend on char_object.rb and vice versa (because CeCoPpDirective is subclass of CodeObject and CodeObject references CeCoPpDirective)
 
+# TODO_W  implement CeDisjunctiveCondition
+# 
+# XXX_W Analysis of strings in CeAtomicCondition (detect
+# e.g. equivalence of `a != b' and `!(a==b)')
+# 
+# TODO_R rework API, e.g. find a way to ensure ConjucntiveConditions
+# always have more than 2 entries and Atomic or Empty conditions will
+# be used otherwise
+# 
+# TODO_R  implement based on sets insead of arrays
+# 
+# TODO_R  track adducers
+# 
+# FIXME_F much room for performance improvements
+
 require 'rocc/helpers'
 
 module Rocc::Semantic
@@ -93,6 +108,10 @@ module Rocc::Semantic
       "<always true>"
     end
 
+    def empty?
+      return true
+    end
+    
     ##
     # return true if self and other are equivalent
     def equivalent?(other)
@@ -150,6 +169,10 @@ module Rocc::Semantic
       @text
     end
 
+    def empty?
+      return false
+    end
+    
     ##
     # return true if self and other are equivalent
     def equivalent?(other)
@@ -183,7 +206,7 @@ module Rocc::Semantic
       else
         raise "invalid argument: `#{other}' (#{other.class})"
       end        
-    end
+    end # imply?
 
     ##
     # Returns all conditions from +other+ not implied by +self+.
@@ -199,21 +222,54 @@ module Rocc::Semantic
           other
         end
       when CeConjunctiveCondition
-        CeConjunctiveCondition.new(other.conditions.select do |oc|
-                                     not imply?(oc)
-                                   end)
+        CeConjunctiveCondition.new(
+          other.conditions.select do |oc|
+            not imply?(oc)
+          end
+        )
       else
         raise
       end        
-    end
+    end # complement
 
     def negate
       # XXX pass origin? same origin for both conditions?
       @negated ||= self.class.new("!(#{@text})", origin)
     end
       
+    ##
+    # Return the disjunction of +self+ and +other+, i.e. the set of
+    # conditions that is common in +self+ and +other+ or *is implied
+    # by* +self+ *and* +other+.
+    #--
+    # TODO_W
+    # TODO_F
+    def disjunction(other)
+      case other
+      when CeEmptyCondition
+        other
+      when CeAtomicCondition
+        if self == other.negate or seft.negate == other
+          CeEmptyCondition.instance
+        else
+          raise "not yet implemented"
+          CeDisjunctiveCondition.new([self, other])
+        end
+      when CeConjunctiveCondition
+        if other.imply?(self)
+          other
+        elsif other.imply?(self.negate)
+          self.negate.complement(other)
+        else
+          raise "not yet implemented"
+          CeDisjunctiveCondition.new([self, other])
+        end
+      else
+        raise "not yet implemented"
+      end
+    end # disjunction
 
-  end # class CeAtomicCondition
+ end # class CeAtomicCondition
 
 
   class CeConjunctiveCondition < CeCondition
@@ -247,11 +303,17 @@ module Rocc::Semantic
       '<' + @conditions.map {|c| c.to_s}.join(' <&> ') + '>'
     end
 
+    def empty?
+      @conditions.empty?
+    end
+    
     ##
     # return true if self and other are equivalent
     def equivalent?(other)
       if other.is_a? CeConjunctiveCondition and @conditions == other.conditions
         true
+      elsif @conditions.empty?
+        other.empty?
       else
         not @conditions.find do |sc|
           not sc.equivalent?(other)
@@ -354,9 +416,19 @@ module Rocc::Semantic
     # TODO_W
     # TODO_F
     def disjunction(other)
-      raise "not yet supported" unless other.is_a?(CeConjunctiveCondition)
-      raise "not yet supported" unless other.conditions.map{|c| c.negate}.to_set.subset?(@conditions.to_set)
-      (@conditions.to_set - other.conditions.map{|c| c.negate}).to_a
+      case other
+      when CeEmptyCondition
+        other
+      when CeAtomicCondition
+        other.disjunction(self) # TODO_R conjunction does it the other
+      # way around: call CeConjunctiveCondition#conjunction from
+      # CeAtomicCondition#conjunction. Align these approaches.
+      when CeConjunctiveCondition
+        raise "not yet supported" unless other.conditions.map{|c| c.negate}.to_set.subset?(@conditions.to_set)
+        (@conditions.to_set - other.conditions.map{|c| c.negate}).to_a
+      else
+        raise "not yet supported"
+      end
     end
 
   end # class CeConjunctiveCondition    

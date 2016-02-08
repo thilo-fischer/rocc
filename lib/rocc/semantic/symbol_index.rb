@@ -11,9 +11,14 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/session/logging'
+
 module Rocc::Semantic
 
   class SymbolIndex
+
+    extend  Rocc::Session::LogClientClassMixin
+    include Rocc::Session::LogClientInstanceMixin
 
     def initialize
       @symbols = {}
@@ -41,29 +46,22 @@ module Rocc::Semantic
     # preprocessor conditionals (+existence_conditions+ of the
     # symbol).
     def find_symbols(criteria)
+      original_criteria = criteria.dup # XXX for dbg message only
       identifier = criteria.delete(:identifier)
 
       #@symbols.values.each {|s| warn "\tsymbol #{s.name_dbg}"}
 
-      symbols_matching_id = case identifier
-                            when nil
-                              @symbols.values.flatten
-                            when String
-                              @symbols[identifier] || []
-                            when Regexp
-                              @symbols.select {|key, value| key =~ identifier}.values.flatten
-                            else
-                              raise
-                            end
-
-      warn "id.count: #{symbols_matching_id.count}"
-      unless symbols_matching_id.empty?
-        #warn "symbols_matching_id.first #{symbols_matching_id.first}"
-        warn "symbols_matching_id.count #{symbols_matching_id.count}"
-        unless symbols_matching_id.empty?
-          warn "symbols_matching_id.first #{symbols_matching_id.first.name_dbg}"
+      symbols_matching_id =
+        case identifier
+        when nil
+          @symbols.values.flatten
+        when String
+          @symbols[identifier] || []
+        when Regexp
+          @symbols.select {|key, value| key =~ identifier}.values.flatten
+        else
+          raise
         end
-      end
 
       result = symbols_matching_id.select do |s|
         #warn "symbols with according identifier: #{s.name_dbg}"
@@ -74,6 +72,9 @@ module Rocc::Semantic
         match
       end
 
+      log.info{"SymbolInex#find_symbols: #{result.count} out of #{symbols_matching_id.count} symbols matching identifier #{original_criteria[:identifier].inspect} match #{original_criteria}"}
+      log.debug{" \u21AA #{result.map {|s| s.name_dbg}}"}
+      
       result
     end
 

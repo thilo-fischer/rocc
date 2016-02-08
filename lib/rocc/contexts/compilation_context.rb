@@ -83,6 +83,7 @@ module Rocc::Contexts
     # join as many (active) branches as possible and sync branch statuses
     def consolidate_branches
       log.debug{"active branches:       #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
+      # FIXME iterate through active branches of a common parent branch comparing each branch with its direct successor. (inject should do ...)
       active_branches.each do |b|
         next if b == @main_branch
         join_candidate = b.parent.forks.last
