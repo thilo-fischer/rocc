@@ -66,7 +66,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
             # <XXX(ut)
             macro_branch = branch
           else
-            macro_branch = branch.fork(branch.conditions.complement(sym.existence_conditions), sym)
+            macro_branch = branch.fork(sym.existence_conditions.complement(branch.conditions), sym)
           end
           #warn "XXXX #{macro_branch}"
           m_invoc = Rocc::Semantic::CeMacroInvokation.new(self, sym)

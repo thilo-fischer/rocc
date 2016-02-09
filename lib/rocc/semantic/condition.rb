@@ -155,7 +155,21 @@ module Rocc::Semantic
         self
       when other.imply?(self)
         other
-      when self.imply?(other.negation) # logically equivalent to `other.imply?(self.negation)'
+      when (
+        (other.is_a?(CeNegationCondition) and
+         self.imply?(other.negation)) or
+        other.imply?(self.negation)
+      )
+        # `self.imply?(other.negation)' is logically equivalent to
+        # `other.imply?(self.negation)'. If other is a
+        # CeNegationCondition, preferably test
+        # `self.imply?(other.negation)' because it won't require a
+        # (possibly not yet existing) negation of self. Otherwise,
+        # preferably test `other.imply?(other.negation)' (because self
+        # might be a CeNegationCondition itself (as long as
+        # CeNegationCondition does not override disjunction method)
+        # and because it is preferable to affect self rathen than
+        # other and thus run the negation method on self).
         raise "contradiction, not yet implemented"
       else
         CeConjunctiveCondition.new([self, other])
@@ -175,7 +189,14 @@ module Rocc::Semantic
         self
       when self.imply?(other)
         other
-      when self.imply?(other.negation) # logically equivalent to `other.imply?(self.negation)'
+      when (
+        (other.is_a?(CeNegationCondition) and
+         self.imply?(other.negation)) or
+        other.imply?(self.negation)
+      )
+        # `self.imply?(other.negation)' is logically equivalent to
+        # `other.imply?(self.negation)', see comment in conjunction
+        # method.
         CeUnconditionalCondition.instance
       else
         CeDisjunctiveCondition.new([self, other])
@@ -344,7 +365,7 @@ module Rocc::Semantic
 
   end # class CeAtomicCondition
 
-
+  
   ##
   # A CeCondition based on another CeCondition that applies if and
   # only if the condition it is based upon does not apply.
@@ -386,9 +407,36 @@ module Rocc::Semantic
     def initialize(conditions, adducer = conditions)
       raise "invalid argument: should create CeUnconditionalCondition instead" if conditions.empty? # XXX(assert)
       raise "invalid argument: conditions contains only a single element" if conditions.count == 1 # XXX(assert)
-      @conditions = conditions.to_set
-      super(@conditions, adducer)
+      super(conditions, adducer)
+      @conditions = flatten_conditions(conditions.to_set)
     end
+
+    def flatten_conditions(input_set)
+      result_set = Set.new
+      input_set.each do |c|
+        if c.is_a?(self.class)
+          result_set.union(c.conditions)
+        else
+          result_set << c
+        end
+      end
+      result_set
+    end
+    protected :flatten_conditions
+
+    def merge(other)
+      raise "invalid argument" unless other.class == self.class # XXX(assert)
+      set_dup = @conditions.dup
+      other.conditions.each do |other_c|
+        set_dup << other_c unless imply?(other_c)
+      end
+      if set_dup.length == @conditions.length
+        self
+      else
+        self.class.new(set_dup)
+      end
+    end
+    protected :merge
 
     # Define a constant containing the string to be given as
     # FAMILY_ABBREV to avoid repeated recreation of string object from
@@ -420,12 +468,43 @@ module Rocc::Semantic
         else
           c.to_s
         end.join(join_str_to_s)
+      end
     end
 
     def to_code
       @conditions.map {|c| '(' + c.to_s + ')'}.join(join_str_to_code)
     end
 
+    # XXX sensible?
+    def equivalent?(other)
+      sres = super
+      return sres unless sres.nil?
+      
+      if other.is_a?(self.class)
+        if @conditions.equal?(other.conditions) or
+           (self.imply?(other) and other.imply?(self))
+          true
+        else
+          false
+        end
+      else
+        nil
+      end
+    end
+    
+   # XXX sensible?
+    def imply?(other)
+      sres = super
+      return sres unless sres.nil?
+      
+      if other.is_a?(self.class) and
+        equivalent?(other)
+          true
+        else
+          nil
+      end
+    end
+    
   end
   
   class CeConjunctiveCondition < CeSetOfConditions
@@ -453,10 +532,10 @@ module Rocc::Semantic
     private :join_str_to_code
 
     ##
-    # Return the complement of the set of conditions of +self+ in the
-    # set of conditions in +other+ (based on condition equivalence as
-    # defined by CeCondition#equivalent? methods), i.e. all conditions
-    # from +other+ not implied by +self+.
+    # Return the complement of the condition or set of conditions of
+    # +other+ in the set of conditions in +self+ (based on condition
+    # equivalence as defined by CeCondition#equivalent? methods),
+    # i.e. all conditions from +self+ not implied by +other+.
     #
     # E.g.
     #
@@ -467,103 +546,35 @@ module Rocc::Semantic
     #   (If A implies B, there is no condition in the conjunction not
     #   implied by A.)
     def complement(other)
-      case other
-      else
-        raise "invalid argument or not yet implemented"
-      end
+      #case other
+      #when CeUnconditionalCondition
+      #  raise "not yet implemented"
+      #when CeAtomicCondition
+        cond_set = @conditions.select do |c|
+          not other.imply?(c)
+        end
+        case cond_set.length
+        when 0
+          CeUnconditionalCondition.instance
+        when 1
+          cond_set.first
+        when @conditions.length
+          self
+        else
+          # XXX_F skip flatten_conditions in initialize method
+          CeConjunctiveCondition.new(cond_set)
+        end
+      #when CeConjunctiveCondition
+      #  # TODO_W check condition's equivalence in both sets
+      #  cond_set = @conditions - other.conditions
+      #  cond_set.
+      #  # XXX_F skip flatten_conditions in initialize method
+      #  CeConjunctiveCondition.new(cond_set)
+      #else
+      #  raise "invalid argument or not yet implemented"
+      #end
     end
 
-    # See rdoc-ref:Rocc::Semantic::CeCondition#equivalent?
-    def equivalent?(other)
-      sres = super
-      return sres unless sres.nil?
-      
-      case other
-      when CeConjunctiveCondition
-        self.imply?(other) and other.imply?(self)
-      else
-        raise "invalid argument or not yet implemented"
-      end
-    end
-    
-    # See rdoc-ref:Rocc::Semantic::CeCondition#imply?
-    def imply?(other)
-      sres = super
-      return sres unless sres.nil?
-      
-      case other
-      when CeAtomicCondition, CeNegatedCondition
-        conditions.find do |own_c|
-          own_c.imply?(other)
-        end
-      when CeConjunctiveCondition
-        # return false if there is at least one condition in other not
-        # implied by self
-        not other.conditions.find do |other_c|
-          not imply?(other_c)
-        end
-      when CeDisjunctiveCondition
-        # return true if there is at least one condition in other
-        # implied by self
-        other.conditions.find do |other_c|
-          imply?(other_c)
-        end
-     else
-        raise "invalid argument or not yet implemented"
-      end
-    end
-    
-    # See rdoc-ref:Rocc::Semantic::CeCondition#conjunction
-    def conjunction(other)
-      raise "not yet implemented"
-    end
-    # See rdoc-ref:Rocc::Semantic::CeCondition#disjunction
-    def disjunction(other)
-      raise "not yet implemented"
-    end
-
-    ###
-    ## return true if self and other are equivalent
-    #def equivalent?(other)
-    #  if other.is_a? CeConjunctiveCondition and @conditions == other.conditions
-    #    true
-    #  elsif @conditions.empty?
-    #    other.empty?
-    #  else
-    #    not @conditions.find do |sc|
-    #      not sc.equivalent?(other)
-    #    end
-    #  end
-    #end # def equivalent?
-    #
-    ###
-    ## return +true+ if +other+ will always be true when +self+ is true,
-    ## (self -> other), false otherwise.
-    #def imply?(other)
-    #  case other
-    #  when CeUnconditionalCondition
-    #    equivalent?(other)
-    #  when CeAtomicCondition
-    #    @conditions.find do |sc|
-    #      sc.imply?(other)
-    #    end
-    #  else
-    #    if @conditions.empty?
-    #      # self represents true # XXX should be CeUnconditionalCondition then
-    #      false
-    #    elsif other.conditions.empty?
-    #      # other represents true # XXX should be CeUnconditionalCondition then
-    #      true
-    #    elsif @conditions == other.conditions
-    #      true
-    #    else
-    #      not other.conditions.find do |oc|
-    #        not imply?(other)
-    #      end
-    #    end
-    #  end # case other
-    #end # def imply?
-    #
     ###
     ## Returns all conditions from +other+ not implied by +self+.
     ## Result will be empty if +self.imply?(other)+.
@@ -609,20 +620,56 @@ module Rocc::Semantic
     #    end
     #  end
     #end
-    #
-    ###
-    ## Return the conjunction of +self+ and +other+, i.e. the set of
-    ## conditions that *implies* +self+ *and* +other+.
-    #def conjunction(other)
-    #  if other.is_a?(CeConjunctiveCondition)
-    #    c_dup = @conditions.dup
-    #    c_dup += other.conditions
-    #    CeConjunctiveCondition.new(c_dup)
-    #  else
-    #    super
-    #  end
+
+    # See rdoc-ref:Rocc::Semantic::CeCondition#equivalent?
+    def equivalent?(other)
+      sres = super
+      return sres unless sres.nil?
+      
+      raise "invalid argument or not yet implemented"
+    end
+    
+    # See rdoc-ref:Rocc::Semantic::CeCondition#imply?
+    def imply?(other)
+      sres = super
+      return sres unless sres.nil?
+      
+      case other
+      when CeAtomicCondition, CeNegatedCondition
+        conditions.find do |own_c|
+          own_c.imply?(other)
+        end
+      when CeConjunctiveCondition
+        # return false if there is at least one condition in other not
+        # implied by self
+        not other.conditions.find do |other_c|
+          not imply?(other_c)
+        end
+      when CeDisjunctiveCondition
+        # return true if there is at least one condition in other
+        # implied by self
+        other.conditions.find do |other_c|
+          imply?(other_c)
+        end
+     else
+        raise "invalid argument or not yet implemented"
+      end
+    end
+    
+    # See rdoc-ref:Rocc::Semantic::CeCondition#conjunction
+    def conjunction(other)
+      if other.is_a?(CeConjunctiveCondition)
+        merge(other)
+      else
+        super
+      end
+    end
+    
+    ## See rdoc-ref:Rocc::Semantic::CeCondition#disjunction
+    #def disjunction(other)
+    #  raise "not yet implemented"
     #end
-    #
+
     ###
     ## Return the disjunction of +self+ and +other+, i.e. the set of
     ## conditions that is common in +self+ and +other+ or *is implied
@@ -680,21 +727,46 @@ module Rocc::Semantic
     def equivalent?(other)
       sres = super
       return sres unless sres.nil?
-      raise "not yet implemented"
+      
+      raise "invalid argument or not yet implemented"
     end
+    
     # See rdoc-ref:Rocc::Semantic::CeCondition#imply?
     def imply?(other)
       sres = super
       return sres unless sres.nil?
-      raise "not yet implemented"
+
+      case other
+      when CeAtomicCondition, CeNegatedCondition, CeConjunctiveCondition, CeDisjunctiveCondition
+        # return false if there is at least one condition in self not
+        # implying other
+        not conditions.find do |own_c|
+          not own_c.imply?(other)
+        end
+      #when CeConjunctiveCondition
+      #  # return false if there is at least one condition in other not
+      #  # implied by self
+      #  not other.conditions.find do |other_c|
+      #    not imply?(other_c)
+      #  end
+      #when CeDisjunctiveCondition
+      #  # return true if there is at least one condition in other
+      #  # implied by self
+      #  other.conditions.find do |other_c|
+      #    imply?(other_c)
+      #  end
+      else
+        raise "invalid argument or not yet implemented"
+      end
     end
-    # See rdoc-ref:Rocc::Semantic::CeCondition#conjunction
-    def conjunction(other)
-      raise "not yet implemented"
-    end
+    
     # See rdoc-ref:Rocc::Semantic::CeCondition#disjunction
     def disjunction(other)
-      raise "not yet implemented"
+       if other.is_a?(CeDisjunctiveCondition)
+        merge(other)
+      else
+        super
+      end     
     end
 
     ###
