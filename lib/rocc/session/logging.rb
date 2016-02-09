@@ -61,16 +61,17 @@ module Rocc::Session
       @specific_loggers = nil
     end # initialize
 
-    def setup(default_loglevel = DEFAULT_LOGLEVEL)
+    def setup(generic_loglevel = DEFAULT_LOGLEVEL)
       @default_logger = create_logger
       @specific_loggers = {}
       
-      set_default_threshold(default_loglevel)
+      set_default_threshold(generic_loglevel)
 
       @default_logger.debug{"Default log level is #{@default_logger.sev_threshold}."}
 
       # XXX development aid
-      if defined? SPECIFIC_LOGLEVELS
+      if defined? SPECIFIC_LOGLEVELS and
+        [Logger::DEBUG, Logger::INFO].include?(generic_loglevel)
         SPECIFIC_LOGLEVELS.each_pair {|k,v| set_logtag_threshold(k,v)}
       end
       #warn "@specific_loggers=#{@specific_loggers}"

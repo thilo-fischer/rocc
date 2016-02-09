@@ -27,7 +27,7 @@ module Rocc::Semantic
     end
     
     def announce_symbol(symbol)
-      warn "SymbolIndex#announce_symbol: #{symbol}"
+      log.info{"SymbolIndex#announce_symbol: #{symbol}"}
       id_array = @symbols[symbol.identifier] ||= []
       id_array << symbol
     end

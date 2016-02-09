@@ -18,6 +18,8 @@ require 'rocc/semantic/function'
 require 'rocc/semantic/variable'
 #require 'rocc/semantic/typedef'
 
+require 'rocc/session/logging'
+
 module Rocc::Semantic::Temporary
 
   ##
@@ -39,6 +41,9 @@ module Rocc::Semantic::Temporary
   # demand), but it increases performance because all symbols will be
   # needed on finalization of the +ArisingSpecification+ anyways.
   class ArisingSpecification #< Rocc::Semantic::Specification
+
+    extend  Rocc::Session::LogClientClassMixin
+    include Rocc::Session::LogClientInstanceMixin
 
     attr_reader :origin_shared, :origin_private, :symbol_family, :identifier, :storage_class, :type_qualifiers, :type_specifiers
 
@@ -66,7 +71,7 @@ module Rocc::Semantic::Temporary
     end
 
     def create_symbol(branch)
-      warn "ArisingSpecification#create_symbol(#{branch.name_dbg}) <- #{@identifier}"
+      log.debug{"ArisingSpecification#create_symbol(#{branch.name_dbg}) -> #{@identifier}"}
       raise "missing identifier" unless @identifier
       raise "missing symbol_family" unless @symbol_family
       raise "Already created symbol from this #{self.class}!" if @symbol

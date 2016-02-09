@@ -26,7 +26,7 @@ module Rocc::Semantic
       super(origin)
       @identifier = identifier
       @existence_conditions = conditions
-      log.fatal{"new symbol #{self} in #{origin} given #{conditions}"}
+      log.info{"new symbol #{self} in #{origin} given #{conditions}"}
     end # initialize
 
     def name
