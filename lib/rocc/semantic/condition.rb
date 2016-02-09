@@ -170,6 +170,7 @@ module Rocc::Semantic
         # CeNegationCondition does not override disjunction method)
         # and because it is preferable to affect self rathen than
         # other and thus run the negation method on self).
+        warn "#{self}, #{other}"
         raise "contradiction, not yet implemented"
       else
         CeConjunctiveCondition.new([self, other])
@@ -317,7 +318,10 @@ module Rocc::Semantic
         # TODO_W
         if imply?(other.negation)
           false
+        elsif other.negation.is_a?(CeAtomicCondition)
+          not imply?(other.negation) # XXX correct?
         else
+          warn "#{self}, #{other}"
           raise "not yet implemented"
         end
       when CeConjunctiveCondition
@@ -467,8 +471,8 @@ module Rocc::Semantic
           '(' + c.to_s + ')'
         else
           c.to_s
-        end.join(join_str_to_s)
-      end
+        end
+      end.join(join_str_to_s)
     end
 
     def to_code
@@ -635,7 +639,7 @@ module Rocc::Semantic
       return sres unless sres.nil?
       
       case other
-      when CeAtomicCondition, CeNegatedCondition
+      when CeAtomicCondition, CeNegationCondition
         conditions.find do |own_c|
           own_c.imply?(other)
         end

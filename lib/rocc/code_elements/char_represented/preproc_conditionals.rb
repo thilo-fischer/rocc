@@ -107,7 +107,7 @@ module Rocc::CodeElements::CharRepresented
       until_directive = @else_directive if until_directive == @end_directive && @else_directive # TODO_R unclean special case handling
       directives.inject(Rocc::Semantic::CeUnconditionalCondition.instance) do |conj, dir|
         return conj if dir == until_directive
-        conj.conjunction(dir.own_induced_condition.negate)
+        conj.conjunction(dir.own_induced_condition.negation)
       end
     end
     
