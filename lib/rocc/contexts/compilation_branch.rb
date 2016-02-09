@@ -132,7 +132,7 @@ module Rocc::Contexts
 
     def self.root_branch(compilation_context)
       # XXX? use compilation_context as adducer instead of as parent?
-      self.new(compilation_context, nil, Rocc::Semantic::CeEmptyCondition.instance, nil)
+      self.new(compilation_context, nil, Rocc::Semantic::CeUnconditionalCondition.instance, nil)
     end
 
     def register(forked_branch)

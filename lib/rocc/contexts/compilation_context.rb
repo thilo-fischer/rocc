@@ -162,7 +162,7 @@ module Rocc::Contexts
 
     def current_ppcond_induced_conditions
       if ppcond_stack_empty?
-        Rocc::Semantic::CeEmptyCondition.instance
+        Rocc::Semantic::CeUnconditionalCondition.instance
       else
         ppcond_stack_top.ppcond_branch_conditions
       end

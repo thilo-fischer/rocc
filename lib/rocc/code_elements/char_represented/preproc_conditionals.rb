@@ -105,7 +105,7 @@ module Rocc::CodeElements::CharRepresented
     def negated_induced_conditions(until_directive = nil)
       until_directive ||= @else_directive || @end_directive
       until_directive = @else_directive if until_directive == @end_directive && @else_directive # TODO_R unclean special case handling
-      directives.inject(Rocc::Semantic::CeEmptyCondition.instance) do |conj, dir|
+      directives.inject(Rocc::Semantic::CeUnconditionalCondition.instance) do |conj, dir|
         return conj if dir == until_directive
         conj.conjunction(dir.own_induced_condition.negate)
       end
@@ -264,7 +264,7 @@ module Rocc::CodeElements::CharRepresented
     end
 
     def fromgroup_induced_conditions
-      Rocc::Semantic::CeEmptyCondition.instance
+      Rocc::Semantic::CeUnconditionalCondition.instance
     end
 
   end # class CeCoPpCondIf
@@ -361,7 +361,7 @@ module Rocc::CodeElements::CharRepresented
     end
 
     def own_induced_condition
-      Rocc::Semantic::CeEmptyCondition.instance
+      Rocc::Semantic::CeUnconditionalCondition.instance
     end
 
   end # class CeCoPpCondElse
@@ -402,7 +402,7 @@ module Rocc::CodeElements::CharRepresented
 
     # XXX_R redundant CeCoPpCondElse#own_induced_condition and CeCoPpCondEndif#own_induced_condition (=> mixin?)
     def own_induced_condition
-      Rocc::Semantic::CeEmptyCondition.instance
+      Rocc::Semantic::CeUnconditionalCondition.instance
     end
 
   end # class CeCoPpCondEndif

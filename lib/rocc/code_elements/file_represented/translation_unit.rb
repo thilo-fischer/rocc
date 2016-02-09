@@ -110,7 +110,7 @@ module Rocc::CodeElements::FileRepresented
     end
 
     def existence_conditions
-      Rocc::Semantic::CeEmptyCondition.instance
+      Rocc::Semantic::CeUnconditionalCondition.instance
     end
 
   end # class CeTranslationUnit
