@@ -277,6 +277,8 @@ module Rocc::CodeElements::CharRepresented
       super_duty = super
       return nil if super_duty.nil?
 
+      @existence_conditions = @existence_conditions.disjunction(compilation_context.ppcond_stack_top.own_induced_condition.negation) unless compilation_context.ppcond_stack_top.own_induced_condition.is_a?(Rocc::Semantic::CeUnconditionalCondition) # XXX_R quick and dirty fix too strict existence_conditions
+
       associate(compilation_context.ppcond_stack_top)
       @fromgroup_induced_conditions = @ppcond_group.negated_induced_conditions(self)
 

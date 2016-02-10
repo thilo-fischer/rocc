@@ -39,7 +39,7 @@ int i_func_i(int i_param) {
 #ifdef NO_SUCH_MACRO
 // FIXME #error errornous preprocessor-conditional branch
 #elif defined(FORTYTWO) && FORTYTWO == 42
-char *pc_func_(unsigned int i_param, char c_param, char *pc_param)
+char *pc_func_ui_c_pc(unsigned int i_param, char c_param, char *pc_param)
 {
   return pc_param;
 }
