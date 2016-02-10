@@ -1,6 +1,80 @@
-= rocc
+= rocc - C Code Operations in Ruby
 
-Describe your project here
+rocc is a swiss army knive commend line tool (and a collection of Ruby
+scripts) to operate on C-ish source code.
+
+See cucumber feature documentation in the +features+ directory for current and planned application examples.
+
+== FAQ
+
+=== Stability
+
+rocc cannot be considered stable (yet). If you use rocc, you will likely find the one or the other bug (which you are welcome to report and/or fix). Also the user interface of rocc cannot be considered stable yet. Though trying to keep change as little as possible, the meaning or usage of command line parameters and rocc internal commands and their parameters might still change; currently even without further notice, but we will have a proper change log mentioning such changes and maybe even a UI compability option soon.
+
+=== Language Support
+
+rocc is currently targeting to be capable of parsing and understanding
+code that will compile with a C99 compatible compiler.
+
+C11, C++98/03/11/14 support and a C89 mode are planned features.
+
+Objective-C support _might_ get on the roadmap -- maybe ... someday ...
+
+Java and C# support: Would probably be added if someone found a valid usecase where it would make sense to use rocc with one of these languages. AFAIK these languages already have sufficient tools targeting similar capabilities as rocc. 
+
+=== Platform support
+
+rocc is curently getting developed on a Linux system. It shall (one day) be maintained for Linux/Unix, Windows and OS X systems. It should work on any system that runs a Ruby interpreter, possibly requiering adaptions of the filesystem specific code sections.
+
+=== Why is it written in Ruby?
+
+Ruby is the best general purpose programming language I know of (as of today, in 2015) -- period.
+
+Compared to the other programming languages, Ruby provides
+
+* very clean and readable code.
+
+* great expressiveness: much functionality with very few lines of
+  code.
+
+* great support for agile, test-driven development.
+
+* no more "Why do I have to take care of this? Can't the
+  compiler/build toolchain/interpreter/whatever do this for me?"
+  feelings.
+
+* multi platform support and open source language tools.
+
+* ...
+
+* last, but not least: the most fun while coding :)
+
+Give it a try: https://www.ruby-lang.org/en/documentation/quickstart/
+
+There are some languages out there that are as good as or maybe even
+better than Ruby in most of these aspects, but unfortunately these
+languages are not (*yet*) commonly used enough to serve as a possible
+alternate programming language for rocc.
+
+Time-critical parts of rocc might be ported to C or C++ (or maybe
+Java, C# or something fancy like Go or Crystal) in the future for
+increased runtime performance. It is planned though to always maintain
+a reference implementation of these parts written in ruby to keep rocc
+runnable from the platform independent ruby sources without any
+platform specific binaries.
+
+== Copyright and License
+
+Copyright (C) 2014-2016  Thilo Fischer.
+
+This file is part of rocc.
+
+rocc is free software with a multi-license approach: you can
+redistribute it and/or modify it as if it was under the terms of the
+GNU General Public License as long as the things you publish to
+satisfy the GPL's copyleft still can be integrated into the rocc
+project's main codebase without restricting the multi-license
+approach. See LICENSE.txt from the top-level directory for details.
 
 :include:rocc.rdoc
 
