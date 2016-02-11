@@ -350,7 +350,7 @@ module Rocc::Ui
       new(format_str)
     end # def self.compile
 
-    DEFAULT_FORMAT_STR = "%f %i%^(%+#P%{%40T\u2194 %?C%}"
+    DEFAULT_FORMAT_STR = "%f %i%^(%+#P%{%32T[%?C]%}"
 
     FLAG_ADJUST_LEFT       = '-'
     FLAG_PLAIN_TRUNCATE    = '|'
@@ -404,11 +404,7 @@ module Rocc::Ui
     def format(symbol)
       result = ''
       @content.each do |c|
-        if c.is_a?(ConvSpecialTabstop) # TODO_R quick and dirty corner case handling
-          c.adjust(result)
-        else
-          result += c.format(symbol)
-        end
+        c.append(result, symbol)
       end
       result
     end # def format
@@ -471,8 +467,8 @@ module Rocc::Ui
         end
       end
       
-      def format(symbol)
-        @str
+      def append(destination, symbol)
+        destination << @str
       end
       
     end # class OrdinaryChars
@@ -501,11 +497,13 @@ module Rocc::Ui
       end
 
       def parse_spec_str
-        raise "invalid conversion specifier: `#{@spec_str}'" unless @spec_str =~ /^(?<flags>.*)(?<min>\d+)?(.(?<max>\d+))?[[:alpha:]]$/        
+        raise "invalid conversion specifier: `#{@spec_str}'" unless @spec_str =~ /^(?<flags>[^.[:alnum:]]*)(?<min>\d+)?(.(?<max>\d+))?[[:alpha:]]$/        
         @flags     = Regexp.last_match[:flags].chars.to_a.to_set
         # XXX_F what gives better performance? @flags as string or as set?
         @min_width = Regexp.last_match[:min]
+        @min_width = @min_width.to_i if @min_width
         @max_width = Regexp.last_match[:max]
+        @max_width = @max_width.to_i if @max_width
       end
       private :parse_spec_str
 
@@ -547,6 +545,10 @@ module Rocc::Ui
         true
       end
 
+      def append(destination, symbol)
+        destination << format(symbol)
+      end
+      
       def format(symbol)
         plain_string(symbol)
       end
@@ -673,14 +675,12 @@ module Rocc::Ui
     
     class ConvSpecialTabstop < Conversion
 
-      def adjust(preliminary_result)
-        # FIXME_W not working yet!
-        # TODO_W flag support
-        if min_width and preliminary_result.length < min_width
-          preliminary_result += ' ' * (min_width - preliminary_result.length)
+      def append(destination, symbol)
+        if min_width and destination.length < min_width
+          destination << ' ' * (min_width - destination.length)
         elsif max_width
-          Rocc::Helpers::String.str_abbrev!(preliminary_result, max_width)
-        end
+          Rocc::Helpers::String.str_abbrev!(destination, max_width)
+        end        
       end
       
     end # class ConvSpecialTabstop
@@ -702,7 +702,12 @@ module Rocc::Ui
         @parts.last << arg
       end
 
-      def format(symbol)
+      def append(destination, symbol)
+        active_part = find_active_part(symbol)
+        active_part.append(destination, symbol) if active_part
+      end
+      
+      def find_active_part(symbol)
         latest_candidate_part = nil
         active_part = @parts.find do |part|
           part.content.find do |spec|
@@ -715,11 +720,11 @@ module Rocc::Ui
           end
         end
         if active_part
-          active_part.format(symbol)
+          active_part
         elsif latest_candidate_part != @parts.last
-          @parts.last.format(symbol)
+          @parts.last
         else
-          ''
+          nil
         end
       end # def format
       
@@ -737,19 +742,10 @@ module Rocc::Ui
         @content << arg
       end
 
-      # XXX_R implementation identical to SymbolFormatter#format
-      def format(symbol)
-        result = ''
-        @content.each do |c|
-          if c.is_a?(ConvSpecialTabstop) # TODO_R quick and dirty corner case handling
-            c.adjust(result)
-          else
-            result += c.format(symbol)
-          end
-        end
-        result
-      end # def format
-
+      def append(destination, symbol)
+        @content.each {|c| c.append(destination, symbol)}
+      end
+      
     end # class Conditional
 
     class CondSectMark; end
@@ -797,39 +793,40 @@ module Rocc::Ui
         @parent = nil
       end
 
-      def format(symbol)
-        # TODO_W flag support
+      def append(destination, symbol)
         if flag?(FLAG_APPLICABLE) and
           not @target_spec.applicable?(symbol)
-          ''
+          @target_spec.append(destination, symbol)
         elsif flag?(FLAG_NO_TRIVIAL) and
           (not @target_spec.applicable?(symbol) or
            @target_spec.trivial?(symbol))
-          ''
+          @target_spec.append(destination, symbol)
         else
-          '(' + @target_spec.format(symbol) + ')'
+          destination << '('
+          @target_spec.append(destination, symbol)
+          destination << ')'
         end
-      end # def format
+      end # def append
 
     end # class ConvExtWrap
 
     class SpecialCharacter; end
 
     class SpecialCharPercent < SpecialCharacter
-      def format(symbol)
-        '%'
+      def append(destination, symbol)
+        destination << '%'
       end
     end
     
     class SpecialCharNewline < SpecialCharacter
-      def format(symbol)
-        "\n"
+      def append(destination, symbol)
+        destination <<  "\n"
       end
     end
     
     class SpecialCharTab < SpecialCharacter
-      def format(symbol)
-        "\t"
+      def append(destination, symbol)
+        destination << "\t"
       end
     end
     

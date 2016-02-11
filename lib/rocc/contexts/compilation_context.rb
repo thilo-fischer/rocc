@@ -164,6 +164,7 @@ module Rocc::Contexts
       if ppcond_stack_empty?
         Rocc::Semantic::CeUnconditionalCondition.instance
       else
+        #warn "ppcond_stack: #{@ppcond_stack}"
         ppcond_stack_top.ppcond_branch_conditions
       end
     end

@@ -914,8 +914,11 @@ module Rocc::Semantic
 
     # See rdoc-ref:Rocc::Semantic::CeCondition#probability
     def probability
-      # TODO_W does this computation make any sense ?!?
-      @conditions.inject(1) {|product, cond| product * (1.0/(1.0+cond.probability))}
+      # TODO_W Find a better formula to compute pseudo-probability of
+      # condition.
+      count = 1.0 * @conditions.count
+      mean = @conditions.inject(0.0) {|sum, cond| sum += cond.probability} / count
+      (count / (count + 1.0)) * mean
     end
     
   end # class CeDisjunctiveCondition

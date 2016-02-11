@@ -382,7 +382,6 @@ module Rocc::Contexts
       raise "not yet supported" unless @parent == other.parent
       bc = @branching_condition.disjunction(other.branching_condition)
       if bc.is_a?(Rocc::Semantic::CeUnconditionalCondition) and @parent.forks.count == 2
-        warn "XXXXX B #{bc} #{@parent.forks.count}"
         @parent.derive_progress_info(self)
         @parent.terminate_fork(self)
         @parent.terminate_fork(other)
@@ -392,7 +391,6 @@ module Rocc::Contexts
 
         @parent
       else
-        warn "XXXXX A #{bc} #{@parent.forks.count}"
         raise unless @parent.forks.count > 2
         joint = self.class.new(@parent, self, bc, [self, other])
 

@@ -165,6 +165,7 @@ module Rocc::CodeElements::CharRepresented
     attr_reader :own_induced_condition
 
     def ppcond_branch_conditions
+      #warn "ec: #{existence_conditions}; gc: #{fromgroup_induced_conditions}; oc: #{own_induced_condition}"
       existence_conditions.
         conjunction(fromgroup_induced_conditions).
         conjunction(own_induced_condition)

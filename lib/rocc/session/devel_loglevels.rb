@@ -30,6 +30,7 @@ module Rocc::Session
   #  1 => Logger::INFO
   #  0 => Logger::DEBUG
   SPECIFIC_LOGLEVELS = {
+    "Rocc::Semantic::SymbolIndex" => 1,
     #"Rocc::CodeElements::CharRepresented::CharObjectPicker" => 1,
     #"Rocc::CodeElements::CharRepresented::Tokens" => 0,
     #"Rocc::CodeElements::CharRepresented::" => 0,
