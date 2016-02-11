@@ -42,11 +42,7 @@ module Rocc::Semantic
     end
     
     def existence_probability
-      if tautology?
-        1
-      else
-        0.5 ** existence_conditions.length # FIXME_W (see also C conversion specifier of SymbolFormatter.format)
-      end
+      existence_conditions.probability
     end
 
     def match(criteria)

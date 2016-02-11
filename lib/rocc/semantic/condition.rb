@@ -207,8 +207,17 @@ module Rocc::Semantic
     def tautology?
       is_a?(CeUnconditionalCondition)
     end
+
+    # Return 1 for tautologies, 0 for conditions that will never apply
+    # (e.g. <tt>#if 0</tt>) and some value between 0 and 1 otherwise.
+    # 
+    # FIXME_W (see also C conversion specifier of
+    # SymbolFormatter.format)
+    def probability
+      0.5
+    end
     
-  end
+  end # class CeCondition
 
   ##
   # A CeCondition that always applies.
@@ -266,6 +275,11 @@ module Rocc::Semantic
       self
     end
 
+    # See rdoc-ref:Rocc::Semantic::CeCondition#probability
+    def probability
+      1
+    end
+    
   end # class CeUnconditionalCondition
 
   ##
@@ -374,6 +388,11 @@ module Rocc::Semantic
     #  end        
     #end # complement
 
+    # See rdoc-ref:Rocc::Semantic::CeCondition#probability
+    def probability
+      0.5 # XXX_W
+    end
+    
   end # class CeAtomicCondition
 
   
@@ -408,6 +427,11 @@ module Rocc::Semantic
       "!(#{@negation})"
     end
 
+    # See rdoc-ref:Rocc::Semantic::CeCondition#probability
+    def probability
+      1 - @negation.probability
+    end
+    
   end # class CeUnconditionalCondition
 
 
@@ -707,6 +731,11 @@ module Rocc::Semantic
     #  end
     #end
 
+    # See rdoc-ref:Rocc::Semantic::CeCondition#probability
+    def probability
+      @conditions.inject(1) {|product, cond| product * cond.probability}
+    end
+    
   end # class CeConjunctiveCondition
 
 
@@ -883,6 +912,12 @@ module Rocc::Semantic
     #  end
     #end
 
+    # See rdoc-ref:Rocc::Semantic::CeCondition#probability
+    def probability
+      # TODO_W does this computation make any sense ?!?
+      @conditions.inject(1) {|product, cond| product * (1.0/(1.0+cond.probability))}
+    end
+    
   end # class CeDisjunctiveCondition
 
 end # module Rocc::Semantic
