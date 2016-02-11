@@ -118,7 +118,15 @@
 #   * TODO review all `raise' expressions and provide appropriate messages and exception classes
 #   * FIXME top-level exception handling to prevent program crashes
 #   * FIXME raise "not yet implemented"/raise "not yet supported"
-# * review module hierarchy and file structure
+# * FIXME_R review module hierarchy and file structure
+# * Language support
+#   * FIXME_W support for C99
+#   * TODO_W support for C++98/03
+#   * TODO_W language mode to distinguish C89/C99/C++ features to be able to detect C99 code in C89 projects as problems, to allow C++ keywords as identifiers in C etc.
+#   * TODO_W support for C11
+#   * XXX_W support for C++11, C++14
+#   * XXX_W? support "converting" C11 code to C99 code to C89 code and C++14 to C++11 to C++98/03 replacing code sections using newer language features with equivalent code of previous language version?
+#   * XXX_W? Objective-C support?
 #
 # = Abbreviations used in the sourc code and documentation
 #

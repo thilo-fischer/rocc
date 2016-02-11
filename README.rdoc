@@ -76,5 +76,9 @@ satisfy the GPL's copyleft still can be integrated into the rocc
 project's main codebase without restricting the multi-license
 approach. See LICENSE.txt from the top-level directory for details.
 
+---
+
+TODO What about the following? Need to set up rdoc documentation correctly ...
+
 :include:rocc.rdoc
 
