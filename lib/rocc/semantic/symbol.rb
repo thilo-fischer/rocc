@@ -17,7 +17,7 @@ module Rocc::Semantic
 
   class CeSymbol < Rocc::CodeElements::CodeElement
 
-    attr_reader :identifier, :adducers
+    attr_reader :identifier, :adducers, :existence_conditions
 
     # origin is the unit the symbol lives in, e.g. the translation
     # unit it belongs to.  identifier is the symbols name.
@@ -35,6 +35,14 @@ module Rocc::Semantic
     
     def name_dbg
       "Sym[#{@identifier}]"
+    end
+
+    def existence_probability
+      if tautology?
+        1
+      else
+        0.5 ** existence_conditions.length # FIXME_W (see also C conversion specifier of SymbolFormatter.format)
+      end
     end
 
     def match(criteria)

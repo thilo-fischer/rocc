@@ -11,24 +11,18 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/helpers'
+
 module Rocc::Ui
 
   class SymbolFormatter
 
-    DEFAULT_FORMAT_STR = "%f %i%^#P%{%T40\u2194 %?C%}"
-
-    CONV_SPEC_FLAGS      = %w[- | ^ ? ! ~ # _] + [' ']
-    CONV_SPEC_CHARS      = %w[i f F y Y p P q c C T]
-    COND_SECT_CHARS      = %w[{ | }]
-    CONV_EXT_FLAGS       = %w[^ ~ # < ' " ` *] + [' ', '[']
-    CONV_EXT_CHARS       = %w[(]
-
     ##
-    # Create a string representation of this symbol formatted
-    # according to the provided format string.
+    # Create a string representation of +symbol+ formatted
+    # according to the provided format string +format_str+.
     #
-    # This function is for symbols similar to what the commonly known
-    # strftime functions are to time and date data.
+    # This function is to symbols similar to what is the commonly
+    # known strftime functions are to time and date data.
     #
     # Format string works similar to the format strings used with the
     # printf and strftime functions. A format string may contain
@@ -273,7 +267,7 @@ module Rocc::Ui
     #     value, add space characters until reaching the given
     #     length. If maximum width is given, and the result string
     #     exceeds this length, truncate the result string. Truncation
-    #     will be done according to the | flag.
+    #     will be done according to the | flag. T stands for Tabstop.
     #
     # = Conditional Sections
     #
@@ -336,24 +330,41 @@ module Rocc::Ui
     # 
     # [%t] tab character
     #
-    #
     def self.format(format_str = DEFAULT_FORMAT_STR, symbol)
       formatter = compile(format_str)
       formatter.format(symbol)
     end # def self.format
 
-
+    ##
+    # Create a SymbolFormatter that will format a symbol passed to its
+    # format method (its instance menthod SymbolFormatter#format, not
+    # the class method SymbolFormatter.format) according to the format
+    # string passed to the compile method.
+    #
+    # This way, the format string has to be parsed only once and can
+    # afterwards be used for multipls symbols without needing to parse
+    # the format string again.
+    #
+    # FIXME_R currently only a wrapper to SymbolFormatter.new ->
+    # remove compile, use new instead? Or keep as synonym as Regexp
+    # does it?
     def self.compile(format_str = DEFAULT_FORMAT_STR)
       new(format_str)
     end # def self.compile
 
-    PICKING_CLASSES = [
-      SpecialCharacterSpecifier,
-      ConditionalSection,
-      ConversionSpecifier,
-      ConversionExtension
-    ]
+    DEFAULT_FORMAT_STR = "%f %i%(%^#P%{%T40\u2194 %?C%}"
 
+    #CONV_SPEC_FLAGS      = %w[- | ^ ? ! ~ # _] + [' ']
+    #CONV_EXT_FLAGS       = %w[^ ~ # < ' " ` *] + [' ', '[']
+
+    FLAG_ALTERNATE_FORM    = '#'
+    FLAG_CODE_ALIKE        = '_'
+
+    ##
+    # Create a SymbolFormatter that will format a symbol passed to its
+    # format method (its instance menthod SymbolFormatter#format, not
+    # the class method SymbolFormatter.format) according to
+    # +format_str+. See also SymbolFormatter.compile.
     def initialize(format_str = DEFAULT_FORMAT_STR)
       @content = []
       
@@ -361,68 +372,35 @@ module Rocc::Ui
 
       until pars_ctx.finished?
         if ordinary = OrdinaryChars.pick!(pars_ctx)
-          pars_ctx.cur_content_holder << ordinary
+          pars_ctx.add_content(ordinary)
           break if pars_ctx.finished?
         end
-        
-        spec = PICKING_CLASSES.find do |pc|
-          pc.pick!(pars_ctx)
+
+        raise unless pars_ctx.pick_char! == '%' # XXX(assert)
+        pars_ctx.cue!
+
+        spec_class = nil
+        char = pars_ctx.pick_char!
+        until spec_class = SPECIFIER_CHAR_TO_CLASS[char] do
+          char = pars_ctx.pick_char!
         end
-        raise "unknown specifier at `#{pars_ctx.remainder}'" unless spec
-        pars_ctx.cur_content_holder << spec
+
+        raise "unknown specifier at `#{pars_ctx.format_str[start..-1]}'" unless spec_class
+
+        spec_obj = spec_class.new(pars_ctx)
+        pars_ctx.add_content(spec_obj) unless spec_obj.is_a?(CondSectMark) or spec_obj.is_a?(ConvExtWrap) # TODO_R quick and dirty corner case handling
       end
     end
 
-      
-    #    when conv_spec = ConversionSpecifier.pick!(pars_ctx)
-    #      
-    #    
-    #    
-    #  cursor = 0
-    #  conv_ext = nil
-    #  cond_stack = []
-    #
-    #  while s_pos = s.index('%', cursor) do
-    #
-    #    @content << OrdinaryChars.new(format_str[cursor .. s_pos-1]) if s_pos > cursor
-    #
-    #    next_char = format_str[s_pos+1]
-    #
-    #    case
-    #    when SPECIAL_CHAR_CHARS.include?(next_char)
-    #      result += special_char(next_char)
-    #      cursor = s_pos + 2
-    #    when COND_SECT_CHARS.include?(next_char)
-    #      raise "not yet implemented"
-    #      cursor = s_pos + 2
-    #    when s_end = s.index(Regexp.union(CONV_SPEC_CHARS), pos)
-    #      conv = conversion(format_str[s_pos+1 .. s_end])
-    #      if conv.affect_conditional?
-    #        raise "not yet implemented"
-    #      end
-    #      str = conv.to_s
-    #      if conv_ext
-    #        str = conv_ext.apply(str)
-    #        conv_ext = nil
-    #      end
-    #      
-    #      cursor = s_end + 1
-    #    when s_end = s.index(Regexp.union(CONV_EXT_CHARS), pos)
-    #      conv_ext = conversion_extension(format_str[s_pos+1 .. s_end])
-    #      cursor = s_end + 1
-    #    else
-    #      raise "invalid conversion specifier at `#{format_str[s_pos .. -1]}'"
-    #    end
-    #
-    #  end
-    #
-    #  @content << OrdinaryChars.new(format_str[cursor .. -1]) if cursor < format_str.length
-    #  
-    #end # def initialize
-
     def format(symbol)
       result = ''
-      @content.each {|c| result << c.format(symbol)}
+      @content.each do |c|
+        if c.respond_to?(:format) # XXX_R smells
+          result += c.format(symbol)
+        else
+          c.adjust(result)
+        end
+      end
       result
     end # def format
 
@@ -431,10 +409,12 @@ module Rocc::Ui
     class FmtStrParsingContext
       attr_reader :format_str
       attr_accessor :cursor
+      attr_reader :cue_cursor
       attr_accessor :cur_content_holder
       def initialize(format_str, toplevel_content_holder)
         @format_str = format_str
         @cursor = 0
+        @cue_cursor = nil
         @cur_content_holder = toplevel_content_holder
       end
       def finished?
@@ -443,6 +423,20 @@ module Rocc::Ui
       def remainder
         @format_str[@cursor..-1]
       end
+      def pick_char!
+        c = @format_str[@cursor]
+        @cursor += 1
+        c
+      end
+      def cue!
+        @cue_cursor = @cursor
+      end
+      def cued_string
+        @format_str[@cue_cursor...@cursor]
+      end
+      def add_content(spec_obj)
+        @cur_content_holder << spec_obj
+     end
     end
 
     class OrdinaryChars
@@ -451,20 +445,20 @@ module Rocc::Ui
         @str = string
       end
       
-      def pick!(pars_ctx)
+      def self.pick!(pars_ctx)
         start = pars_ctx.cursor
         next_spec_idx = pars_ctx.format_str.index('%', start)
         if next_spec_idx
-          str = pars_ctx[start...next_spec_idx_]
+          str = pars_ctx.format_str[start...next_spec_idx]
           pars_ctx.cursor = next_spec_idx
         else
-          str = pars_ctx[start..-1]
+          str = pars_ctx.format_str[start..-1]
           next_spec_idx = pars_ctx.format_str.length
         end
         if str.empty?
           nil
         else
-          self.new(pars_ctx[start...next_spec_pos])
+          self.new(pars_ctx.format_str[start...next_spec_idx])
         end
       end
       
@@ -474,143 +468,338 @@ module Rocc::Ui
       
     end # class OrdinaryChars
 
+    
     class Conversion
-      def initialize(conversion_specifier_str)
-        @spec_str = conversion_specifier_str
+      
+      ##
+      # +pars_ctx+ current FmtStrParsingContext
+      # +conversion_specifier_str+ Part of the format string
+      # specifying this conversion specifier, not including the
+      # introducing '%' sign.
+      def initialize(pars_ctx)
+        @spec_str = pars_ctx.cued_string
       end
-    def self.conversion(conv_spec)
-      raise "not yet implemented"
-      subst = case directive
-                  
-              when 'i'
-                identifier
-              when 'f'
-                self.class.family_character
-              when 'f'
-                self.class.family_name
-              when 'y'
-                raise "not yet implemented" # FIXME
-                type_string
-              when 'Y'
-                raise "not yet implemented" # FIXME
-                imposed_type_string
-              when '0P'
-                if self.respond_to? :parameters and parameters
-                  parameters.count.to_s
-                else
-                  ''
-                end
-              when '>P'
-                if self.respond_to? :parameters and parameters and not parameters.empty?
-                  parameters.count.to_s
-                else
-                  ''
-                end
-              when ')P'
-                if self.respond_to? :parameters and parameters
-                  "(#{parameters.count.to_s})"
-                else
-                  ''
-                end
-              when ']P'
-                if self.respond_to? :parameters and parameters
-                  if parameters.empty?
-                    '()'
-                  else
-                    "(#{parameters.count.to_s})"
-                  end
-                else
-                  ''
-                end
-              when '}P'
-                if self.respond_to? :parameters and parameters
-                  if parameters.empty? and not self.signatures.find {|s| s.is_void?}
-                    '()'
-                  else
-                    "(#{parameters.count.to_s})"
-                  end
-                else
-                  ''
-                end
-              when ',P'
-                if self.respond_to? :parameters and parameters
-                  raise "not yet implemented" # FIXME
-                  parameters.map {|p| p.type_string}.join(', ')
-                else
-                  ''
-                end
-              when /.*?p/
-                if self.respond_to? :parameters and parameters
-                  directive.chop
-                else
-                  ''
-                end
-              when /\d+C/
-                targetlen = directive.chop.to_i
-                if targetlen > result.length
-                  (targetlen - result.length) * ' '
-                else
-                  ''
-                end
-              else
-                raise "invalid strf directive: `%#{directive}'"
-              end
-      result + subst + part
-    end
-  end # def self.conversion
-  end # class Conversion
 
-  class Conditional
-    def initialize
-      @parts = []
+      def parse_spec_str
+        raise "invalid conversion specifier: `#{@spec_str}'" unless @spec_str =~ /^(?<flags>.*)(?<min>\d+)?(.(?<max>\d+))?[[:alpha:]]$/        
+        @flags     = Regexp.last_match[:flags]
+        @min_width = Regexp.last_match[:min]
+        @max_width = Regexp.last_match[:max]
+      end
+      private :parse_spec_str
+
+      def flags
+        parse_spec_str unless @flags
+        @flags
+      end
+
+      def min_width
+        parse_spec_str unless @min_width
+        @min_width
+      end
+      
+      def max_width
+        parse_spec_str unless @max_width
+        @max_width
+      end
+
+      def affect_conditional?
+        flags.include?('?') or flags.include?('!')
+      end
+
+      ##
+      # whether the information this conversion uses from the symbol
+      # is trivial (wrt ? and ! flag)
+      #
+      # Child classes need to override this method to respond to ? and
+      # ! flags properly.
+      def trivial?(symbol)
+        false
+      end
+
+      ##
+      # whether the conversion is applicable to symbols like +symbol+
+      #
+      # Child classes which are not applicable to every symbol need to
+      # override this method.
+      def applicable?(symbol)
+        true
+      end
+
+      def format(symbol)
+        plain_string(symbol)
+      end
+      
+    end # class Conversion
+    
+    
+    class ConvSymIdentifier < Conversion
+      def plain_string(symbol)
+        symbol.identifier
+      end
+    end # class ConvSymIdentifier
+    
+    class ConvSymFamilyChar < Conversion
+      def plain_string(symbol)
+        symbol.class.family_character
+      end
+    end # class ConvSymFamilyChar
+    
+    class ConvSymFamilyName < Conversion
+      def plain_string(symbol)
+        symbol.class.family_name
+      end
+    end # class ConvSymFamilyName
+    
+    class ConvSymNativeType < Conversion
+      def plain_string(symbol)
+        raise "not yet implemented" # FIXME
+      end
+    end # class ConvSymNativeType
+    
+    class ConvSymImplicitType < Conversion
+      def plain_string(symbol)
+        raise "not yet implemented" # FIXME
+      end
+    end # class ConvSymImplicitType
+    
+    class ConvSymParamConversion < Conversion
+      def trivial?(symbol)
+        (not applicable?) or parameters.empty?
+      end
+      
+      def applicable?(symbol)
+        symbol.respond_to? :parameters and parameters
+      end
+
     end
 
-    def add_part(part)
-      @parts << part
-    end
-
-    def format(symbol)
-      latest_candidate_part = nil
-      active_part = @parts.find do |part|
-        part.find do |spec|
-          if spec.is_a?(Conversion) and
-            spec.affect_conditional?
-            latest_candidate_part = part
-            spec.applicable?(symbol) and
-              not spec.value.empty?(symbol)
-          else
-            false
-          end
+    class ConvSymParamTypeList < ConvSymParamConversion
+      def plain_string(symbol)
+        if symbol.respond_to? :parameters
+          raise "not yet implemented" # FIXME
+        #parameters.map {|p| p.type_string}.join(', ')
+        else
+          ''
         end
       end
-      if active_part
-        active_part.format(symbol)
-      elsif latest_candidate_part != @parts.last
-        @parts.last.format(symbol)
-      else
-        ''
+    end # class ConvSymParamTypeList
+    
+    class ConvSymParamCount < ConvSymParamConversion
+      def plain_string(symbol)
+        if symbol.respond_to? :parameters
+          symbol.parameters.count.to_s
+        else
+          ''
+        end
       end
-    end
-  end # class Conditional
+    end # class ConvSymParamCount
+    
+    class ConvSymParamNamedList < ConvSymParamConversion
+      def plain_string(symbol)
+        if symbol.respond_to? :parameters
+          raise "not yet implemented" # FIXME
+        #parameters.map {|p| p.type_string}.join(', ')
+        else
+          ''
+        end
+      end
+    end # class ConvSymParamNamedList
 
-  class SpecialCharacter < OrdinaryChars
-    CHAR_SPEC_MAP = {
-      '%' => '%',
-      'n' => "\n",
-      't' => "\t",
-    }
-    def initialize(character)
-      super
-    end
-    def self.pick!(str)
-      char = CHAR_SPEC_MAP[str[1]]
-      if char
-        str.slice!(0,1)
-        self.new(char)
+    class ConditionConversion < Conversion
+      def trivial?(symbol)
+        symbol.existence_conditions.tautology?
       end
     end
-  end # class SpecialCharacter
-  
+    
+    class ConvSymExistCond < ConditionConversion
+      def plain_string(symbol)
+        if flags.contain?(FLAG_CODE_ALIKE)
+          symbol.existence_conditions.to_code(
+            flags.contain?(FLAG_ALTERNATE_FORM)
+          )
+        else
+          symbol.existence_conditions.to_s
+        end
+      end
+    end # class ConvSymExistCond
+    
+    class ConvSymExistProb < ConditionConversion
+      def plain_string(symbol)
+        symbol.existence_probability.to_s
+      end
+    end # class ConvSymExistProb
+    
+    class ConvSpecialTabstop < Conversion
+
+      def abjust(preliminary_result)
+        # TODO_W flag support
+        if min_length and preliminary_result.length < min_length
+          preliminary_result += (min_length - preliminary_result.length) * ' '
+        elsif max_length
+          Rocc::Helpers::String.str_abbrev!(preliminary_result, max_length)
+        end
+      end
+      
+    end # class ConvSpecialTabstop
+
+    class CondSection
+      
+      attr_reader :parent
+      
+      def initialize(parent)
+        @parent = parent
+        @parts = [ CondSectPart.new ]
+      end
+      
+      def add_part
+        @parts << CondSectPart.new
+      end
+      
+      def <<(arg)
+        @parts.last << arg
+      end
+
+      def format(symbol)
+        latest_candidate_part = nil
+        active_part = @parts.find do |part|
+          part.content.find do |spec|
+            if spec.is_a?(Conversion) and spec.affect_conditional?
+              latest_candidate_part = part
+              not spec.trivial?(symbol)
+            else
+              false
+            end
+          end
+        end
+        if active_part
+          active_part.format(symbol)
+        elsif latest_candidate_part != @parts.last
+          @parts.last.format(symbol)
+        else
+          ''
+        end
+      end # def format
+      
+    end # class CondSection
+    
+    class CondSectPart
+      
+      attr_reader :content
+      
+      def initialize
+        @content = []
+      end
+
+      def <<(arg)
+        @content << arg
+      end
+
+      # XXX_R implementation identical to SymbolFormatter#format
+      def format(symbol)
+        result = ''
+        @content.each {|c| result += c.format(symbol)}
+        result
+      end # def format
+
+    end # class Conditional
+
+    class CondSectMark; end
+
+    class CondSectStart < CondSectMark
+      def initialize(pars_ctx)
+        new_sect = CondSection.new(pars_ctx.cur_content_holder)
+        pars_ctx.cur_content_holder << new_sect
+        pars_ctx.cur_content_holder = new_sect
+      end
+    end
+    
+    class CondSectDivider < CondSectMark
+      def initialize(pars_ctx)
+        pars_ctx.cur_content_holder.add_part
+      end
+    end
+    
+    class CondSectEnd < CondSectMark
+      def initialize(pars_ctx)
+        pars_ctx.cur_content_holder = pars_ctx.cur_content_holder.parent
+      end
+    end
+    
+    class ConvExtWrap
+      attr_reader :parent
+
+      def initialize(pars_ctx)
+        @pars_ctx = pars_ctx # TODO_R quick and dirty, smells !!
+        @parent = pars_ctx.cur_content_holder
+        @parent << self
+        pars_ctx.cur_content_holder = self
+        @target_spec = nil
+      end
+      
+      def <<(arg)
+        raise if @target_spec # XXX(assert)
+        @target_spec = arg
+        @pars_ctx.cur_content_holder = @parent
+        @pars_ctx = nil
+        @parent = nil
+      end
+
+      def format(symbol)
+        # TODO_W flag support
+        '(' + @target_spec.format(symbol) + ')'
+      end # def format
+
+    end # class ConvExtWrap
+
+    class SpecialCharacter; end
+
+    class SpecialCharPercent < SpecialCharacter
+      def format(symbol)
+        '%'
+      end
+    end
+    
+    class SpecialCharNewline < SpecialCharacter
+      def format(symbol)
+        "\n"
+      end
+    end
+    
+    class SpecialCharTab < SpecialCharacter
+      def format(symbol)
+        "\t"
+      end
+    end
+    
+    #PICKING_CLASSES = [
+    #  SpecialCharacterSpecifier,
+    #  ConditionalSection,
+    #  ConversionSpecifier,
+    #  ConversionExtension
+    #]
+
+    SPECIFIER_CHAR_TO_CLASS = {
+      'i' => ConvSymIdentifier,
+      'f' => ConvSymFamilyChar,
+      'F' => ConvSymFamilyName,
+      'y' => ConvSymNativeType,
+      'Y' => ConvSymImplicitType,
+      'p' => ConvSymParamTypeList,
+      'P' => ConvSymParamCount,
+      'q' => ConvSymParamNamedList,
+      'c' => ConvSymExistCond,
+      'C' => ConvSymExistProb,
+      'T' => ConvSpecialTabstop,
+      '(' => ConvExtWrap,
+      '{' => CondSectStart,
+      ':' => CondSectDivider,
+      '}' => CondSectEnd,
+      '%' => SpecialCharPercent,
+      'n' => SpecialCharNewline,
+      't' => SpecialCharTab,
+    }
+
   end # class SymbolFormatter
 
 end # module Rocc::Ui

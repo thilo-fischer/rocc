@@ -204,6 +204,10 @@ module Rocc::Semantic
       end
     end
 
+    def tautology?
+      is_a?(CeUnconditionalCondition)
+    end
+    
   end
 
   ##
@@ -228,8 +232,11 @@ module Rocc::Semantic
       "\u22A4"
     end
 
-    def to_code
-      'true'
+    ##
+    # +ansi_c+ If true, do *not* assume stdbool.h or C++, use +'1'+
+    # and +'0'+ instead of +'true'+ and +'false'+.
+    def to_code(ansi_c = false)
+      ansi_c ? '1' : 'true'
     end
 
     ###

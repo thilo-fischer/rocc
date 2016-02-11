@@ -37,14 +37,26 @@ module Rocc::Helpers
 
     ##
     # If +str+ is less than +length+ long, return string. Return an
-    # abbreviated +str+ representation otherwise: the first +length - 1+
-    # plus unicode character `horizontal ellipsis' otherwise.
+    # abbreviated +str+ representation otherwise that is exactly
+    # +length+ long: the first +length - 1+ characters plus unicode
+    # character `horizontal ellipsis'.
     def str_abbrev(str, length = 12)
       if str.length > length
         str[0..(length-2)] + "\u2026"
       else
         str
       end
+    end
+
+    ##
+    # If +str+ is less than +length+ long, do nothing. Truncate +str+
+    # and append unicode character `horizontal ellipsis' such that the
+    # resulting string is exactly +length+ characters long otherwise.
+    def str_abbrev!(str, length = 12)
+      if str.length > length
+        str[(length-1)..-1] = "\u2026"
+      end
+      str
     end
 
     ##
