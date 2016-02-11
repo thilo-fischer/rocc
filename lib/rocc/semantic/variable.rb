@@ -30,11 +30,11 @@ module Rocc::Semantic
     end
 
     # FIXME? define constant instead of function?
+    def self.family
+      :variable
+    end
     def self.family_character
       'V'
-    end
-    def self.family_name
-      'variable'
     end
   end # class CeVariable
 

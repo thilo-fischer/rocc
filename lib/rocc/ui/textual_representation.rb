@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'set' # needed if @flags are a set
+
 require 'rocc/helpers'
 
 module Rocc::Ui
@@ -20,6 +22,9 @@ module Rocc::Ui
     ##
     # Create a string representation of +symbol+ formatted
     # according to the provided format string +format_str+.
+    #
+    # *WARNING:* Not all features of the format string as described
+    # here are yet fully implemented! (=> TODO_W)
     #
     # This function is to symbols similar to what is the commonly
     # known strftime functions are to time and date data.
@@ -83,16 +88,13 @@ module Rocc::Ui
     #     width - 1 characters and to append the UTF-8 ellipsis
     #     character to mark that a truncation was done.)
     #
-    # [' ']
-    #     (space character) If the conversion specifier character is
-    #     not applicable to the current symbol and a minimum width
-    #     vaule is given, use minimum width number of space
-    #     characters as replacement string. (Default is to use empty
-    #     replacement string if conversion specifier character is
-    #     not applicable.)
+    # [~] If the conversion specifier character is not applicable to
+    #     the current symbol and a minimum width vaule is given, use
+    #     minimum width number of space characters as replacement
+    #     string. (Default is to use empty replacement string if
+    #     conversion specifier character is not applicable.)
     #
-    # [^] Fill part of the replacement string or the overall
-    #     replacement string only if the value from which the
+    # [+] Fill the replacement string only if the value from which the
     #     replacement string's content is being created is not
     #     trivial, empty, null, zero or similar. This flag has
     #     different meaning for different conversion specifier
@@ -119,7 +121,7 @@ module Rocc::Ui
     #     not trivial, empty, null, zero or similar. This flag has
     #     different meaning for different conversion specifier
     #     characters, analogue to the conversion specifier character
-    #     specific significances of the ^ flag. See ^ flag and
+    #     specific significances of the + flag. See + flag and
     #     Conditional Sections for details.
     #
     # [!] Like ? flag, but use the content the conversion specifier
@@ -135,21 +137,13 @@ module Rocc::Ui
     #     Not a flag, reserved for conversion extersions (see
     #     below).
     #
-    # [~] If the replacement string contains characters to be prefixed
-    #     and/or suffixed to the characters containing the actual
-    #     content representing the symbol's value(s) and a minumum
-    #     width value is given, align the prefix at the beginning of
-    #     the conversion specifiers position in the replacement string
-    #     and the suffix such that the overall replacement string is
-    #     (at least) minimum width characters long.
-    #
     # [#] Alternate form. This flag has different meaning for
     #     different conversion specifier characters, specifically:
     #
     #     [p, q]
     #         Always give +void+ for functions with no parameters.
     #
-    #     [P] If used together with the ^ flag: Add 0 to the
+    #     [P] If used together with the + flag: Add 0 to the
     #         replacement string if function has no parameters but
     #         +void+ was given in the function's "most relevant"
     #         function signature.
@@ -196,9 +190,9 @@ module Rocc::Ui
     #
     # When a conversion specifier is used on a symbol where its
     # conversion specifier character is not applicable, the
-    # replacement string will be an empty string or if the ' ' (space)
-    # flag and a minimum width value was given minimum width number of
-    # spaces. (See also ' ' flag.)
+    # replacement string will be an empty string or if the ~ flag and
+    # a minimum width value was given minimum width number of
+    # spaces. (See also ~ flag.)
     #
     # === All symbols
     # 
@@ -256,7 +250,7 @@ module Rocc::Ui
     #     conditional that is not trivial (like e.g. <tt>#if 0</tt>,
     #     <tt>#if 1</tt> or include guards) has a 50% chance to
     #     apply. Exact meaning of the vaule might change in future,
-    #     but meaning when combinend with the ^ flag should be
+    #     but meaning when combinend with the + flag should be
     #     preserved.
     #
     # === Special Purpose
@@ -289,7 +283,7 @@ module Rocc::Ui
     # conversion specifier (not inside a nested conditional section)
     # which has the ? or the ! flag set and where the content this
     # conversion specifier refers to is not trivial, empty, null, zero
-    # or similar (as specified with the ^ flag) will be selected to be
+    # or similar (as specified with the + flag) will be selected to be
     # used as a replacement for the overall conditional section. If
     # the last part of a conditional section does not contain a
     # conversion specifier (not inside a nested conditional section)
@@ -303,11 +297,15 @@ module Rocc::Ui
     #     zero or more of the following flags:
     #
     #     [^] Do not put parenthesis to the result string if the
-    #         following conversion specifier uses the ^ flag and its
+    #         following conversion specifier is not applicable to the
+    #         symbol.
+    #     
+    #     [+] Do not put parenthesis to the result string if the
+    #         following conversion specifier uses the + flag and its
     #         replacement string is not filled with content of the
-    #         symbol due to empty content and the ^ flag.
+    #         symbol due to empty content and the + flag.
     #
-    #     [~] When leaving away parenthisis due to the ^ flag, put a
+    #     [~] When leaving away parenthisis due to the + flag, put a
     #         space character in the replacement string instead. (Two
     #         space characters if combined with the ' ' flag.)
     #
@@ -352,13 +350,24 @@ module Rocc::Ui
       new(format_str)
     end # def self.compile
 
-    DEFAULT_FORMAT_STR = "%f %i%(%^#P%{%T40\u2194 %?C%}"
+    DEFAULT_FORMAT_STR = "%f %i%^(%+#P%{%T40\u2194 %?C%}"
 
-    #CONV_SPEC_FLAGS      = %w[- | ^ ? ! ~ # _] + [' ']
-    #CONV_EXT_FLAGS       = %w[^ ~ # < ' " ` *] + [' ', '[']
-
+    FLAG_ADJUST_LEFT       = '-'
+    FLAG_PLAIN_TRUNCATE    = '|'
+    FLAG_APPLICABLE        = '^'
+    FLAG_NO_TRIVIAL        = '+'
+    FLAG_AFFECT_COND_SECT  = '?'
+    FLAG_SELECT_COND_SECT  = '!'
+    FLAG_FILL_WIDTH        = '~'
     FLAG_ALTERNATE_FORM    = '#'
     FLAG_CODE_ALIKE        = '_'
+    FLAG_PAD_SPACE         = ' '
+    FLAG_BRACKETS          = '['
+    FLAG_ANGLE_BRACKETS    = '<'
+    FLAG_SINGLE_QUOTES     = "'"
+    FLAG_DOUBLE_QUOTES     = '"'
+    FLAG_GRAVE_QUOTES      = '`'
+    FLAG_C_COMMENT         = '*'
 
     ##
     # Create a SymbolFormatter that will format a symbol passed to its
@@ -469,7 +478,18 @@ module Rocc::Ui
     end # class OrdinaryChars
 
     
+    module SpecifierWithFlagsMixin
+      
+      def flag?(*test_chars)
+        test_chars.find {|tc| flags.include?(tc)}
+      end
+      
+    end # module SpecifierWithFlagsMixin
+    
+    
     class Conversion
+
+      include SpecifierWithFlagsMixin
       
       ##
       # +pars_ctx+ current FmtStrParsingContext
@@ -482,7 +502,8 @@ module Rocc::Ui
 
       def parse_spec_str
         raise "invalid conversion specifier: `#{@spec_str}'" unless @spec_str =~ /^(?<flags>.*)(?<min>\d+)?(.(?<max>\d+))?[[:alpha:]]$/        
-        @flags     = Regexp.last_match[:flags]
+        @flags     = Regexp.last_match[:flags].chars.to_a.to_set
+        # XXX_F what gives better performance? @flags as string or as set?
         @min_width = Regexp.last_match[:min]
         @max_width = Regexp.last_match[:max]
       end
@@ -504,7 +525,7 @@ module Rocc::Ui
       end
 
       def affect_conditional?
-        flags.include?('?') or flags.include?('!')
+        flag?(FLAG_AFFECT_COND_SECT, FLAG_SELECT_COND_SECT)
       end
 
       ##
@@ -564,19 +585,21 @@ module Rocc::Ui
     end # class ConvSymImplicitType
     
     class ConvSymParamConversion < Conversion
+      
       def trivial?(symbol)
-        (not applicable?) or parameters.empty?
+        symbol.parameters.empty?
       end
       
       def applicable?(symbol)
-        symbol.respond_to? :parameters and parameters
+        symbol.class.family == :function or
+        (symbol.class.family == :macro and symbol.parameters)
       end
 
-    end
+    end # class ConvSymParamConversion
 
     class ConvSymParamTypeList < ConvSymParamConversion
       def plain_string(symbol)
-        if symbol.respond_to? :parameters
+        if applicable?(symbol)
           raise "not yet implemented" # FIXME
         #parameters.map {|p| p.type_string}.join(', ')
         else
@@ -587,8 +610,26 @@ module Rocc::Ui
     
     class ConvSymParamCount < ConvSymParamConversion
       def plain_string(symbol)
-        if symbol.respond_to? :parameters
-          symbol.parameters.count.to_s
+        if applicable?(symbol)
+          if flag?(FLAG_NO_TRIVIAL)
+            if symbol.class.family == :function and
+              flag?(FLAG_ALTERNATE_FORM)
+              if symbol.parameters.empty? and
+                not symbol.signatures.find {|s| s.is_void?} # XXX_W determine and use the "most significant" function signature
+                ''
+              else
+                symbol.parameters.count.to_s
+              end
+            else
+              if symbol.parameters.empty?
+                ''
+              else
+                symbol.parameters.count.to_s
+              end
+            end
+          else
+            symbol.parameters.count.to_s
+          end
         else
           ''
         end
@@ -666,7 +707,7 @@ module Rocc::Ui
           part.content.find do |spec|
             if spec.is_a?(Conversion) and spec.affect_conditional?
               latest_candidate_part = part
-              not spec.trivial?(symbol)
+              spec.applicable?(symbol) and not spec.trivial?(symbol)
             else
               false
             end
@@ -727,9 +768,13 @@ module Rocc::Ui
     end
     
     class ConvExtWrap
-      attr_reader :parent
+      
+      include SpecifierWithFlagsMixin
+      
+      attr_reader :flags
 
       def initialize(pars_ctx)
+        @flags = pars_ctx.cued_string.chop
         @pars_ctx = pars_ctx # TODO_R quick and dirty, smells !!
         @parent = pars_ctx.cur_content_holder
         @parent << self
@@ -747,7 +792,16 @@ module Rocc::Ui
 
       def format(symbol)
         # TODO_W flag support
-        '(' + @target_spec.format(symbol) + ')'
+        if flag?(FLAG_APPLICABLE) and
+          not @target_spec.applicable?(symbol)
+          ''
+        elsif flag?(FLAG_NO_TRIVIAL) and
+          (not @target_spec.applicable?(symbol) or
+           @target_spec.trivial?(symbol))
+          ''
+        else
+          '(' + @target_spec.format(symbol) + ')'
+        end
       end # def format
 
     end # class ConvExtWrap

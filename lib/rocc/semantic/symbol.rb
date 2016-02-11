@@ -37,6 +37,10 @@ module Rocc::Semantic
       "Sym[#{@identifier}]"
     end
 
+    def self.family_name
+      family.to_s
+    end
+    
     def existence_probability
       if tautology?
         1

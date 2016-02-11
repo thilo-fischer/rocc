@@ -46,11 +46,11 @@ module Rocc::Semantic
     end
 
     # FIXME? define constant instead of function?
+    def self.family
+      :macro
+    end
     def self.family_character
       'M'
-    end
-    def self.family_name
-      'macro'
     end
 
     def is_function_like?
