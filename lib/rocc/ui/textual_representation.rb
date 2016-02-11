@@ -350,7 +350,7 @@ module Rocc::Ui
       new(format_str)
     end # def self.compile
 
-    DEFAULT_FORMAT_STR = "%f %i%^(%+#P%{%T40\u2194 %?C%}"
+    DEFAULT_FORMAT_STR = "%f %i%^(%+#P%{%40T\u2194 %?C%}"
 
     FLAG_ADJUST_LEFT       = '-'
     FLAG_PLAIN_TRUNCATE    = '|'
@@ -404,10 +404,10 @@ module Rocc::Ui
     def format(symbol)
       result = ''
       @content.each do |c|
-        if c.respond_to?(:format) # XXX_R smells
-          result += c.format(symbol)
-        else
+        if c.is_a?(ConvSpecialTabstop) # TODO_R quick and dirty corner case handling
           c.adjust(result)
+        else
+          result += c.format(symbol)
         end
       end
       result
@@ -673,12 +673,13 @@ module Rocc::Ui
     
     class ConvSpecialTabstop < Conversion
 
-      def abjust(preliminary_result)
+      def adjust(preliminary_result)
+        # FIXME_W not working yet!
         # TODO_W flag support
-        if min_length and preliminary_result.length < min_length
-          preliminary_result += (min_length - preliminary_result.length) * ' '
-        elsif max_length
-          Rocc::Helpers::String.str_abbrev!(preliminary_result, max_length)
+        if min_width and preliminary_result.length < min_width
+          preliminary_result += ' ' * (min_width - preliminary_result.length)
+        elsif max_width
+          Rocc::Helpers::String.str_abbrev!(preliminary_result, max_width)
         end
       end
       
@@ -739,7 +740,13 @@ module Rocc::Ui
       # XXX_R implementation identical to SymbolFormatter#format
       def format(symbol)
         result = ''
-        @content.each {|c| result += c.format(symbol)}
+        @content.each do |c|
+          if c.is_a?(ConvSpecialTabstop) # TODO_R quick and dirty corner case handling
+            c.adjust(result)
+          else
+            result += c.format(symbol)
+          end
+        end
         result
       end # def format
 
