@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'rocc/ui/textual_representation'
+
 module Rocc::Commands
 
   class Ls < Command
@@ -97,7 +99,9 @@ module Rocc::Commands
       elsif args.empty?
         #warn "cursor: #{applctx.cursor}"
         #warn "symbols: #{applctx.cursor.find_symbols}"
-        applctx.cursor.find_symbols(:origin => applctx.cursor).each {|s| puts s.strf}
+        applctx.cursor.find_symbols(:origin => applctx.cursor).each do |s|
+          puts Rocc::Ui::SymbolFormatter.format(s)
+        end
       else
         args.each { |o| o.list(STDOUT, options) }
       end
