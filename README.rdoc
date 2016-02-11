@@ -65,7 +65,7 @@ platform specific binaries.
 
 == Copyright and License
 
-Copyright (C) 2014-2016  Thilo Fischer.
+Copyright (c) 2014-2016  Thilo Fischer.
 
 This file is part of rocc.
 

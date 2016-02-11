@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  Thilo Fischer.
+# Copyright (c) 2014-2016  Thilo Fischer.
 #
 # This file is part of rocc.
 #

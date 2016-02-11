@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  Thilo Fischer.
+# Copyright (c) 2014-2016  Thilo Fischer.
 #
 # This file is part of rocc.
 #
@@ -17,7 +17,7 @@ module Rocc::Ui::Interactive
 
   COPYRIGHT_NOTE =
     "rocc - C Code Operations in Ruby\n" \
-    "Copyright (C) 2014-2016 Thilo Fischer\n" \
+    "Copyright (c) 2014-2016 Thilo Fischer\n" \
     "This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.\n" \
     "This is free software, and you are welcome to redistribute it\n" \
     "under certain conditions; type `show c' for details.\n"
