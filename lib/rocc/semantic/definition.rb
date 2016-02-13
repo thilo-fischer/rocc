@@ -13,16 +13,74 @@
 
 require 'rocc/code_elements/code_element'
 require 'rocc/semantic/specification'
+require 'rocc/semantic/declaration'
 
 module Rocc::Semantic
 
   class CeDefinition < CeSpecification
 
+    attr_reader :declaration, :body
+
     ##
     # +origin+ of a definition shall be an array of those tokens
     # that form this definition.
-    def initialize(origin)
-      super
+    #
+    # +declaration+ A definition always implies a declaration (in
+    # C/C++ code). If a definition is found, the definition shall be
+    # addad to the symbols adducers. The definition than holds a
+    # reference to the declaration implied by the represented
+    # definition. (CeDefinition could also derive from CeDeclaration,
+    # but due to the "prefer aggregation over inheritence" principle,
+    # it is implemeted like this.)
+    def initialize(origin, declaration)
+      super(origin)
+      @declaration = declaration
+      @body = nil
+    end
+
+    ##
+    # For function definitions, +body+ is the compound statement
+    # implementing the function (aka the function body). A function
+    # definition will always have a +body != nil+. For variable
+    # definitons, +body+ is the variable's initializer if specified,
+    # nil otherwise.
+    #
+    # Even if a function has different implementations or a variable has different initializers in different preprocessor branches, a definition will always have at most one body:
+    #
+    # * If there are several blocks given for a function in separate
+    #   preprocessor branches (as in the following code example), this
+    #   will result in the CeFunction object referencing multiple
+    #   CeDefinition objects with different existance conditions.
+    #   
+    #   E.g.
+    #    int foo()
+    #    #ifdef BRANCH0
+    #      { return 0; }
+    #    #else
+    #      { return 42; }
+    #    #endif
+    #
+    # * If there is a block given for a function that deviates in
+    #   different preprocessor branches (as in the following code
+    #   example), this will result in the CeFunction object
+    #   referencing a CeDefinition object with a CeCompoundStatement
+    #   +body+ in which some statements and expressions have different
+    #   existance conditions.
+    #   
+    #   E.g.
+    #    int foo() {
+    #    #ifdef BRANCH0
+    #      return 0;
+    #    #else
+    #      return 42;
+    #    #endif
+    #    }
+    #
+    # * The same applies for variable definitions with expressions
+    #   instead of compound statements.
+    def body=(arg)
+      raise if @body # XXX(assert)
+      @body = arg
     end
 
   end # class CeDefinition

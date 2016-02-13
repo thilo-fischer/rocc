@@ -24,6 +24,7 @@ module Rocc::Semantic
     def initialize(origin, identifier, conditions, hashargs)
       raise "unprocessed hashargs: #{hashargs.inspect}" unless hashargs.empty? # XXX defensive progamming => remove some day
       super(origin)
+      @adducers = []
       @identifier = identifier
       @existence_conditions = conditions
       log.info{"new symbol #{self} in #{origin} given #{conditions}"}
@@ -39,6 +40,19 @@ module Rocc::Semantic
 
     def self.family_name
       family.to_s
+    end
+
+    alias specifications adducer
+
+    def add_specification(arg)
+      @adducers << arg
+    end
+
+    # TODO rename method. some name that clarifies that not the specification, but the initializer or function block shall be given here.
+    def add_definition(arg)
+      already_defined = @definitions.find {|d| d.existence_conditions.overlap(arg.existence_conditions)}
+      raise "double defined symbol: #{arg}" if already_defined
+      @definitions << arg
     end
     
     def existence_probability

@@ -23,11 +23,12 @@ module Rocc::CodeElements::FileRepresented
   # corresponds to an object file being created during compilation.
   class CeTranslationUnit < Rocc::CodeElements::CodeElement
 
-    attr_reader :include_files
+    attr_reader :include_files, :content
 
     def initialize(main_file)
       super(main_file)
       @include_files = []
+      @content = []
     end
 
     alias main_file origin
@@ -59,6 +60,10 @@ module Rocc::CodeElements::FileRepresented
       @symbol_idx.announce_symbol(symbol)
     end
 
+    def announce_semantic_element(arg)
+      @content << arg
+    end
+
     ##
     # Parse translation unit's main source file. (Implies parsing all
     # files included from the main file with the +#include+
@@ -73,6 +78,10 @@ module Rocc::CodeElements::FileRepresented
       ctx.start_tu(self)
       main_file.pursue(ctx.lineread_context)
       ctx.terminate_tu
+    end
+
+    def pursue # XXX(assert)
+      raise "not implemented for translation unit -> programming error :("
     end
 
     ##

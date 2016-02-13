@@ -289,8 +289,8 @@ module Rocc::Contexts
       result
     end
 
-    def announce_symbol(origin, symbol_family, identifier, hashargs = {})
-      log.debug{"#{name_dbg}.announce_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"}
+    def declare_symbol(origin, symbol_family, identifier, conditions, hashargs = {})
+      log.debug{"#{name_dbg}.declare_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"}
 
       linkage = nil
       
@@ -306,7 +306,7 @@ module Rocc::Contexts
           linkage = :extern # XXX what about function local symbols declared with storage class specifier extern ?
         end
       else
-        linkage = symbol_family.default_linkage # XXX necessary to query symbol_familiy or is it always :extern anyways?
+        linkage = symbol_family.default_linkage # XXX necessary to query symbol_familiy or is it always :extern anyway?
       end # find_scope(Rocc::Semantic::CeFunction)
 
       raise "programming error" unless linkage
@@ -314,30 +314,47 @@ module Rocc::Contexts
 
       symbols = find_symbols(
         :identifier => identifier,
-        :symbol_family => symbol_family,
-        :conditions => conditions
+        :namespace => ...,
+        #:symbol_family => symbol_family
       )
-
-      #warn "@@@ symbols #{symbols}"
       
       if symbols.empty?
 
         # symbol detected for the first time
+        # XXX(L340)
         symbol = symbol_family.new(origin, identifier, conditions, hashargs)
         compilation_context.announce_symbol(symbol)
 
       else
-        
-        raise "double defined symbol" if symbols.count > 1 # XXX
-        symbol = symbols.first
 
+        conflicting = symbols.find do |s|
+          s.existence_conditions.overlap(symbol.existence_conditions) and
+            symbol != s
+        end
+
+        raise "conflicting symbols: #{conflicting} and #{symbol}" if confilcting
+
+        same = symbols.find {|s| symbol == s}
+        if same
+          same.existence_conditions = same.existence_conditions.disjunction(conditions)
+        else
+          # XXX(L340) same code
+          symbol = symbol_family.new(origin, identifier, conditions, hashargs)
+          compilation_context.announce_symbol(symbol)
+        end
+        
         # FIXME compare linkage, storage_class, type_qualifiers and type_specifiers of the annonced and the indexed symbol => must be compatible
         raise "inconsistend declarations" if false # symbol.type_qualifiers != type_qualifiers or symbol.type_specifiers != type_specifiers
 
       end # symbols.empty?
 
       symbol
-    end # announce_symbol
+    end # declare_symbol
+
+    def define_symbol(origin, symbol_family, identifier, definition, hashargs = {})
+      symbol = declare_symbol
+      symbol.add_definition(definition)
+    end
 
     def find_symbols(criteria)
       c = criteria.clone # XXX_F

@@ -22,16 +22,17 @@ module Rocc::Commands
     
     def self.option_parser(options)
 
-      options[:format] = :short
-      
       OptionParser.new do |opts|      
 
         opts.banner = "Usage: #{@name} [options] [object]..."
         
-        opts.on("-t type",
-                "--type",
-                %w[file symbol identifier macro function variable type tag struct union enum label],
-                "list only objects of a certain type") do |arg|
+        opts.on(
+          "-t type",
+          "--type",
+          %w[file symbol identifier macro function variable type
+             tag struct union enum label],
+          "list only objects of a certain type"
+        ) do |arg|
           if options.key?(:type) then
             options[:type] = [arg]
           else
@@ -39,9 +40,11 @@ module Rocc::Commands
           end
         end
 
-        opts.on("--literal [type]",
-                %w[string char integer float],
-                "list literals of specific type") do |arg|
+        opts.on(
+          "--literal [type]",
+          %w[string char integer float],
+          "list literals of specific type"
+        ) do |arg|
           if options.key?(:literal) then
             options[:literal] = [arg]
           else
@@ -49,9 +52,11 @@ module Rocc::Commands
           end
         end
 
-        opts.on("--comment [type]",
-                %w[block line],
-                "list comments") do |arg|
+        opts.on(
+          "--comment [type]",
+          %w[block line],
+          "list comments"
+        ) do |arg|
           if options.key?(:comment) then
             options[:comment] = [arg]
           else
@@ -59,9 +64,12 @@ module Rocc::Commands
           end
         end
 
-        opts.on("-f criteria",
-                "--filter",
-                "list only objects matching the given filter criteria.") do |arg|
+        opts.on(
+          "-f criteria",
+          "--filter",
+          "list only objects matching the given filter criteria."
+          #Multiple filter criteria may be defined by repeating this flag multiple times.
+        ) do |arg|
           if options.key?(:filter) then
             options[:filter] = [arg]
           else
@@ -69,23 +77,57 @@ module Rocc::Commands
           end
         end
 
-        opts.on("-l",
-                "--long",
-                "long listing format") do |arg|
+        opts.on(
+          "-l",
+          "--long",
+          "long listing format"
+        ) do |arg|
           options[:format] = :long
         end
 
-        opts.on("-F",
-                "--classify",
-                "append indicator representing it's type to objects") do |arg|
-          options[:one_per_line] = true
+        opts.on(
+          "--format format_string",
+          "list symbols using the given format string"
+        ) do |arg|
+          options[:format] = arg
         end
 
-        opts.on("-1",
-                "--one-per-line",
-                "list one object per line") do |arg|
-          options[:one_per_line] = true
+        #opts.on("-F",
+        #        "--classify",
+        #        "append indicator representing it's type to objects") do |arg|
+        #  options[:one_per_line] = true
+        #end
+
+        #opts.on("-1",
+        #        "--one-per-line",
+        #        "list one object per line") do |arg|
+        #  options[:one_per_line] = true
+        #end
+
+        opts.on(
+          "--each",
+          "list each declaration or definition of a symbol, not just one per symbol"
+        ) do |arg|
+          options[:each] = true
         end
+
+        opts.on(
+          "--assume condition",
+          "for preprocessor conditionals, assume condition is true"
+        ) do |arg|
+          list = options[:assume] ||= []
+          list << arg
+        end
+
+        opts.on(
+          "--assume-def macro",
+          "for preprocessor conditionals, assume a macro with the given name is defined"
+        ) do |arg|
+          list = options[:assume] ||= []
+          list << "defined(#{arg})"
+        end
+
+        
 
       end
       

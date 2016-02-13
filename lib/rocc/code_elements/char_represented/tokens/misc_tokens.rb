@@ -246,8 +246,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
         
         case branch.current_scope
         when Rocc::Semantic::Temporary::ArisingSpecification
-          branch.current_scope.mark_as_declaration unless branch.current_scope.is_definition?
-          branch.current_scope.mark_as_variable unless branch.current_scope.is_function?
           branch.finish_current_scope
         when Rocc::Semantic::Statement
           if branch.current_scope.complete?
@@ -283,8 +281,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
             next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new
             next_arising.share_origin(prev_arising)
             
-            branch.current_scope.mark_as_declaration unless branch.current_scope.is_definition?
-            branch.current_scope.mark_as_variable unless branch.current_scope.is_function?
             branch.finish_current_scope
             branch.enter_scope(next_arising)
           end
@@ -327,7 +323,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
         case branch.current_scope
         when Rocc::Semantic::CeFunction
           function = branch.leave_scope
-          raise unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
+          raise unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification # XXX(assert)
+          TODO pop declaration from stack, CeDefinition.new(..., declaration), push definition to stack
           branch.current_scope.mark_as_definition
           branch.finish_current_scope
           branch.enter_scope(function)
@@ -369,7 +366,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
           when Rocc::Semantic::Temporary::ArisingSpecification
             if branch.current_scope.identifier
               branch.current_scope.mark_as_function
-              function = branch.current_scope.create_symbol(branch)
+              function = branch.current_scope.finalize(branch)
               branch.enter_scope(function)
               func_sig = Rocc::Semantic::CeFunctionSignature.new(function, self)
               branch.enter_scope(func_sig)

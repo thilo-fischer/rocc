@@ -63,7 +63,22 @@ module Rocc::Semantic::Temporary
     end
     
     def finalize(branch)
-      raise "CeSpecification is abstract class" if @specification_type == Rocc::Semantic::CeSpecification # FIXME rework @specification_type
+      raise "CeSpecification is abstract class" if @specification_type == Rocc::Semantic::CeSpecification # FIXME rework @specification_type # XXX(assert)
+
+      if @symbol_family <= Rocc::Semantic::CeVariable
+        if @storage_class and @storage_class == :extern
+          raise "cannot define symbol declared extern" if is_definition? # XXX(assert)
+          mark_as_declaration
+        else
+          mark_as_definition
+        end
+      elsif @symbol_family <= Rocc::Semantic::CeVariable
+        mark_as_declaration unless is_definition?
+      else
+        raise "not yet supported"
+      end
+      mark_as_variable unless branch.current_scope.is_function?
+
       @symbol = create_symbol(branch) unless @symbol
       specification = @specification_type.new(origin)
       @symbol.add_adducer(specification)
@@ -83,6 +98,7 @@ module Rocc::Semantic::Temporary
       @symbol = branch.announce_symbol(origin, @symbol_family, @identifier, hashargs)
       @symbol
     end
+    private :create_symbol
 
     def share_origin(other)
       @origin_shared = other.origin_shared
