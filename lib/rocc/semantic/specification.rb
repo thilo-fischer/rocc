@@ -17,12 +17,56 @@ module Rocc::Semantic
 
   class CeSpecification < Rocc::CodeElements::CodeElement
 
+    attr_reader :symbol
+
     ##
     # +origin+ of a specification shall be an array of those tokens
     # that form this specification.
-    def initialize(origin)
-      super
+    #
+    # +symbol+ The symbol announced by this specification.
+    def initialize(origin, symbol = nil)
+      super(origin)
+      @symbol = symbol
     end
+
+    def symbol=(arg)
+      raise if @symbol # XXX(assert)
+      @symbol = arg
+    end
+
+    def function?
+      @symbol.is_a?(CeFunction)
+    end
+
+    def variable?
+      @symbol.is_a?(CeVariable)
+    end
+
+    def type?
+      @symbol.is_a?(CeTypedef)
+    end
+
+    def macro?
+      @symbol.is_a?(CeMacro)
+    end
+
+    #def enum?
+    #  @symbol.is_a?(CeEnum)
+    #end
+    #
+    #def struct?
+    #  @symbol.is_a?(CeStruct)
+    #end
+    #
+    #def union?
+    #  @symbol.is_a?(CeUnion)
+    #end
+    #
+    ## returns true if CeSymbol object represents the member of a
+    ## struct or union
+    #def member?
+    #  @symbol.is_a?(CeSUMember)
+    #end
 
   end # class CeSpecification
 

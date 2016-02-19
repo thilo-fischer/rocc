@@ -53,6 +53,10 @@ module Rocc::Semantic
       'M'
     end
 
+    def namespace
+      :macro
+    end
+
     def is_function_like?
       #@parameters.is_a?(Array)
       @parameters != nil

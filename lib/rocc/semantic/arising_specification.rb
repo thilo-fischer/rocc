@@ -55,7 +55,6 @@ module Rocc::Semantic::Temporary
       @storage_class = nil
       @type_qualifiers = []
       @type_specifiers = []
-      @specification_type = Rocc::Semantic::CeSpecification
     end
 
     def origin
@@ -63,8 +62,6 @@ module Rocc::Semantic::Temporary
     end
     
     def finalize(branch)
-      raise "CeSpecification is abstract class" if @specification_type == Rocc::Semantic::CeSpecification # FIXME rework @specification_type # XXX(assert)
-
       if @symbol_family <= Rocc::Semantic::CeVariable
         if @storage_class and @storage_class == :extern
           raise "cannot define symbol declared extern" if is_definition? # XXX(assert)
@@ -79,14 +76,14 @@ module Rocc::Semantic::Temporary
       end
       mark_as_variable unless branch.current_scope.is_function?
 
-      @symbol = create_symbol(branch) unless @symbol
-      specification = @specification_type.new(origin)
-      @symbol.add_adducer(specification)
+      setup_symbol(branch)
+      decl = Rocc::Semantic::CeDeclarition.new(origin, symbol)
+      @symbol.announce_declaration(decl)
       @symbol
     end
 
-    def create_symbol(branch)
-      log.debug{"ArisingSpecification#create_symbol(#{branch.name_dbg}) -> #{@identifier}"}
+    def setup_symbol(branch)
+      log.debug{"ArisingSpecification#setup_symbol(#{branch.name_dbg}) -> #{@identifier}"}
       raise "missing identifier" unless @identifier
       raise "missing symbol_family" unless @symbol_family
       raise "Already created symbol from this #{self.class}!" if @symbol
@@ -98,7 +95,7 @@ module Rocc::Semantic::Temporary
       @symbol = branch.announce_symbol(origin, @symbol_family, @identifier, hashargs)
       @symbol
     end
-    private :create_symbol
+    private :setup_symbol
 
     def share_origin(other)
       @origin_shared = other.origin_shared
@@ -173,49 +170,6 @@ module Rocc::Semantic::Temporary
       @type_specifiers << symbol
       
     end # add_type_specifier
-
-    def mark_as_definition
-      @specification_type = Rocc::Semantic::CeDefinition
-    end
-
-    def mark_as_declaration
-      @specification_type = Rocc::Semantic::CeDeclaration
-    end
-
-    private
-
-    def specification_type=(arg)
-      raise if @specification_type and not arg < @specification_type
-      @specification_type = arg
-    end
-
-    public
-    
-    def is_definition?
-      case
-      when @specification_type <= Rocc::Semantic::CeDefinition
-        true
-      when @specification_type <= Rocc::Semantic::CeDeclaration
-        false
-      when @specification_type <= Rocc::Semantic::CeSpecification
-        nil
-      else
-        raise "programming error, @specification_type: #{@specification_type}"
-      end
-    end
-
-    def is_declaration?
-      case
-      when @specification_type <= Rocc::Semantic::CeDefinition
-        false
-      when @specification_type <= Rocc::Semantic::CeDeclaration
-        true
-      when @specification_type <= Rocc::Semantic::CeSpecification
-        nil
-      else
-        raise "programming error, @specification_type: #{@specification_type}"
-      end
-    end
 
     # XXX? support symbol family CeFunctionParameter
     

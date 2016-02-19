@@ -200,7 +200,7 @@ module Rocc::CodeElements
           raise "Programmin error :("
         end
       when Class
-        raise "Programmin error :(" unless depth < CodeElement
+        raise "Invalid argument: must be an instance of a class derived from CodeElement" unless depth < CodeElement
         if self.is_a? depth then
           self
         elsif @origin

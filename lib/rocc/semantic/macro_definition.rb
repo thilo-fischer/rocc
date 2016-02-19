@@ -11,15 +11,13 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
-require 'rocc/code_elements/code_element'
+require 'rocc/semantic/specification.rb'
 
 module Rocc::Semantic
 
   ##
   # Represents the specification of a macro.
-  #
-  # FIXME? derive from CeSpecification?
-  class CeMacroDefinition < Rocc::CodeElements::CodeElement
+  class CeMacroDefinition < CeSpecification
 
     ##
     # +origin+ of a +MacroDefinition+ shall be the CeCoPpDefine object
@@ -30,9 +28,10 @@ module Rocc::Semantic
 
     alias define_directive origin
 
-    def existence_conditions
-      define_directive.existence_conditions
-    end
+    ## same result as CodeElement#existence_conditions
+    #def existence_conditions
+    #  define_directive.existence_conditions
+    #end
     
     def name_dbg
       "#MDef[#{origin.identifier}]"

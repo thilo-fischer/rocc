@@ -289,64 +289,58 @@ module Rocc::Contexts
       result
     end
 
-    def declare_symbol(origin, symbol_family, identifier, conditions, hashargs = {})
-      log.debug{"#{name_dbg}.declare_symbol: #{origin}, #{symbol_family}, #{identifier}, #{hashargs.inspect}"}
-
-      linkage = nil
+    def declare_symbol(newly_created_symbol)
+      log.debug{"#{name_dbg}.declare_symbol: #{newly_created_symbol}"}
       
-      if find_scope(Rocc::Semantic::CeFunction)
-        linkage = :none
-      elsif hashargs.key?(:storage_class)
-        case hashargs[:storage_class]
-        when :typedef
-          raise "not yet supported" # FIXME
-        when :static
-          linkage = :intern
-        when :extern
-          linkage = :extern # XXX what about function local symbols declared with storage class specifier extern ?
-        end
-      else
-        linkage = symbol_family.default_linkage # XXX necessary to query symbol_familiy or is it always :extern anyway?
-      end # find_scope(Rocc::Semantic::CeFunction)
-
-      raise "programming error" unless linkage
-      hashargs[:linkage] = linkage
-
-      symbols = find_symbols(
+      overlapping_symbols = find_symbols(
         :identifier => identifier,
-        :namespace => ...,
+        :namespace => symbol_family.namespace,
         #:symbol_family => symbol_family
       )
-      
-      if symbols.empty?
 
-        # symbol detected for the first time
-        # XXX(L340)
-        symbol = symbol_family.new(origin, identifier, conditions, hashargs)
-        compilation_context.announce_symbol(symbol)
-
-      else
-
-        conflicting = symbols.find do |s|
-          s.existence_conditions.overlap(symbol.existence_conditions) and
-            symbol != s
-        end
-
-        raise "conflicting symbols: #{conflicting} and #{symbol}" if confilcting
-
-        same = symbols.find {|s| symbol == s}
-        if same
-          same.existence_conditions = same.existence_conditions.disjunction(conditions)
+      overlap_by_conditions = overlapping_symbols.group_by do |s|
+        case
+        when s.existence_conditions.imply?(newly_created_symbol.existence_conditions)
+          :implies
+        when newly_created_symbol.existence_conditions.imply?(s.existence_conditions)
+          :implied
         else
-          # XXX(L340) same code
-          symbol = symbol_family.new(origin, identifier, conditions, hashargs)
-          compilation_context.announce_symbol(symbol)
+          :independent
         end
-        
-        # FIXME compare linkage, storage_class, type_qualifiers and type_specifiers of the annonced and the indexed symbol => must be compatible
-        raise "inconsistend declarations" if false # symbol.type_qualifiers != type_qualifiers or symbol.type_specifiers != type_specifiers
+      end
 
-      end # symbols.empty?
+      #raise "conflicting symbols: #{conflicting} and #{identifier}" if conflicting = (overlap_by_conditions[:implies] + overlap_by_conditions[:implied]).find {|s| s != newly_created_symbol}
+
+      symbol = newly_created_symbol
+
+      if not overlap_by_conditions[:implies].empty?
+        raise unless overlap_by_conditions[:implied].empty? # XXX(assert)
+        raise if overlap_by_conditions[:implies].length > 1 # XXX(assert)
+        s = overlap_by_conditions[:implies].first
+        raise "conflicting symbols: #{s} and #{symbol}" unless s == symbol
+        # drop newly created symbol, use already known symbol instead
+        symbol = s
+      elsif not overlap_by_conditions[:implied].empty?
+        raise unless overlap_by_conditions[:implies].empty? # XXX(assert)
+        raise if overlap_by_conditions[:implied].length > 1 # XXX(assert)
+        s = overlap_by_conditions[:implied].first
+        raise "conflicting symbols: #{s} and #{symbol}" unless s == symbol
+        s.existence_conditions = s.existence_conditions.conjunction(symbol.existence_conditions)
+        # drop newly created symbol, use already known symbol instead
+        symbol = s        
+      elsif not overlap_by_conditions[:independent].empty?
+        same = overlap_by_conditions[:independent].select {|s| s == symbol }
+        raise if same.length > 1 # XXX(assert)
+        s = same.first
+        s.existence_conditions = s.existence_conditions.conjunction(symbol.existence_conditions)
+        # drop newly created symbol, use already known symbol instead
+        symbol = s
+      end
+
+      compilation_context.announce_symbol(symbol) if symbol.equal?(newly_created_symbol)
+
+      enter_scope(declaration)
+      enter_scope(symbol)
 
       symbol
     end # declare_symbol

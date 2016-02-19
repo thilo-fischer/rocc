@@ -20,31 +20,54 @@ module Rocc::Semantic
     attr_reader :linkage
     
     def initialize(origin, identifier, conditions, hashargs)
-      @linkage = pick_from_hashargs(hashargs, :linkage)
+
       @type_specifiers = pick_from_hashargs(hashargs, :type_specifiers) # FIXME not yet processed
+      
       if hashargs.key?(:type_qualifiers)
         @type_qualifiers = pick_from_hashargs(hashargs, :type_qualifiers) # FIXME not yet processed
       end
+
       if hashargs.key?(:storage_class)
         @storage_class = pick_from_hashargs(hashargs, :storage_class) # FIXME not yet processed
       end
+
       super # XXX defensive progamming => replace some day with # super(origin, conditions, identifier)
-      @adducers = []
+
+      # XXX Check: linkage might not apply to all symbols derived from CeTypedSymbol (CeSUMember, CeTypedef, ..?), there might be classes not derived from CeTypedSymbol where linkage applies (CeEnum, CeSymbolCompound, ..?). => If so: Add another level to inheritence hierarchy or extract linkage stuff to mixin?
+      if descend_origin(Rocc::Semantic::CeFunction)
+        @linkage = :none
+      else
+        case @storage_class
+        when nil
+          @linkage = default_linkage # XXX necessary to query symbol_familiy or is it always :extern anyway?          
+        when :typedef
+          raise "not yet supported" # FIXME
+        when :static
+          @linkage = :intern
+        when :extern
+          @linkage = :extern # XXX what about function local symbols declared with storage class specifier extern ?
+        end
+      end
+
     end
 
     def name_dbg
       "TySym[#{@identifier}]"
     end    
 
-    # adducers are the specifications that announce the symbol
-    def add_adducer(a)
-      @adducers << a
-    end
-
-    alias adducer adducers
-
     def namespace
       :ordinary
+    end
+
+    def ==(other)
+      super and
+        @type_specifiers == other.type_specifiers and
+        @linkage == other.linkage and
+        @type_qualifiers == other.type_qualifiers and
+        (
+          @storage_class == other.storage_class or
+          false # TODO_W allow compatible storage class specifiers
+        )
     end
 
     def match(criteria)

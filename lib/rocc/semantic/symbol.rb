@@ -17,14 +17,15 @@ module Rocc::Semantic
 
   class CeSymbol < Rocc::CodeElements::CodeElement
 
-    attr_reader :identifier, :adducers, :existence_conditions
+    attr_reader :identifier, :existence_conditions, :declarations, :definitions
 
     # origin is the unit the symbol lives in, e.g. the translation
     # unit it belongs to.  identifier is the symbols name.
     def initialize(origin, identifier, conditions, hashargs)
       raise "unprocessed hashargs: #{hashargs.inspect}" unless hashargs.empty? # XXX defensive progamming => remove some day
       super(origin)
-      @adducers = []
+      @declarations = []
+      @definitions  = []
       @identifier = identifier
       @existence_conditions = conditions
       log.info{"new symbol #{self} in #{origin} given #{conditions}"}
@@ -42,22 +43,47 @@ module Rocc::Semantic
       family.to_s
     end
 
-    alias specifications adducer
-
-    def add_specification(arg)
-      @adducers << arg
+    def adducer
+      @declarations + @definitions
+      #@declarations + @definitions.map {|d| d.declaration}
     end
 
-    # TODO rename method. some name that clarifies that not the specification, but the initializer or function block shall be given here.
+    def ==(other)
+      self.class == other.class and
+        @origin == other.origin and
+        @identifier == other.identifier
+    end
+
+    def add_declaration(arg)
+      @declarations << arg
+    end
+
     def add_definition(arg)
       already_defined = @definitions.find {|d| d.existence_conditions.overlap(arg.existence_conditions)}
       raise "double defined symbol: #{arg}" if already_defined
+      if @declarations.include?(arg.declaration)
+        # FIXME do not add declaration in the first place
+        @declarations.delete(arg.declaration)
+      end
       @definitions << arg
     end
     
     def existence_probability
       existence_conditions.probability
     end
+
+    def implicit_existence_conditions
+      inject_start = (@declarations + @definitions).first.existence_conditions # XXX works, but smells
+      (@declarations + @definitions).inject(inject_start) do |conds, spec|
+        conds.disjunction(spec.existence_conditions)
+      end
+    end
+    private :implicit_existence_conditions
+
+    def assert_existence_conditions_consistency
+      raise "inconsisten existence conditions" unless existence_conditions.equivalent?(implicit_existence_conditions)
+    end
+    private :assert_existence_conditions_consistency
 
     def match(criteria)
       #warn "XXXX #{name_dbg} -> match: #{criteria}"
