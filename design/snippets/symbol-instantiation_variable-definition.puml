@@ -1,0 +1,129 @@
+@startuml
+
+legend center
+  Copyright (c) 2014-2016  Thilo Fischer.
+  
+  This diagram is part of the developer documentation of rocc.
+ 
+  rocc is free software with a multi-license approach: you can
+  redistribute it and/or modify it as if it was under the terms of the
+  GNU General Public License as long as the things you publish to
+  satisfy the GPL's copyleft still can be integrated into the rocc
+  project's main codebase without restricting the multi-license
+  approach. See LICENSE.txt from the top-level directory for details.
+ 
+  The same license applies to this document.
+
+  --
+
+  The rocc architecture is work in progress.  Deviations of the diagram
+  from the actual source code (or vice versa) must be expected.
+endlegend
+
+skinparam monochrome true
+
+title Variable Definition
+
+participant TranslationUnit
+participant CompilationContext
+participant Token
+participant CompilationBranch
+participant "ArisingSpecification" as ArisingSpecification
+participant "s : Symbol" as Symbol
+participant "d : Declaration" as Declaration
+participant "D : Definition" as Definition
+participant "i : Initializer" as Initializer
+
+... parsed optional storage class, type qualifier, type specifier and parsed declarator ...
+
+[-> Token : pursue_branch
+rnote over Token : ""=""
+
+activate Token
+
+== same as variable declaration >> ==
+
+Token -> CompilationBranch : finish_current_scope
+activate CompilationBranch
+
+note over ArisingSpecification : CompilationBranch#\ncurrent_scope
+CompilationBranch -> ArisingSpecification : finalize
+activate ArisingSpecification
+
+create Symbol
+ArisingSpecification -> Symbol : new
+
+ArisingSpecification -> CompilationBranch : declare_symbol(s)
+activate CompilationBranch
+
+CompilationBranch -> CompilationContext : announce_symbol(s)
+activate CompilationContext
+CompilationBranch <-- CompilationContext : symbol
+deactivate CompilationContext
+
+create Declaration
+CompilationBranch -> Declaration : new(symbol, conditions)
+
+CompilationBranch -> Symbol : announce_declaration(d)
+activate Symbol
+CompilationBranch <-- Symbol
+deactivate Symbol
+
+ArisingSpecification <-- CompilationBranch
+deactivate CompilationBranch
+
+CompilationBranch <-- ArisingSpecification : d
+deactivate ArisingSpecification
+
+CompilationBranch -> CompilationBranch : leave_scope
+
+CompilationBranch -> TranslationUnit : announce_semantic_element(d)
+activate TranslationUnit
+CompilationBranch <-- TranslationUnit
+deactivate TranslationUnit
+
+Token <-- CompilationBranch : d
+deactivate CompilationBranch
+
+== << same as variable declaration ==
+
+create Definition
+Token -> Definition : new(d)
+Token -> CompilationBranch : enter_scope(D)
+note over Definition : CompilationBranch#\ncurrent_scope
+
+create Initializer
+Token -> Initializer : new
+Token -> CompilationBranch : enter_scope(r)
+note over Initializer : CompilationBranch#\ncurrent_scope
+
+[<-- Token
+deactivate Token
+
+... parse Initializer (RValue expression) ...
+
+[-> Token : pursue_branch
+rnote over Token : "";"" or "",""
+
+activate Token
+
+Token -> CompilationBranch : finish_current_scope
+activate CompilationBranch
+
+note over Initializer : CompilationBranch#\ncurrent_scope
+CompilationBranch -> Initializer : finalize
+
+CompilationBranch -> CompilationBranch : leave_scope
+
+note over Definition : CompilationBranch#\ncurrent_scope
+
+CompilationBranch -> Definition : add_body(i)
+
+Token <-- CompilationBranch : D
+deactivate CompilationBranch
+
+[<-- Token
+deactivate Token
+
+@enduml
+
