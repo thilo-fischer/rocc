@@ -28,13 +28,13 @@ participant TranslationUnit
 participant CompilationContext
 participant Token
 participant CompilationBranch
-participant "ArisingSpecification" as ArisingSpecification
-participant "s : Symbol" as Symbol
+participant "a : ArisingSpecification" as ArisingSpecification
+participant "s : Variable < Symbol" as Symbol
 participant "d : Declaration" as Declaration
 participant "D : Definition" as Definition
 participant "i : Initializer" as Initializer
 
-... parsed optional storage class, type qualifier, type specifier and parsed declarator ...
+... parsed optional storage class, type qualifier, type specifier and parsed identifier ...
 
 [-> Token : pursue_branch
 rnote over Token : ""=""
@@ -76,6 +76,7 @@ CompilationBranch <-- ArisingSpecification : d
 deactivate ArisingSpecification
 
 CompilationBranch -> CompilationBranch : leave_scope
+destroy ArisingSpecification
 
 CompilationBranch -> TranslationUnit : announce_semantic_element(d)
 activate TranslationUnit

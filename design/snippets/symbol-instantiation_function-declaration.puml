@@ -22,28 +22,75 @@ endlegend
 
 skinparam monochrome true
 
-title Variable Declaration
+title Function Declaration
 
 participant TranslationUnit
 participant CompilationContext
 participant Token
 participant CompilationBranch
 participant "a : ArisingSpecification" as ArisingSpecification
-participant "s : Variable < Symbol" as Symbol
+participant "s : Function < Symbol" as Symbol
 participant "d : Declaration" as Declaration
+participant "f : FunctionSignature" as FunctionSignature
 
 ... parsed optional storage class, type qualifier, type specifier and parsed identifier ...
 
 [-> Token : pursue_branch
+rnote over Token : ""(""
+activate Token
 
-rnote over Token : "";"" or "",""
+note over ArisingSpecification : CompilationBranch#\ncurrent_scope
+
+Token -> CompilationBranch : current_scope
+activate CompilationBranch
+Token <-- CompilationBranch : a
+deactivate CompilationBranch
+
+Token -> ArisingSpecification : mark_as_function
+
+create FunctionSignature
+Token -> FunctionSignature : new
+Token -> CompilationBranch : enter_scope(f)
+note over FunctionSignature : CompilationBranch#\ncurrent_scope
+
+[<-- Token
+deactivate Token
+
+... parse function parameters ...
+
+[-> Token : pursue_branch
+rnote over Token : "")""
+activate Token
+
+Token -> CompilationBranch : finish_current_scope
+activate CompilationBranch
+note over FunctionSignature : CompilationBranch#\ncurrent_scope
+CompilationBranch -> FunctionSignature : finalize
+CompilationBranch -> CompilationBranch : leave_scope
+note over ArisingSpecification : CompilationBranch#\ncurrent_scope
+Token <-- CompilationBranch : f
+deactivate CompilationBranch
+
+Token -> CompilationBranch : current_scope
+activate CompilationBranch
+Token <-- CompilationBranch : a
+deactivate CompilationBranch
+
+Token -> ArisingSpecification : signature=(f)
+
+[<-- Token
+deactivate Token
+
+[-> Token : pursue_branch
+
+'rnote over Token : "";"" or "",""
+rnote over Token : "";""
 
 activate Token
 
 Token -> CompilationBranch : finish_current_scope
 activate CompilationBranch
 
-note over ArisingSpecification : CompilationBranch#\ncurrent_scope
 CompilationBranch -> ArisingSpecification : finalize
 activate ArisingSpecification
 
@@ -57,12 +104,6 @@ CompilationBranch -> CompilationContext : announce_symbol(s)
 activate CompilationContext
 CompilationBranch <-- CompilationContext : symbol
 deactivate CompilationContext
-note left
-  if symbol == s already known
-    return symbol
-  else
-    return s
-end note
 
 create Declaration
 CompilationBranch -> Declaration : new(symbol, conditions)
@@ -72,14 +113,18 @@ activate Symbol
 CompilationBranch <-- Symbol
 deactivate Symbol
 
-ArisingSpecification <-- CompilationBranch
+ArisingSpecification <-- CompilationBranch : d
 deactivate CompilationBranch
+
+ArisingSpecification -> Symbol : announce_signature(d, f)
 
 CompilationBranch <-- ArisingSpecification : d
 deactivate ArisingSpecification
 
 CompilationBranch -> CompilationBranch : leave_scope
+
 destroy ArisingSpecification
+
 
 CompilationBranch -> TranslationUnit : announce_semantic_element(d)
 activate TranslationUnit
