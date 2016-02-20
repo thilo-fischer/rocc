@@ -33,6 +33,10 @@ participant "s : Variable < Symbol" as Symbol
 participant "d : Declaration" as Declaration
 participant "D : Definition" as Definition
 participant "i : Initializer" as Initializer
+database "ScopeStack (part of\nCompilationBranch)" as ScopeStack
+
+activate ScopeStack
+rnote over ScopeStack : a
 
 ... parsed optional storage class, type qualifier, type specifier and parsed identifier ...
 
@@ -41,12 +45,10 @@ rnote over Token : ""=""
 
 activate Token
 
-== same as variable declaration >> ==
-
 Token -> CompilationBranch : finish_current_scope
 activate CompilationBranch
 
-note over ArisingSpecification : CompilationBranch#\ncurrent_scope
+'note over ArisingSpecification : CompilationBranch#\ncurrent_scope
 CompilationBranch -> ArisingSpecification : finalize
 activate ArisingSpecification
 
@@ -64,39 +66,33 @@ deactivate CompilationContext
 create Declaration
 CompilationBranch -> Declaration : new(symbol, conditions)
 
-CompilationBranch -> Symbol : announce_declaration(d)
-activate Symbol
-CompilationBranch <-- Symbol
-deactivate Symbol
-
 ArisingSpecification <-- CompilationBranch
 deactivate CompilationBranch
 
 CompilationBranch <-- ArisingSpecification : d
 deactivate ArisingSpecification
 
+rnote over ScopeStack : a
 CompilationBranch -> CompilationBranch : leave_scope
+deactivate ScopeStack
 destroy ArisingSpecification
-
-CompilationBranch -> TranslationUnit : announce_semantic_element(d)
-activate TranslationUnit
-CompilationBranch <-- TranslationUnit
-deactivate TranslationUnit
 
 Token <-- CompilationBranch : d
 deactivate CompilationBranch
 
-== << same as variable declaration ==
-
 create Definition
 Token -> Definition : new(d)
 Token -> CompilationBranch : enter_scope(D)
-note over Definition : CompilationBranch#\ncurrent_scope
+activate ScopeStack
+rnote over ScopeStack : D
+'note over Definition : CompilationBranch#\ncurrent_scope
 
 create Initializer
 Token -> Initializer : new
-Token -> CompilationBranch : enter_scope(r)
-note over Initializer : CompilationBranch#\ncurrent_scope
+Token -> CompilationBranch : enter_scope(i)
+activate ScopeStack
+rnote over ScopeStack : i
+'note over Initializer : CompilationBranch#\ncurrent_scope
 
 [<-- Token
 deactivate Token
@@ -111,14 +107,33 @@ activate Token
 Token -> CompilationBranch : finish_current_scope
 activate CompilationBranch
 
-note over Initializer : CompilationBranch#\ncurrent_scope
+'note over Initializer : CompilationBranch#\ncurrent_scope
 CompilationBranch -> Initializer : finalize
 
+rnote over ScopeStack : i
 CompilationBranch -> CompilationBranch : leave_scope
+deactivate ScopeStack
+rnote over ScopeStack : D
 
-note over Definition : CompilationBranch#\ncurrent_scope
+'note over Definition : CompilationBranch#\ncurrent_scope
 
 CompilationBranch -> Definition : add_body(i)
+
+CompilationBranch -> Definition : finalize
+
+CompilationBranch -> Symbol : announce_definition(D)
+'activate Symbol
+'CompilationBranch <-- Symbol
+'deactivate Symbol
+
+CompilationBranch -> TranslationUnit : announce_semantic_element(D)
+activate TranslationUnit
+CompilationBranch <-- TranslationUnit
+deactivate TranslationUnit
+
+rnote over ScopeStack : D
+CompilationBranch -> CompilationBranch : leave_scope
+deactivate ScopeStack
 
 Token <-- CompilationBranch : D
 deactivate CompilationBranch

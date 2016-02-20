@@ -94,29 +94,34 @@ activate CompilationBranch
 CompilationBranch -> ArisingSpecification : finalize
 activate ArisingSpecification
 
-create Symbol
-ArisingSpecification -> Symbol : new
-
-ArisingSpecification -> CompilationBranch : declare_symbol(s)
-activate CompilationBranch
-
-CompilationBranch -> CompilationContext : announce_symbol(s)
+ArisingSpecification -> CompilationContext : find_symbols(identifier, namespace, signature)
 activate CompilationContext
-CompilationBranch <-- CompilationContext : symbol
+ArisingSpecification <-- CompilationContext : es
 deactivate CompilationContext
 
+alt es.empty?
+
+  create Symbol
+  ArisingSpecification -> Symbol : new
+
+  ArisingSpecification -> CompilationContext : announce_symbol(s)
+  'activate CompilationContext
+  'CompilationBranch <-- CompilationContext : symbol
+  'deactivate CompilationContext
+
+else otherwise
+
+  ArisingSpecification -> ArisingSpecification : s = es.first
+  
+end ' alt es.empty?
+
 create Declaration
-CompilationBranch -> Declaration : new(symbol, conditions)
-
-CompilationBranch -> Symbol : announce_declaration(d)
-activate Symbol
-CompilationBranch <-- Symbol
-deactivate Symbol
-
-ArisingSpecification <-- CompilationBranch : d
-deactivate CompilationBranch
+ArisingSpecification -> Declaration : new(s, conditions)
 
 ArisingSpecification -> Symbol : announce_signature(d, f)
+activate Symbol
+ArisingSpecification <-- Symbol
+deactivate Symbol
 
 CompilationBranch <-- ArisingSpecification : d
 deactivate ArisingSpecification
