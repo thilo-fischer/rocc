@@ -45,29 +45,40 @@ rnote over Token : ""=""
 
 activate Token
 
+== same as variable declaration >> ==
+
 Token -> CompilationBranch : finish_current_scope
 activate CompilationBranch
 
 'note over ArisingSpecification : CompilationBranch#\ncurrent_scope
-CompilationBranch -> ArisingSpecification : finalize
+CompilationBranch -> ArisingSpecification : launch
 activate ArisingSpecification
 
-create Symbol
-ArisingSpecification -> Symbol : new
-
-ArisingSpecification -> CompilationBranch : declare_symbol(s)
-activate CompilationBranch
-
-CompilationBranch -> CompilationContext : announce_symbol(s)
+ArisingSpecification -> CompilationContext : find_symbols(identifier, namespace,\nsymbol_family, storage_class, type_qualifiers, type_specifiers)
 activate CompilationContext
-CompilationBranch <-- CompilationContext : symbol
+ArisingSpecification <-- CompilationContext : existing_symbols
 deactivate CompilationContext
 
-create Declaration
-CompilationBranch -> Declaration : new(symbol, conditions)
+alt existing_symbols.empty?
 
-ArisingSpecification <-- CompilationBranch
-deactivate CompilationBranch
+  create Symbol
+  ArisingSpecification -> Symbol : new
+
+  ArisingSpecification -> CompilationContext : announce_symbol(s)
+  'activate CompilationContext
+  'CompilationBranch <-- CompilationContext : symbol
+  'deactivate CompilationContext
+
+else otherwise
+
+  ArisingSpecification -> ArisingSpecification : s = existing_symbols.first
+  
+end ' alt existing_symbols.empty?
+
+create Declaration
+ArisingSpecification -> Declaration : new(s, conditions)
+
+== << same as variable declaration ==
 
 CompilationBranch <-- ArisingSpecification : d
 deactivate ArisingSpecification
@@ -76,6 +87,7 @@ rnote over ScopeStack : a
 CompilationBranch -> CompilationBranch : leave_scope
 deactivate ScopeStack
 destroy ArisingSpecification
+
 
 Token <-- CompilationBranch : d
 deactivate CompilationBranch
@@ -108,7 +120,7 @@ Token -> CompilationBranch : finish_current_scope
 activate CompilationBranch
 
 'note over Initializer : CompilationBranch#\ncurrent_scope
-CompilationBranch -> Initializer : finalize
+CompilationBranch -> Initializer : launch
 
 rnote over ScopeStack : i
 CompilationBranch -> CompilationBranch : leave_scope
@@ -119,21 +131,22 @@ rnote over ScopeStack : D
 
 CompilationBranch -> Definition : add_body(i)
 
-CompilationBranch -> Definition : finalize
+CompilationBranch -> Definition : launch
+activate Definition
 
-CompilationBranch -> Symbol : announce_definition(D)
-'activate Symbol
-'CompilationBranch <-- Symbol
-'deactivate Symbol
+Definition -> Symbol : announce_definition(D)
+
+CompilationBranch <-- Definition
+deactivate Definition
+
+rnote over ScopeStack : D
+CompilationBranch -> CompilationBranch : leave_scope
+deactivate ScopeStack
 
 CompilationBranch -> TranslationUnit : announce_semantic_element(D)
 activate TranslationUnit
 CompilationBranch <-- TranslationUnit
 deactivate TranslationUnit
-
-rnote over ScopeStack : D
-CompilationBranch -> CompilationBranch : leave_scope
-deactivate ScopeStack
 
 Token <-- CompilationBranch : D
 deactivate CompilationBranch

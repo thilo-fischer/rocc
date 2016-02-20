@@ -31,6 +31,10 @@ participant CompilationBranch
 participant "a : ArisingSpecification" as ArisingSpecification
 participant "s : Variable < Symbol" as Symbol
 participant "d : Declaration" as Declaration
+database "ScopeStack (part of\nCompilationBranch)" as ScopeStack
+
+activate ScopeStack
+rnote over ScopeStack : a
 
 ... parsed optional storage class, type qualifier, type specifier and parsed identifier ...
 
@@ -40,45 +44,52 @@ rnote over Token : "";"" or "",""
 
 activate Token
 
+== same as variable definition >> ==
+
 Token -> CompilationBranch : finish_current_scope
 activate CompilationBranch
 
-note over ArisingSpecification : CompilationBranch#\ncurrent_scope
-CompilationBranch -> ArisingSpecification : finalize
+'note over ArisingSpecification : CompilationBranch#\ncurrent_scope
+CompilationBranch -> ArisingSpecification : launch
 activate ArisingSpecification
 
-create Symbol
-ArisingSpecification -> Symbol : new
-
-ArisingSpecification -> CompilationBranch : declare_symbol(s)
-activate CompilationBranch
-
-CompilationBranch -> CompilationContext : announce_symbol(s)
+ArisingSpecification -> CompilationContext : find_symbols(identifier, namespace,\nsymbol_family, storage_class, type_qualifiers, type_specifiers)
 activate CompilationContext
-CompilationBranch <-- CompilationContext : symbol
+ArisingSpecification <-- CompilationContext : existing_symbols
 deactivate CompilationContext
-note left
-  if symbol == s already known
-    return symbol
-  else
-    return s
-end note
+
+alt existing_symbols.empty?
+
+  create Symbol
+  ArisingSpecification -> Symbol : new
+
+  ArisingSpecification -> CompilationContext : announce_symbol(s)
+  'activate CompilationContext
+  'CompilationBranch <-- CompilationContext : symbol
+  'deactivate CompilationContext
+
+else otherwise
+
+  ArisingSpecification -> ArisingSpecification : s = existing_symbols.first
+  
+end ' alt existing_symbols.empty?
 
 create Declaration
-CompilationBranch -> Declaration : new(symbol, conditions)
+ArisingSpecification -> Declaration : new(s, conditions)
 
-CompilationBranch -> Symbol : announce_declaration(d)
+== << same as variable definition ==
+
+ArisingSpecification -> Symbol : announce_declaration(d)
 activate Symbol
-CompilationBranch <-- Symbol
+ArisingSpecification <-- Symbol
 deactivate Symbol
-
-ArisingSpecification <-- CompilationBranch
-deactivate CompilationBranch
 
 CompilationBranch <-- ArisingSpecification : d
 deactivate ArisingSpecification
 
+rnote over ScopeStack : a
 CompilationBranch -> CompilationBranch : leave_scope
+deactivate ScopeStack
 destroy ArisingSpecification
 
 CompilationBranch -> TranslationUnit : announce_semantic_element(d)

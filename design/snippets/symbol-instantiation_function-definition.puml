@@ -22,7 +22,7 @@ endlegend
 
 skinparam monochrome true
 
-title Function Declaration
+title Function Definition
 
 participant TranslationUnit
 participant CompilationContext
@@ -32,9 +32,11 @@ participant "a : ArisingSpecification" as ArisingSpecification
 participant "s : Function < Symbol" as Symbol
 participant "d : FunctionDeclaration" as Declaration
 participant "fs : FunctionSignature" as FunctionSignature
+participant "D : Definition" as Definition
+participant "c : CompoundStatement" as CompoundStatement
 database "ScopeStack (part of\nCompilationBranch)" as ScopeStack
 
-== same as function definition >> ==
+== same as function declaration >> ==
 
 activate ScopeStack
 rnote over ScopeStack : a
@@ -94,16 +96,15 @@ Token -> ArisingSpecification : signature=(fs)
 [<-- Token
 deactivate Token
 
-== << same as function definition ==
+== << same as function declaration ==
 
 [-> Token : pursue_branch
 
-'rnote over Token : "";"" or "",""
-rnote over Token : "";""
+rnote over Token : ""{""
 
 activate Token
 
-== same as function definition >> ==
+== same as function declaration >> ==
 
 Token -> CompilationBranch : finish_current_scope
 activate CompilationBranch
@@ -143,9 +144,7 @@ Declaration -> FunctionSignature : param_names
 Declaration <-- FunctionSignature : param_names
 Declaration -> Declaration : param_names=(param_names)
 
-== << same as function definition ==
-
-ArisingSpecification -> Symbol : announce_declaration(d)
+== << same as function declaration ==
 
 CompilationBranch <-- ArisingSpecification : d
 deactivate ArisingSpecification
@@ -156,19 +155,73 @@ deactivate ScopeStack
 destroy ArisingSpecification
 destroy FunctionSignature
 
-CompilationBranch -> TranslationUnit : announce_semantic_element(d)
+Token <-- CompilationBranch : d
+deactivate CompilationBranch
+
+create Definition
+Token -> Definition : new(d)
+Token -> CompilationBranch : enter_scope(D)
+activate ScopeStack
+rnote over ScopeStack : D
+'note over Definition : CompilationBranch#\ncurrent_scope
+
+create CompoundStatement
+Token -> CompoundStatement : new
+Token -> CompilationBranch : enter_scope(c)
+activate ScopeStack
+rnote over ScopeStack : c
+'note over Initializer : CompilationBranch#\ncurrent_scope
+
+[<-- Token
+deactivate Token
+
+... parse implementation (CompoundStatement) ...
+
+[-> Token : pursue_branch
+rnote over Token : ""}""
+
+activate Token
+
+Token -> CompilationBranch : finish_current_scope
+activate CompilationBranch
+
+'note over Initializer : CompilationBranch#\ncurrent_scope
+CompilationBranch -> CompoundStatement : launch
+
+rnote over ScopeStack : c
+CompilationBranch -> CompilationBranch : leave_scope
+deactivate ScopeStack
+rnote over ScopeStack : D
+
+'note over Definition : CompilationBranch#\ncurrent_scope
+
+CompilationBranch -> Definition : add_body(c)
+
+CompilationBranch -> Definition : launch
+activate Definition
+
+Definition -> Symbol : announce_definition(D)
+
+CompilationBranch <-- Definition
+deactivate Definition
+
+rnote over ScopeStack : D
+CompilationBranch -> CompilationBranch : leave_scope
+deactivate ScopeStack
+
+CompilationBranch -> TranslationUnit : announce_semantic_element(D)
 activate TranslationUnit
 CompilationBranch <-- TranslationUnit
 deactivate TranslationUnit
 
-Token <-- CompilationBranch : d
+Token <-- CompilationBranch : D
 deactivate CompilationBranch
 
 [<-- Token
 deactivate Token
 
 note over TranslationUnit, ScopeStack
-  Similar to Variable Definition. Deviations: Tokens that cause relevant pursuations, function signature related stuff (parsing of function signature, signature_types in find_symbols, announce_signature)
+  Similar to Variable Definition. Deviations: Tokens that cause relevant pursuations, function signature related stuff (parsing of function signature, signature_types in find_symbols, announce_signature), CompoundStatement instead of Initializer
 end note
 
 @enduml

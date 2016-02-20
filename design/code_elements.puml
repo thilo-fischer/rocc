@@ -200,9 +200,15 @@ class Declaration {
 }
 Specification <|-- Declaration
 
+class FunctionDeclaration {
+}
+Declaration <|-- FunctionDeclaration
+
 class Definition {
 }
 Specification <|-- Definition
+
+Definition "0..1" --> "1" Declaration
 
 
 class Symbol {
@@ -248,7 +254,7 @@ Type "1" <-- "0..n" TypedSymbol : type <
 
 Type <|-- TypeNative
 class TypeNative {
-  + name : String
+  + name : Symbol
 }
 note bottom
 void char short
@@ -327,14 +333,11 @@ TypedSymbol <|-- Function
 Function "0..1" -- "1..n" BlockStatement : implementation >
 Function "0..n" --> "1" TypeFunction : type >
 
-
-class FunctionSignature {
+class FuncParamNames {
   + param_names : String[]
 }
 ' Only if it is a function's specification.
-Specification "1" -- "0..1" FunctionSignature
-Function "1" -- "1..n" FunctionSignature
-' FIXME How to handle multiple different but consistent signatures?
+FunctionDeclaration "1" -- "1" FuncParamNames
 
 class SymbolCompound {
   + members?()
@@ -373,7 +376,7 @@ Symbol <|-- Macro
 
 class MacroDefinition {
 }
-Definition <|-- MacroDefinition
+Specification <|-- MacroDefinition
 Macro "1" -- "1" MacroDefinition
 
 class Statement {
@@ -412,6 +415,24 @@ ArgumentRef <|-- Reference
 ConstArgref <|-- ArgumentRef
 
 ArgumentRef "0..n" -- "1" FunctionInvokation
+
+
+package Temporary <<Frame>> #F8F8F8 {
+
+  class FunctionSignature {
+  }
+  FunctionSignature "0..1" --> "1" FuncParamNames
+  
+  class ArisingSpecification {
+    + identifier : String
+    + symbol_family : Class < Symbol
+    + storage_class : Symbol
+    + type_qualifiers : Symbol[]
+    + type_specifiers : Symbol[], String[]
+  }
+
+' endpkg Temporary
+}
 
 
 '       ===========
