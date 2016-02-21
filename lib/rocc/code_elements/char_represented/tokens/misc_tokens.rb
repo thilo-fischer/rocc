@@ -245,18 +245,36 @@ module Rocc::CodeElements::CharRepresented::Tokens
         #end
         
         case branch.current_scope
+
+        when Rocc::Semantic::CompoundStatement, Rocc::CodeElements::FileRepresented::CeTranslationUnit
+          # XXX warn about superflous ';' token
+
         when Rocc::Semantic::Temporary::ArisingSpecification,
              Rocc::Semantic::CeInitializer
           branch.finish_current_scope
           branch.leave_scope
-        when Rocc::Semantic::Statement
+          
+        when Rocc::Semantic::Statement          
           if branch.current_scope.complete?
             branch.leave_scope
           else
             raise "found #{name_dbg}, but #{branch.current_scope.name_dbg} is not yet complete"
           end
-        when Rocc::CodeElements::FileRepresented::CeTranslationUnit
-          # XXX warn about superflous ';' token
+
+        # XXX_W> sensible?
+        when Rocc::Semantic::CeRValue
+          raise unless branch.current_scope.complete? # XXX(assert)
+          branch.leave_scope
+          
+        when Rocc::Semantic::CeExpression
+          raise unless branch.current_scope.complete? # XXX(assert)
+          branch.leave_scope
+          if branch.current_scope.is_a?(Rocc::Semantic::CeRValue)
+            raise unless branch.current_scope.complete? # XXX(assert)
+            branch.leave_scope
+          end            
+        # <XXX_W
+          
         else
           raise "programming error: unexpected scope at #{path_dbg} -- #{branch.scope_stack_trace}"
         end

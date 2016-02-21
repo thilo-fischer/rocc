@@ -241,12 +241,13 @@ module Rocc::Contexts
         current_scope.finalize
         sym = current_scope.create_symbol
         same = find_symbols(sym)
-        if same
+        if same.empty?
+          compilation_context.announce_symbol(sym)
+        else
+          raise if same.length > 1 # XXX(assert)
           # drop newly created symbol if there is already an according
           # object
-          sym = same
-        else
-          compilaiton_context.announce_symbol(sym)
+          sym = same.first
         end
         spec = current_scope.launch_declaration(sym) # XXX rename ArisingSpecification#finalize
         translation_unit.announce_semantic_element(spec) unless current_scope.is_definition?

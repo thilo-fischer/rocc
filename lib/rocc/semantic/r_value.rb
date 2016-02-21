@@ -19,11 +19,8 @@ module Rocc::Semantic
 
     ##
     # +origin+ is the statement or definition this r-value is part of
-    #
-    # +adducer+ is the first of those tokens that represent the r-value
-    def initialize(origin, adducer)
+    def initialize(origin)
       super(origin)
-      @adducers = [adducer]
       @expression = nil
     end
     
