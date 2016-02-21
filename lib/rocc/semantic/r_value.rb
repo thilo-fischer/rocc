@@ -39,6 +39,7 @@ module Rocc::Semantic
 
     def finalize
       raise "#{self} incomplete" unless complete?
+      self
     end
     
   end # class CeRValue

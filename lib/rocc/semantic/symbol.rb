@@ -59,12 +59,12 @@ module Rocc::Semantic
     end
 
     def add_definition(arg)
-      already_defined = @definitions.find {|d| d.existence_conditions.overlap(arg.existence_conditions)}
+      already_defined = @definitions.find do |d|
+        d.existence_conditions.imply?(arg.existence_conditions) or
+          arg.existence_conditions.imply?(d.existence_conditions)
+        end
       raise "double defined symbol: #{arg}" if already_defined
-      if @declarations.include?(arg.declaration)
-        # FIXME do not add declaration in the first place
-        @declarations.delete(arg.declaration)
-      end
+      raise "programming error :(" if @declarations.include?(arg.declaration) # XXX(assert)
       @definitions << arg
     end
     

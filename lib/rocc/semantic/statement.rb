@@ -32,9 +32,10 @@ module Rocc::Semantic
     
   end # class Statement
 
+  # FIXME adducer should be opening brace, tokens of all contained statements and closing brace
   class CompoundStatement < Statement
     attr_reader :statements
-    # adducer is opening brace token
+    # +adducer+ is opening brace token
     def initialize(origin, adducer)
       super(origin, [adducer])
       @statements = []
@@ -54,6 +55,10 @@ module Rocc::Semantic
     end
     def add_statement(statement)
       @statements << statement
+    end
+    def finalize
+      raise "#{self} incomplete" unless complete?
+      self
     end
   end
 

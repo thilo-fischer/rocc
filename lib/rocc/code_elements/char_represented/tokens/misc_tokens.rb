@@ -261,22 +261,12 @@ module Rocc::CodeElements::CharRepresented::Tokens
             raise "found #{name_dbg}, but #{branch.current_scope.name_dbg} is not yet complete"
           end
 
-        # XXX_W> sensible?
-        when Rocc::Semantic::CeRValue
-          raise unless branch.current_scope.complete? # XXX(assert)
-          branch.leave_scope
-          
-        when Rocc::Semantic::CeExpression
-          raise unless branch.current_scope.complete? # XXX(assert)
-          branch.leave_scope
-          if branch.current_scope.is_a?(Rocc::Semantic::CeRValue)
-            raise unless branch.current_scope.complete? # XXX(assert)
-            branch.leave_scope
-          end            
-        # <XXX_W
-          
         else
-          raise "programming error: unexpected scope at #{path_dbg} -- #{branch.scope_stack_trace}"
+          raise unless branch.current_scope.complete? # XXX(assert)
+          branch.leave_scope
+          # recurse down the scope
+          pursue_branch(compilation_context, branch)
+          
         end
         
       when ','

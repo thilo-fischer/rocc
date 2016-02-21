@@ -92,8 +92,8 @@ module Rocc::Semantic
     end
 
     def finalize
-      raise unless complete?
-      declaration.symbol.announce_definition(self)
+      raise "definition without body" unless complete?
+      declaration.symbol.add_definition(self)
     end
 
     def symbol

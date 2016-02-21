@@ -250,18 +250,19 @@ module Rocc::Contexts
           sym = same.first
         end
         spec = current_scope.launch_declaration(sym) # XXX rename ArisingSpecification#finalize
-        translation_unit.announce_semantic_element(spec) unless current_scope.is_definition?
+        compilation_context.translation_unit.announce_semantic_element(spec) unless current_scope.is_definition?
         spec
       when Rocc::Semantic::CeInitializer,
            Rocc::Semantic::CompoundStatement
-        body = current_scope.finalize(conditions)
+        body = current_scope.finalize
+        warn "#{current_scope}, #{body.inspect}"
         leave_scope
-        raise unless current_scope.is_a?(Rocc::Semantic::Definition) # XXX(assert)
-        current_scope.add_body(body)
-        definition = current_scope.finalize(conditions)
+        raise unless current_scope.is_a?(Rocc::Semantic::CeDefinition) # XXX(assert)
+        current_scope.body = body
+        definition = current_scope.finalize
         leave_scope
         raise unless current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) # XXX(assert)
-        translation_unit.announce_semantic_element(definition)
+        compilation_context.translation_unit.announce_semantic_element(definition)
         definition
       else
         raise "programming error or not yet implemented"
