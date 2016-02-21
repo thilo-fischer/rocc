@@ -33,6 +33,7 @@ participant "s : Variable < Symbol" as Symbol
 participant "d : Declaration" as Declaration
 participant "D : Definition" as Definition
 participant "i : Initializer" as Initializer
+participant "a* : ArisingSpecification" as NextArisingSpecification
 database "ScopeStack (part of\nCompilationBranch)" as ScopeStack
 
 activate ScopeStack
@@ -82,12 +83,6 @@ ArisingSpecification -> Declaration : new(s, conditions)
 
 CompilationBranch <-- ArisingSpecification : d
 deactivate ArisingSpecification
-
-rnote over ScopeStack : a
-CompilationBranch -> CompilationBranch : leave_scope
-deactivate ScopeStack
-destroy ArisingSpecification
-
 
 Token <-- CompilationBranch : d
 deactivate CompilationBranch
@@ -151,8 +146,24 @@ deactivate TranslationUnit
 Token <-- CompilationBranch : D
 deactivate CompilationBranch
 
+rnote over ScopeStack : a
+Token -> CompilationBranch : leave_scope
+activate CompilationBranch
+Token <-- CompilationBranch : a
+deactivate CompilationBranch
+deactivate ScopeStack
+
+opt CommaToken
+  create NextArisingSpecification
+  Token -> NextArisingSpecification : new(a.origin_shared)
+  Token -> CompilationBranch : enter_scope(a*)
+  rnote over ScopeStack : a*
+  activate ScopeStack
+end ' alt CommaToken
+
 [<-- Token
 deactivate Token
+destroy ArisingSpecification
 
 @enduml
 

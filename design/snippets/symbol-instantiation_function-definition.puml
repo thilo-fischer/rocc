@@ -149,12 +149,6 @@ Declaration -> Declaration : param_names=(param_names)
 CompilationBranch <-- ArisingSpecification : d
 deactivate ArisingSpecification
 
-rnote over ScopeStack : a
-CompilationBranch -> CompilationBranch : leave_scope
-deactivate ScopeStack
-destroy ArisingSpecification
-destroy FunctionSignature
-
 Token <-- CompilationBranch : d
 deactivate CompilationBranch
 
@@ -216,6 +210,12 @@ deactivate TranslationUnit
 
 Token <-- CompilationBranch : D
 deactivate CompilationBranch
+
+rnote over ScopeStack : a
+Token -> CompilationBranch : leave_scope
+deactivate ScopeStack
+destroy ArisingSpecification
+destroy FunctionSignature
 
 [<-- Token
 deactivate Token
