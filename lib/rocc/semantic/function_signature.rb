@@ -13,45 +13,42 @@
 
 require 'rocc/semantic/function'
 
-module Rocc::Semantic
+module Rocc::Semantic::Temporary
 
   class CeFunctionSignature < Rocc::CodeElements::CodeElement
+
+    class Parameter
+      attr_accessor :type, :name, :storage_class_specifier
+    end
 
     alias function origin
 
     attr_reader :adducer, :param_names
 
     ##
-    # origin is the associated function, adducer is an array of all
-    # those tokens thate make up the function signature (including the
-    # opening and closing parenthesis)
-    def initialize(origin, adducer)
-      super(origin)
-      @param_names = []
-      @adducer = [adducer]
+    # +origin+ is an array of all those tokens thate make up the
+    # function signature (including the opening and closing
+    # parenthesis)
+    #
+    # +first_tkn+ is the token of the opening parenthesis
+    def initialize(first_tkn)
+      super([first_tkn])
+      @params = []
       @void = nil
       @complete = false
     end
 
-    alias function origin
-
     def name_dbg
-      "FSig[#{function.identifier}(#{@param_names.count})]"
+      "FSig[#{@param_names.count}]"
     end    
 
     def add_param(tokens, type, name, storage_class_specifier = nil)
-      @adducer += tokens
+      origin += tokens
+      @params << Parameter.new(type, name, storage_class_specifier)
       
-      @param_names << name
+      raise "register is the only storage class specifier allowed for function parameters" if storage_class_specifier and storage_class_specifier != :register # XXX(assert)
       
-      if function.param_list_complete?
-        # TODO assert type is the same as the one of the function's already existing parameter
-      else
-        function.announce_parameter(@param_names.count, type, storage_class_specifier)
-      end
-      
-      raise "register is the only storage class specifier allowed for function parameters" if storage_class_specifier and storage_class_specifier != :register
-    end # sdd_param
+    end # add_param
 
     def complete?
       @complete
@@ -59,17 +56,16 @@ module Rocc::Semantic
 
     # add closing parenthesis token
     def close(token)
-      adducer << token
-      function.param_list_finalize # XXX smells: missleading function names when function has multiple signatures
+      origin << token
       @complete = true
     end
 
     def opening
-      adducer.first
+      origin.first
     end
     
     def closing
-      adducer.last
+      origin.last
     end
 
     def mark_as_void
@@ -86,6 +82,6 @@ module Rocc::Semantic
       (@void == true) if complete?
     end
     
-  end # class CeFunction
+  end # class CeFunctionSignature
 
-end # module Rocc::Semantic
+end # module Rocc::Semantic::Temporary

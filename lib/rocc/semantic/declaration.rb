@@ -21,7 +21,7 @@ module Rocc::Semantic
     ##
     # +origin+ of a declaration shall be an array of those tokens
     # that form this declaration.
-    def initialize(origin)
+    def initialize(origin, symbol = nil)
       super
     end
 

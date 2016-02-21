@@ -17,8 +17,13 @@ module Rocc::Semantic
 
   class CeRValue < Rocc::CodeElements::CodeElement
 
-    def initialize(origin)
-      super
+    ##
+    # +origin+ is the statement or definition this r-value is part of
+    #
+    # +adducer+ is the first of those tokens that represent the r-value
+    def initialize(origin, adducer)
+      super(origin)
+      @adducers = [adducer]
       @expression = nil
     end
     
@@ -33,6 +38,10 @@ module Rocc::Semantic
 
     def name_dbg
       "<r-value>"
+    end
+
+    def finalize
+      raise "#{self} incomplete" unless complete?
     end
     
   end # class CeRValue

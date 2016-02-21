@@ -37,45 +37,59 @@ module Rocc::Semantic
       other_idx.find_symbols({}).each {|s| announce_symbol(s)}
     end
 
+    ##
     # Returns an array of all symbols found in this index that match
     # the given critaria. Returns an empty array if no such symbol
-    # found. family specifies whether the symbol shall be a
-    # variable/function/macro/typedef/..., argument shall be the
-    # according subclass of CeSymbol corresponding to the appropriate
-    # familiy. linkage may specifiy the desired linkage of the symbol
-    # if applicable (elements from some families don't have any
-    # linkage). conditions specifies the conditions to be assumed for
-    # preprocessor conditionals (+existence_conditions+ of the
-    # symbol).
+    # found.
+    #
+    # If +criteria+ is a CeSymbol, all symbols +s+ with
+    # <tt>s == criteria</tt> are being returned.
+    #
+    # If +criteria+ is a hash, all symbols +s+ with
+    # <tt>s.match(criteria)</tt> are being returned.
+    # See CeSymbol#match for details.
     def find_symbols(criteria)
-      original_criteria = criteria.dup # XXX for dbg message only
-      identifier = criteria.delete(:identifier)
+      if criteria.is_a?(CeSymbol)
+        find_symbols_ce_symbol(criteria)
+      else
+        find_symbols_hash(criteria)
+      end
+    end
+
+    def find_symbols_ce_symbol(symbol)
+      symbols_matching_id = @symbols[symbol.identifier]
+      if symbols_matching_id
+        result = @symbols[identifier].select do |s|
+          s == symbol
+        end
+        raise unless result.length <= 1
+        result
+      else
+        []
+      end
+    end
+    private :find_symbols_ce_symbol
+
+    def find_symbols_hash(criteria)
+      
+      primary_crit_copy = criteria.dup # XXX_F(assert) deleting entries from criteria hash to ensure all entries get handled requires copying of criteria hash which decreases performance
+      identifier = primary_crit_copy.delete(:identifier)
 
       #@symbols.values.each {|s| warn "\tsymbol #{s.name_dbg}"}
 
-      symbols_matching_id =
-        case identifier
-        when nil
-          @symbols.values.flatten
-        when String
-          @symbols[identifier] || []
-        when Regexp
-          @symbols.select {|key, value| key =~ identifier}.values.flatten
-        else
-          raise
-        end
+      symbols_matching_id = find_symbols_identifier(identifier)
 
       result = symbols_matching_id.select do |s|
         #warn "symbols with according identifier: #{s.name_dbg}"
         # FIXME duplication of criteria decreases performance
-        crit_copy = criteria.dup
+        crit_copy = primary_crit_copy.dup
         match = s.match(crit_copy)
         raise "unhandled criteria (not yet supported?): #{crit_copy.keys}" if match and not crit_copy.empty?
         match
       end
 
       log.info do
-        crit_str = original_criteria.map do |key, value|
+        crit_str = criteria.map do |key, value|
           "#{key}: " +
             case value
             when Array
@@ -91,7 +105,22 @@ module Rocc::Semantic
       log.debug{" \u21AA #{result.map {|s| s.name_dbg}}"} unless result.empty?
       result
     end
+    private :find_symbols_hash
 
+    def find_symbols_identifier(identifier)
+      case identifier
+      when nil
+        @symbols.values.flatten
+      when String
+        @symbols[identifier] || []
+      when Regexp
+        @symbols.select {|key, value| key =~ identifier}.values.flatten
+      else
+        raise
+      end
+    end
+    private :find_symbols_identifier
+    
     #--
     # XXX move functions find_innermost_symbol, find_function etc. (wrappers for find_symbols) to mixin class to be included by CompilationContext, CompilationBranch, TranslationUnit etc. as well
     

@@ -72,6 +72,7 @@ module Rocc::Semantic
   end
   
   module SubstatementMixin
+    # XXX? differentiate between "blocks" (like switch block, ...) with special syntax and where braces are mandatory and "regular" statements that can be compound statements, but may also be any other statement where braces are not mandatory ?
     attr_reader :substatement
     def substatement=(substatement)
       raise if @substatement

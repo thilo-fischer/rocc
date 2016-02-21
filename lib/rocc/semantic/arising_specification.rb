@@ -45,9 +45,11 @@ module Rocc::Semantic::Temporary
     extend  Rocc::Session::LogClientClassMixin
     include Rocc::Session::LogClientInstanceMixin
 
-    attr_reader :origin_shared, :origin_private, :symbol_family, :identifier, :storage_class, :type_qualifiers, :type_specifiers
+    attr_reader :origin_shared, :origin_private, :symbol_family, :identifier, :scope, :existence_conditions, :storage_class, :type_qualifiers, :type_specifiers
 
-    def initialize
+    def initialize(scope, existence_conditions)
+      @scope = scope
+      @existence_conditions = existence_conditions
       @origin_shared = []
       @origin_private = []
       @symbol_family = Rocc::Semantic::CeSymbol
@@ -55,47 +57,37 @@ module Rocc::Semantic::Temporary
       @storage_class = nil
       @type_qualifiers = []
       @type_specifiers = []
+      @signature = nil
+      @is_definition = false
     end
 
     def origin
       @origin_shared + @origin_private
     end
     
-    def finalize(branch)
-      if @symbol_family <= Rocc::Semantic::CeVariable
-        if @storage_class and @storage_class == :extern
-          raise "cannot define symbol declared extern" if is_definition? # XXX(assert)
-          mark_as_declaration
-        else
-          mark_as_definition
-        end
-      elsif @symbol_family <= Rocc::Semantic::CeVariable
-        mark_as_declaration unless is_definition?
-      else
-        raise "not yet supported"
-      end
-      mark_as_variable unless branch.current_scope.is_function?
-
-      setup_symbol(branch)
-      decl = Rocc::Semantic::CeDeclarition.new(origin, symbol)
-      @symbol.announce_declaration(decl)
-      @symbol
+    def finalize
+      mark_as_variable unless is_function?
+      freeze # XXX(assert)
     end
 
-    def setup_symbol(branch)
-      log.debug{"ArisingSpecification#setup_symbol(#{branch.name_dbg}) -> #{@identifier}"}
-      raise "missing identifier" unless @identifier
-      raise "missing symbol_family" unless @symbol_family
-      raise "Already created symbol from this #{self.class}!" if @symbol
+    def launch_declaration(symbol)
+      decl = Rocc::Semantic::CeDeclaration.new(origin, symbol)
+      symbol.announce_declaration(decl) unless is_definition?
+      decl
+    end
+
+    def create_symbol
+      log.debug{"ArisingSpecification#create_symbol -> #{@identifier} [#{@conditions}]"}
+      raise "missing identifier" unless @identifier # XXX(assert)
+      raise "missing symbol_family" unless @symbol_family # XXX(assert)
+      raise "Already assigned symbol to #{self.class}!" if @symbol # XXX(assert)
       hashargs = {}
       hashargs[:storage_class] = @storage_class if @storage_class
       hashargs[:type_qualifiers] = @type_qualifiers unless @type_qualifiers.empty?
       hashargs[:type_specifiers] = @type_specifiers unless @type_specifiers.empty? # XXX this would be the better place to set type specififer :implicit if no type specifier is given ...
-      origin = branch.closest_symbol_origin_scope
-      @symbol = branch.announce_symbol(origin, @symbol_family, @identifier, hashargs)
-      @symbol
+      symbol = symbol_family.new(scope, identifier, existence_conditions, hashargs)
+      symbol
     end
-    private :setup_symbol
 
     def share_origin(other)
       @origin_shared = other.origin_shared
@@ -171,6 +163,17 @@ module Rocc::Semantic::Temporary
       
     end # add_type_specifier
 
+    def signature=(arg)
+      raise unless is_function?
+      raise if @signature
+      @signature = arg
+    end
+
+    def signature
+      raise unless is_function? # XXX(assert)
+      @signature
+    end
+
     # XXX? support symbol family CeFunctionParameter
     
     def mark_as_function
@@ -181,15 +184,12 @@ module Rocc::Semantic::Temporary
       @symbol_family = Rocc::Semantic::CeVariable
     end
 
-    private
-
     def symbol_family=(arg)
       raise if @symbol_family and not arg < @symbol_family
       @symbol_family = arg
     end
+    private :symbol_family=
 
-    public
-    
     def is_function?
       case
       when @symbol_family <= Rocc::Semantic::CeFunction
@@ -214,6 +214,14 @@ module Rocc::Semantic::Temporary
       else
         raise "programming error, @symbol_family: #{@symbol_family}"
       end
+    end
+
+    def mark_as_definition
+      @is_definition = true
+    end
+
+    def is_definition?
+      @is_definition
     end
 
     def name_dbg

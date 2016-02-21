@@ -46,8 +46,12 @@ module Rocc::CodeElements::CharRepresented::Tokens
         case keyword
             
         when :return
-          function = branch.find_scope(Rocc::Semantic::CeFunction)
-          raise "`#{keyword}' used outside of function" unless function
+          func_def = branch.find_scope(Rocc::Semantic::CeDefinition)
+          warn "func_def: #{func_def.inspect}"
+          warn "func_def.declaration: #{func_def.declaration.inspect}"
+          warn "func_def.symbol: #{func_def.symbol}"
+          warn branch.scope_stack_trace
+          raise "`#{keyword}' used outside of function" unless func_def and func_def.symbol.is_a?(Rocc::Semantic::CeFunction) # XXX(assert)
           s = Rocc::Semantic::ReturnStatement.new(branch.current_scope, self, function)
           branch.enter_scope(s)
           rv = Rocc::Semantic::CeRValue.new(s)
@@ -140,7 +144,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
       raise "unexpected pending tokens: `#{branch.pending_to_s}'" if branch.has_pending?
       unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
-        arising = Rocc::Semantic::Temporary::ArisingSpecification.new
+        arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.closest_symbol_origin_scope, branch.conditions)
         branch.enter_scope(arising)
       end
       branch.current_scope.add_type_specifier(self)

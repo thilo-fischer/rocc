@@ -19,12 +19,9 @@ module Rocc::Semantic
 
   class CeDefinition < CeSpecification
 
-    attr_reader :declaration, :body
+    attr_reader :body
 
     ##
-    # +origin+ of a definition shall be an array of those tokens
-    # that form this definition.
-    #
     # +declaration+ A definition always implies a declaration (in
     # C/C++ code). If a definition is found, the definition shall be
     # addad to the symbols adducers. The definition than holds a
@@ -32,10 +29,17 @@ module Rocc::Semantic
     # definition. (CeDefinition could also derive from CeDeclaration,
     # but due to the "prefer aggregation over inheritence" principle,
     # it is implemeted like this.)
-    def initialize(origin, declaration)
-      super(origin)
-      @declaration = declaration
+    #
+    # CeDefinition#origin is the contained declaration.
+    def initialize(declaration)
+      super(declaration)
       @body = nil
+    end
+
+    alias declaration origin
+
+    def adducer
+      declaration.adducer + body.adducer
     end
 
     ##
@@ -81,6 +85,19 @@ module Rocc::Semantic
     def body=(arg)
       raise if @body # XXX(assert)
       @body = arg
+    end
+
+    def complete?
+      @body
+    end
+
+    def finalize
+      raise unless complete?
+      declaration.symbol.announce_definition(self)
+    end
+
+    def symbol
+      declaration.symbol
     end
 
   end # class CeDefinition

@@ -85,10 +85,30 @@ module Rocc::Semantic
     end
     private :assert_existence_conditions_consistency
 
-    def match(criteria)
+    # Return true if the symbol matches the given criteria. +criteria+
+    # is a hash that may contain the keys listed in the following that
+    # map to Symbols (Ruby Symbols, not CeSymbol), Strings or child
+    # classes of CeSymbol or to Arrays of such. If the key maps to an
+    # array, than the symbol must match (at least) one of the array
+    # entries for the +match+ method to return true.
+    # 
+    # [+:family+] Specifies whether the symbol shall be a
+    #   variable/function/macro/typedef/... . Argument shall be the
+    #   according subclass of CeSymbol corresponding to the
+    #   appropriate familiy.
+    #
+    # [+:linkage] Specifies the desired linkage of the symbol if
+    #   applicable (elements from some families don't have any
+    #   linkage).
+    #
+    # [+:conditions] Specifies the conditions to be assumed for
+    #   preprocessor conditionals (+existence_conditions+ of the
+    #   symbol).
+    #
+     def match(criteria)
       #warn "XXXX #{name_dbg} -> match: #{criteria}"
       
-      return true if criteria.empty? # shortcut to maybe safe performance. XXX remove?
+      return true if criteria.empty? # shortcut to maybe safe some performance. XXX remove?
       
       family = criteria.delete(:symbol_family)
       case

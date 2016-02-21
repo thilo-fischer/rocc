@@ -119,6 +119,7 @@ module Rocc::Contexts
     def derive_progress_info(master)
       @pending_tokens = master.pending_tokens.dup
       @scope_stack = master.scope_stack.dup
+      @scope_stack.last = @scope_stack.last.dup if @scope_stack.last.class.name.start_with?('Rocc::Semantic::Temporary::') # XXX_F more efficient test to check for mutable objects
       @token_requester = master.token_requester
     end
     protected :derive_progress_info
@@ -235,10 +236,35 @@ module Rocc::Contexts
 
     def finish_current_scope
       #warn "finish_current_scope -> #{scope_stack_trace}"
-      raise unless current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
-      symbol = current_scope.finalize(self)
-      leave_scope
-      symbol
+      case current_scope
+      when Rocc::Semantic::Temporary::ArisingSpecification
+        current_scope.finalize
+        sym = current_scope.create_symbol
+        same = find_symbols(sym)
+        if same
+          # drop newly created symbol if there is already an according
+          # object
+          sym = same
+        else
+          compilaiton_context.announce_symbol(sym)
+        end
+        spec = current_scope.launch_declaration(sym) # XXX rename ArisingSpecification#finalize
+        translation_unit.announce_semantic_element(spec) unless current_scope.is_definition?
+        spec
+      when Rocc::Semantic::CeInitializer,
+           Rocc::Semantic::CompoundStatement
+        body = current_scope.finalize(conditions)
+        leave_scope
+        raise unless current_scope.is_a?(Rocc::Semantic::Definition) # XXX(assert)
+        current_scope.add_body(body)
+        definition = current_scope.finalize(conditions)
+        leave_scope
+        raise unless current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) # XXX(assert)
+        translation_unit.announce_semantic_element(definition)
+        definition
+      else
+        raise "programming error or not yet implemented"
+      end
     end
 
     def leave_scope
@@ -351,8 +377,7 @@ module Rocc::Contexts
     end
 
     def find_symbols(criteria)
-      c = criteria.clone # XXX_F
-      compilation_context.find_symbols(c)
+      compilation_context.find_symbols(criteria)
     end
 
     #def collect_forks

@@ -234,19 +234,21 @@ module Rocc::CodeElements::CharRepresented::Tokens
       when ';'
         raise "still pending: `#{branch.pending_to_s}'" if branch.has_pending?
 
-        # XXX? smells (?): two successive `case branch.current_scope'
-        case branch.current_scope
-        when Rocc::Semantic::CeRValue, Rocc::Semantic::CeFunction
-          if branch.current_scope.complete?
-            branch.leave_scope
-          else
-            raise "found #{name_dbg}, but #{branch.current_scope.name_dbg} is not yet complete"
-          end
-        end
+        ## XXX? smells (?): two successive `case branch.current_scope'
+        #case branch.current_scope
+        #when Rocc::Semantic::CeRValue #, Rocc::Semantic::CeFunction
+        #  if branch.current_scope.complete?
+        #    branch.leave_scope
+        #  else
+        #    raise "found #{name_dbg}, but #{branch.current_scope.name_dbg} is not complete"
+        #  end
+        #end
         
         case branch.current_scope
-        when Rocc::Semantic::Temporary::ArisingSpecification
+        when Rocc::Semantic::Temporary::ArisingSpecification,
+             Rocc::Semantic::CeInitializer
           branch.finish_current_scope
+          branch.leave_scope
         when Rocc::Semantic::Statement
           if branch.current_scope.complete?
             branch.leave_scope
@@ -260,32 +262,31 @@ module Rocc::CodeElements::CharRepresented::Tokens
         end
         
       when ','
-        if branch.current_scope.is_a?(Rocc::Semantic::CeInitializer)
-          if branch.current_scope.complete?
-            branch.leave_scope
-          else
-            raise "incomplete initializer at #{path_dbg}"
-          end
-        end
+        
+        case branch.surrounding_scope
+            
+        when Rocc::Semantic::Temporary::CeFunctionSignature
+          raise unless branch.current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) # XXX(assert)
+          wrapup_function_parameter(branch.surrounding_scope, branch.current_scope)
+          branch.leave_scope
+          
+        else
 
-        case branch.current_scope
-        when Rocc::Semantic::Temporary::ArisingSpecification
-
-          case branch.surrounding_scope
-          when Rocc::Semantic::CeFunctionSignature
-            wrapup_function_parameter(branch.surrounding_scope, branch.current_scope)
-            branch.leave_scope
-          else
-            prev_arising = branch.current_scope
+          case branch.current_scope
+          when Rocc::Semantic::CeInitializer,
+               Rocc::Semantic::Temporary::ArisingSpecification
+            branch.finish_current_scope
+            prev_arising = branch.leave_scope
             
             next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new
             next_arising.share_origin(prev_arising)
             
             branch.finish_current_scope
             branch.enter_scope(next_arising)
+          else
+            raise "unexpected #{self} at #{location}"
           end
-        else
-          raise "unexpected `,'"
+
         end
 
       when '.'
@@ -306,46 +307,37 @@ module Rocc::CodeElements::CharRepresented::Tokens
         raise if branch.has_pending?
         raise unless branch.current_scope # XXX correct? Or may '{' be used  at "translation unit scope"?
 
-        # determine origin of to-be-created CompoundStatement
-        origin = nil
         case branch.current_scope
-        when Rocc::Semantic::CeFunction
-          origin = branch.current_scope
-        else
-          raise
-        end
-
-        # create CompoundStatement and enter its scope
-        # XXX? differentiate between "blocks" (like function boby, switch block, ...) and "regular" compound statements where braces are not mandatory, but only to group several statements ?
-        cs = Rocc::Semantic::CompoundStatement.new(origin, self)
-
-        # actions to be taken on the element at the top of the scope stack
-        case branch.current_scope
-        when Rocc::Semantic::CeFunction
-          function = branch.leave_scope
-          raise unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification # XXX(assert)
-          TODO pop declaration from stack, CeDefinition.new(..., declaration), push definition to stack
-          branch.current_scope.mark_as_definition
-          branch.finish_current_scope
-          branch.enter_scope(function)
-          function.block = cs
-        else
+        when Rocc::Semantic::Temporary::ArisingSpecification
+          if branch.current_scope.is_function?
+            branch.current_scope.mark_as_definition
+            func_decl = branch.finish_current_scope # XXX rename method CompilationBranch#finish_current_scope
+            func_def  = Rocc::Semantic::CeDefinition.new(func_decl)
+            branch.enter_scope(func_def)
+            # XXX? differentiate between "blocks" (like function boby, switch block, ...) and "regular" compound statements where braces are not mandatory, but only to group several statements ?
+            func_body = Rocc::Semantic::CompoundStatement.new(func_def, self)
+            branch.enter_scope(func_body)
+          else
+            raise "programming error or not yet supported"
+          end
+        when Rocc::Semantic::CompoundStatement
           raise "not yet supported"
+        when Rocc::Semantic::SubstatementMixin
+          raise "not yet supported"
+        else
+          raise "programming error: unexpected scope at #{path_dbg} -- #{branch.scope_stack_trace}"
         end
-
-        branch.enter_scope(cs)
 
       when '}'
         raise if branch.has_pending?
-        raise "invalid current scope -- #{branch.scope_stack_trace}" unless branch.current_scope.is_a? Rocc::Semantic::CompoundStatement
-        branch.current_scope.close(self)
-        branch.leave_scope
 
         case branch.current_scope
-        when Rocc::Semantic::CeFunction
+        when Rocc::Semantic::CompoundStatement
+          branch.current_scope.close(self)
+          branch.finish_current_scope
           branch.leave_scope
-        when Rocc::Semantic::Statement
-          branch.leave_scope if branch.current_scope.is_complete? 
+        else
+          raise "programming error or not yet supported: invalid current scope -- #{branch.scope_stack_trace}"
         end
 
       when '('
@@ -364,15 +356,14 @@ module Rocc::CodeElements::CharRepresented::Tokens
             raise "not yet supported"
             
           when Rocc::Semantic::Temporary::ArisingSpecification
-            if branch.current_scope.identifier
-              branch.current_scope.mark_as_function
-              function = branch.current_scope.finalize(branch)
-              branch.enter_scope(function)
-              func_sig = Rocc::Semantic::CeFunctionSignature.new(function, self)
+            a = branch.current_scope
+            if a.identifier
+              a.mark_as_function
+              func_sig = Rocc::Semantic::Temporary::CeFunctionSignature.new(self)
+              a.signature=(func_sig)
               branch.enter_scope(func_sig)
-              function.add_signature(func_sig)
             else
-              raise "not yet supported (#{branch.arising.inspect})"
+              raise "not yet supported (#{a.inspect})"
             end
           when Rocc::Semantic::CeRValue
             expr = Rocc::Semantic::CompoundExpression.new(branch.current_scope, self)
@@ -398,20 +389,20 @@ module Rocc::CodeElements::CharRepresented::Tokens
         case branch.current_scope
         when Rocc::Semantic::Temporary::ArisingSpecification
           case branch.surrounding_scope
-          when Rocc::Semantic::CeFunctionSignature
+          when Rocc::Semantic::Temporary::CeFunctionSignature
             wrapup_function_parameter(branch.surrounding_scope, branch.current_scope)
             branch.leave_scope
           else
             raise
           end
-        when Rocc::Semantic::CompoundExpression, Rocc::Semantic::CeFunctionSignature
+        when Rocc::Semantic::CompoundExpression, Rocc::Semantic::Temporary::CeFunctionSignature
           # do nothing, handle in next case statement
         else
           raise "found #{name_dbg}, but #{branch.scope_stack_trace}"
         end
 
         case branch.current_scope
-        when Rocc::Semantic::CompoundExpression, Rocc::Semantic::CeFunctionSignature
+        when Rocc::Semantic::CompoundExpression, Rocc::Semantic::Temporary::CeFunctionSignature
           branch.current_scope.close(self)
           branch.leave_scope
         else
@@ -439,9 +430,13 @@ module Rocc::CodeElements::CharRepresented::Tokens
       when '='
         case branch.current_scope
         when Rocc::Semantic::Temporary::ArisingSpecification
-          branch.current_scope.mark_as_definition
           branch.current_scope.mark_as_variable
-          branch.enter_scope(Rocc::Semantic::CeInitializer.new(branch.current_scope))
+          branch.current_scope.mark_as_definition
+          var_decl = branch.finish_current_scope # XXX rename method CompilationBranch#finish_current_scope
+          var_def  = Rocc::Semantic::CeDefinition.new(var_decl)
+          branch.enter_scope(var_def)
+          var_init = Rocc::Semantic::CeInitializer.new(var_def, self)
+          branch.enter_scope(var_init)
         when Rocc::Semantic::CompoundStatement
           if branch.current_scope.has_pending?
             raise "not an r-value (or no support implemented yet for this kind of rvalue): `#{branch.current_scope.pending_to_s}'" unless branch.pending_tokens.count == 1 and branch.pending.first.is_a?(Rocc::CodeElements::CharReperesented::TknIdentifier)
@@ -466,7 +461,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       elsif arising_param.type_specifiers == [:void] and arising_param.storage_class == nil
         function_signature.mark_as_void
       else
-        raise
+        raise "not yet supported"
       end
     end
 
