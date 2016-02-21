@@ -51,30 +51,40 @@ activate Token
 Token -> CompilationBranch : finish_current_scope
 activate CompilationBranch
 
-'note over ArisingSpecification : CompilationBranch#\ncurrent_scope
-CompilationBranch -> ArisingSpecification : launch
-activate ArisingSpecification
+CompilationBranch -> ArisingSpecification : finalize
 
-ArisingSpecification -> CompilationContext : find_symbols(identifier, namespace,\nsymbol_family, storage_class, type_qualifiers, type_specifiers)
+CompilationBranch -> ArisingSpecification : create_symbol
+activate ArisingSpecification
+create Symbol
+ArisingSpecification -> Symbol : new
+CompilationBranch <-- ArisingSpecification : s
+deactivate ArisingSpecification
+
+CompilationBranch -> CompilationContext : find_symbols(s)
 activate CompilationContext
-ArisingSpecification <-- CompilationContext : existing_symbols
+CompilationBranch <-- CompilationContext : existing_symbols
 deactivate CompilationContext
 
 alt existing_symbols.empty?
 
-  create Symbol
-  ArisingSpecification -> Symbol : new
-
-  ArisingSpecification -> CompilationContext : announce_symbol(s)
+  CompilationBranch -> CompilationContext : announce_symbol(s)
   'activate CompilationContext
   'CompilationBranch <-- CompilationContext : symbol
   'deactivate CompilationContext
 
 else otherwise
 
-  ArisingSpecification -> ArisingSpecification : s = existing_symbols.first
+  note over Symbol : replace newly created symbol\nwith already existing symbol
+  ArisingSpecification -> Symbol : s = existing_symbols.first
+  destroy Symbol
+  create Symbol
+  ArisingSpecification -> Symbol : s = existing_symbols.first
   
 end ' alt existing_symbols.empty?
+
+'note over ArisingSpecification : CompilationBranch#\ncurrent_scope
+CompilationBranch -> ArisingSpecification : launch_declaration(symbol)
+activate ArisingSpecification
 
 create Declaration
 ArisingSpecification -> Declaration : new(s, conditions)
