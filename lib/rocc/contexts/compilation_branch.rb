@@ -254,12 +254,13 @@ module Rocc::Contexts
         spec
       when Rocc::Semantic::CeInitializer,
            Rocc::Semantic::CompoundStatement
-        body = current_scope.finalize # FIXME_W set condiitons in finalize method
-        warn "#{current_scope}, #{body.inspect}"
+        current_scope.finalize # FIXME_W set conditions in finalize method
+        body = current_scope
         leave_scope
         raise unless current_scope.is_a?(Rocc::Semantic::CeDefinition) # XXX(assert)
         current_scope.body = body
-        definition = current_scope.finalize # FIXME_W set condiitons in finalize method
+        current_scope.finalize # FIXME_W set condiitons in finalize method
+        definition = current_scope
         leave_scope
         raise unless current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) # XXX(assert)
         compilation_context.translation_unit.announce_semantic_element(definition)

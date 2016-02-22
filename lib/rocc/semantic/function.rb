@@ -98,7 +98,7 @@ module Rocc::Semantic
       :function
     end
     def self.family_character
-      'F'
+      'f'
     end
   end # class CeFunction
 

@@ -20,8 +20,11 @@ module Rocc::Ui
   class SymbolFormatter
 
     ##
-    # Create a string representation of +symbol+ formatted
-    # according to the provided format string +format_str+.
+    # Create a string representation of +celem+ formatted according to
+    # the provided format string +format_str+. +celem+ shall be a code
+    # element that corresponds to a CeSymbol object, i.e. either a
+    # CeSymbol object itself or a definition or declaration of a
+    # symbol (instance of child class of CeSpecification).
     #
     # *WARNING:* Not all features of the format string as described
     # here are yet fully implemented! (=> TODO_W)
@@ -129,6 +132,11 @@ module Rocc::Ui
     #     section to include in the result string, do not generate any
     #     replacement string for this conversion specifier.
     #     
+    #     The effect of using ! is the same as compining a maximum
+    #     width of 0 with flags | and ?, but using the ! flag may
+    #     faciliate taking shortcuts in the conversions
+    #     implementation.
+    #     
     # [{, }, :]
     #     Not a flag, reserved for conditional sections (see
     #     below).
@@ -151,6 +159,8 @@ module Rocc::Ui
     #     [c] When used in combination with _ flag: Do *not* assume
     #         stdbool.h or C++, use +1+ and +0+ instead of +true+ and
     #         +false+.
+    #
+    #     [f] never use uppercase letters
     #
     # [_] Use replacement string that resembles target language
     #     (i.e. C, C++) code as close as possible.  This flag has
@@ -208,6 +218,10 @@ module Rocc::Ui
     #     [e] enum
     #     [c] class (not yet, planned C++ support)
     #     [n] namespace (not yet, planned C++ support)
+    #     
+    #     When formatting CeSpecification objects, an upper case
+    #     letter will be used for definitions, a lowercase letter for
+    #     declarations.
     #      
     # [F] Full name of the symbol's family
     # 
@@ -252,6 +266,14 @@ module Rocc::Ui
     #     apply. Exact meaning of the vaule might change in future,
     #     but meaning when combinend with the + flag should be
     #     preserved.
+    #
+    # === Specifications
+    #
+    # [d] Empty string when formatting a CeSymbol or a CeDefinition,
+    #     'd' when formatting a CeDeclaration.
+    #
+    # [D] Empty string when formatting a CeSymbol or a CeDeclaration,
+    #     'D' when formatting a Definition.
     #
     # === Special Purpose
     #
@@ -328,9 +350,9 @@ module Rocc::Ui
     # 
     # [%t] tab character
     #
-    def self.format(format_str = DEFAULT_FORMAT_STR, symbol)
+    def self.format(format_str = DEFAULT_FORMAT_STR, celem)
       formatter = compile(format_str)
-      formatter.format(symbol)
+      formatter.format(celem)
     end # def self.format
 
     ##
@@ -368,6 +390,10 @@ module Rocc::Ui
     FLAG_DOUBLE_QUOTES     = '"'
     FLAG_GRAVE_QUOTES      = '`'
     FLAG_C_COMMENT         = '*'
+ 
+    def self.default_formatter
+      @default_formatter ||= compile(DEFAULT_FORMAT_STR)
+    end        
 
     ##
     # Create a SymbolFormatter that will format a symbol passed to its
@@ -375,9 +401,9 @@ module Rocc::Ui
     # the class method SymbolFormatter.format) according to
     # +format_str+. See also SymbolFormatter.compile.
     def initialize(format_str = DEFAULT_FORMAT_STR)
-      @content = []
+      @format_spec = []
       
-      pars_ctx = FmtStrParsingContext.new(format_str, @content)
+      pars_ctx = FmtStrParsingContext.new(format_str, @format_spec)
 
       until pars_ctx.finished?
         if ordinary = OrdinaryChars.pick!(pars_ctx)
@@ -401,10 +427,10 @@ module Rocc::Ui
       end
     end
 
-    def format(symbol)
+    def format(celem)
       result = ''
-      @content.each do |c|
-        c.append(result, symbol)
+      @format_spec.each do |c|
+        c.append(result, celem)
       end
       result
     end # def format
@@ -467,7 +493,7 @@ module Rocc::Ui
         end
       end
       
-      def append(destination, symbol)
+      def append(destination, celem)
         destination << @str
       end
       
@@ -482,10 +508,21 @@ module Rocc::Ui
       
     end # module SpecifierWithFlagsMixin
     
-    
+    module CodeElementProcessorMixin
+      
+      def symbol_instance(celem)
+        if celem.is_a?(Rocc::Semantic::CeSymbol)
+          celem
+        else
+          celem.symbol
+        end
+      end
+      
+    end # module CodeElementProcessorMixin
+
     class Conversion
 
-      include SpecifierWithFlagsMixin
+      include SpecifierWithFlagsMixin, CodeElementProcessorMixin
       
       ##
       # +pars_ctx+ current FmtStrParsingContext
@@ -545,43 +582,81 @@ module Rocc::Ui
         true
       end
 
-      def append(destination, symbol)
-        destination << format(symbol)
+      def append(destination, celem)
+        destination << format(celem)
       end
       
-      def format(symbol)
-        plain_string(symbol)
+      def format(celem)
+        if applicable?(symbol_instance(celem)) # TODO_F `applicable?' is called redundantly and unnecessarily in some derived classes' str_from_celem/sym methods.
+          str = str_from_celem(celem)
+        elsif flag?('~')
+          str = ''
+        else
+          return ''
+        end
+        if @min_width and str.length < @min_width
+          padding = ' ' * (@min_width - str.length)
+          if flag?('-')
+            str = str + padding
+          else
+            str = padding + str
+          end
+        end
+        if @max_width and str.length > @max_width
+          if flag?('|')
+            str = str[0 ... @max_width]
+          else
+            Rocc::Helpers::String.str_abbrev!(str, @max_width)
+          end
+        end
+        str
+      end
+
+      def str_from_celem(celem)
+        str_from_sym(symbol_instance(celem))
       end
       
     end # class Conversion
     
     
     class ConvSymIdentifier < Conversion
-      def plain_string(symbol)
+      def str_from_sym(symbol)
         symbol.identifier
       end
     end # class ConvSymIdentifier
     
     class ConvSymFamilyChar < Conversion
-      def plain_string(symbol)
+      def str_from_celem(celem)
+        if celem.is_a?(Rocc::Semantic::CeSpecification)
+          str = str_from_sym(celem.symbol)
+          if celem.is_a?(Rocc::Semantic::CeDefinition)
+            str.upcase
+          else
+            str
+          end
+        else
+          str_from_sym(celem)
+        end
+      end
+      def str_from_sym(symbol)
         symbol.class.family_character
       end
     end # class ConvSymFamilyChar
     
     class ConvSymFamilyName < Conversion
-      def plain_string(symbol)
+      def str_from_sym(symbol)
         symbol.class.family_name
       end
     end # class ConvSymFamilyName
     
     class ConvSymNativeType < Conversion
-      def plain_string(symbol)
+      def str_from_sym(symbol)
         raise "not yet implemented" # FIXME
       end
     end # class ConvSymNativeType
     
     class ConvSymImplicitType < Conversion
-      def plain_string(symbol)
+      def str_from_sym(symbol)
         raise "not yet implemented" # FIXME
       end
     end # class ConvSymImplicitType
@@ -600,7 +675,7 @@ module Rocc::Ui
     end # class ConvSymParamConversion
 
     class ConvSymParamTypeList < ConvSymParamConversion
-      def plain_string(symbol)
+      def str_from_sym(symbol)
         if applicable?(symbol)
           raise "not yet implemented" # FIXME
         #parameters.map {|p| p.type_string}.join(', ')
@@ -611,7 +686,7 @@ module Rocc::Ui
     end # class ConvSymParamTypeList
     
     class ConvSymParamCount < ConvSymParamConversion
-      def plain_string(symbol)
+      def str_from_sym(symbol)
         if applicable?(symbol)
           if flag?(FLAG_NO_TRIVIAL)
             if symbol.class.family == :function and
@@ -639,7 +714,7 @@ module Rocc::Ui
     end # class ConvSymParamCount
     
     class ConvSymParamNamedList < ConvSymParamConversion
-      def plain_string(symbol)
+      def str_from_sym(symbol)
         if symbol.respond_to? :parameters
           raise "not yet implemented" # FIXME
         #parameters.map {|p| p.type_string}.join(', ')
@@ -656,7 +731,7 @@ module Rocc::Ui
     end
     
     class ConvSymExistCond < ConditionConversion
-      def plain_string(symbol)
+      def str_from_sym(symbol)
         if flags.contain?(FLAG_CODE_ALIKE)
           symbol.existence_conditions.to_code(
             flags.contain?(FLAG_ALTERNATE_FORM)
@@ -668,14 +743,34 @@ module Rocc::Ui
     end # class ConvSymExistCond
     
     class ConvSymExistProb < ConditionConversion
-      def plain_string(symbol)
+      def str_from_sym(symbol)
         symbol.existence_probability.to_s
       end
     end # class ConvSymExistProb
     
+    class ConvSpecDeclaration < ConditionConversion
+      def str_from_celem(celem)
+        if celem.is_a?(Rocc::Semantic::CeDeclaration)
+          'd'
+        else
+          ''
+        end
+      end
+    end # class ConvSpecDeclaration
+    
+    class ConvSpecDefinition < ConditionConversion
+      def str_from_celem(celem)
+        if celem.is_a?(Rocc::Semantic::CeDefinition)
+          'D'
+        else
+          ''
+        end
+      end
+    end # class ConvSpecDefinition
+    
     class ConvSpecialTabstop < Conversion
 
-      def append(destination, symbol)
+      def append(destination, celem)
         if min_width and destination.length < min_width
           destination << ' ' * (min_width - destination.length)
         elsif max_width
@@ -686,6 +781,8 @@ module Rocc::Ui
     end # class ConvSpecialTabstop
 
     class CondSection
+
+      include CodeElementProcessorMixin
       
       attr_reader :parent
       
@@ -702,18 +799,19 @@ module Rocc::Ui
         @parts.last << arg
       end
 
-      def append(destination, symbol)
-        active_part = find_active_part(symbol)
-        active_part.append(destination, symbol) if active_part
+      def append(destination, celem)
+        active_part = find_active_part(celem)
+        active_part.append(destination, celem) if active_part
       end
       
-      def find_active_part(symbol)
+      def find_active_part(celem)
         latest_candidate_part = nil
         active_part = @parts.find do |part|
-          part.content.find do |spec|
+          part.format_spec.find do |spec|
+            sym = symbol_instance(celem)
             if spec.is_a?(Conversion) and spec.affect_conditional?
               latest_candidate_part = part
-              spec.applicable?(symbol) and not spec.trivial?(symbol)
+              spec.applicable?(sym) and not spec.trivial?(sym)
             else
               false
             end
@@ -726,24 +824,24 @@ module Rocc::Ui
         else
           nil
         end
-      end # def format
+      end # def find_active_part
       
     end # class CondSection
     
     class CondSectPart
       
-      attr_reader :content
+      attr_reader :format_spec
       
       def initialize
-        @content = []
+        @format_spec = []
       end
 
       def <<(arg)
-        @content << arg
+        @format_spec << arg
       end
 
-      def append(destination, symbol)
-        @content.each {|c| c.append(destination, symbol)}
+      def append(destination, celem)
+        @format_spec.each {|c| c.append(destination, celem)}
       end
       
     end # class Conditional
@@ -772,7 +870,7 @@ module Rocc::Ui
     
     class ConvExtWrap
       
-      include SpecifierWithFlagsMixin
+      include SpecifierWithFlagsMixin, CodeElementProcessorMixin
       
       attr_reader :flags
 
@@ -793,17 +891,18 @@ module Rocc::Ui
         @parent = nil
       end
 
-      def append(destination, symbol)
+      def append(destination, celem)
+        symbol = symbol_instance(celem)
         if flag?(FLAG_APPLICABLE) and
           not @target_spec.applicable?(symbol)
-          @target_spec.append(destination, symbol)
+          @target_spec.append(destination, celem)
         elsif flag?(FLAG_NO_TRIVIAL) and
           (not @target_spec.applicable?(symbol) or
            @target_spec.trivial?(symbol))
-          @target_spec.append(destination, symbol)
+          @target_spec.append(destination, celem)
         else
           destination << '('
-          @target_spec.append(destination, symbol)
+          @target_spec.append(destination, celem)
           destination << ')'
         end
       end # def append
@@ -813,19 +912,19 @@ module Rocc::Ui
     class SpecialCharacter; end
 
     class SpecialCharPercent < SpecialCharacter
-      def append(destination, symbol)
+      def append(destination, celem)
         destination << '%'
       end
     end
     
     class SpecialCharNewline < SpecialCharacter
-      def append(destination, symbol)
+      def append(destination, celem)
         destination <<  "\n"
       end
     end
     
     class SpecialCharTab < SpecialCharacter
-      def append(destination, symbol)
+      def append(destination, celem)
         destination << "\t"
       end
     end
@@ -848,6 +947,8 @@ module Rocc::Ui
       'q' => ConvSymParamNamedList,
       'c' => ConvSymExistCond,
       'C' => ConvSymExistProb,
+      'd' => ConvSpecDeclaration,
+      'D' => ConvSpecDefinition,
       'T' => ConvSpecialTabstop,
       '(' => ConvExtWrap,
       '{' => CondSectStart,

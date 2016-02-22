@@ -42,7 +42,8 @@ module Rocc::Helpers
     # character `horizontal ellipsis'.
     def str_abbrev(str, length = 12)
       if str.length > length
-        str[0..(length-2)] + "\u2026"
+        raise "invalid argument" unless length > 0
+        str[0...(length-1)] + "\u2026"
       else
         str
       end

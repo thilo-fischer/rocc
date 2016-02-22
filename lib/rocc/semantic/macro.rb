@@ -50,7 +50,7 @@ module Rocc::Semantic
       :macro
     end
     def self.family_character
-      'M'
+      'm'
     end
 
     def namespace

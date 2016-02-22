@@ -105,10 +105,19 @@ module Rocc::Commands
         #end
 
         opts.on(
-          "--each",
-          "list each declaration or definition of a symbol, not just one per symbol"
+          "-s",
+          "--spec",
+          "list symbol specifications (i.e. declarations and definitions) of symbols"
         ) do |arg|
-          options[:each] = true
+          options[:spec] = true
+        end
+
+        opts.on(
+          "-u",
+          "--unique",
+          "with -s: list just one specifications per symbol"
+        ) do |arg|
+          options[:unique] = true
         end
 
         opts.on(
@@ -141,12 +150,21 @@ module Rocc::Commands
       elsif args.empty?
         #warn "cursor: #{applctx.cursor}"
         #warn "symbols: #{applctx.cursor.find_symbols}"
-        symbol_formatter = Rocc::Ui::SymbolFormatter.compile
-        applctx.cursor.find_symbols(:origin => applctx.cursor).each do |s|
-          puts symbol_formatter.format(s)
+        formatter = Rocc::Ui::SymbolFormatter.default_formatter
+        if options[:spec]
+          applctx.cursor.content.each do |semantic_elem|
+            warn "XXXX #{semantic_elem}\nXX #{semantic_elem.class.ancestors}"
+            if semantic_elem.is_a?(Rocc::Semantic::CeSpecification)
+              puts formatter.format(semantic_elem)
+            end
+          end
+        else
+          applctx.cursor.find_symbols(:origin => applctx.cursor).each do |s|
+            puts formatter.format(s)
+          end
         end
       else
-        args.each { |o| o.list(STDOUT, options) }
+        args.each {|o| o.list(STDOUT, options) } # FIXME_W
       end
 
     end # run

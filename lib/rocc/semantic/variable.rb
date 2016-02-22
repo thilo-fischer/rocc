@@ -34,7 +34,7 @@ module Rocc::Semantic
       :variable
     end
     def self.family_character
-      'V'
+      'v'
     end
   end # class CeVariable
 
