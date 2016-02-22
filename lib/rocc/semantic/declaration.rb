@@ -21,10 +21,27 @@ module Rocc::Semantic
     ##
     # +origin+ of a declaration shall be an array of those tokens
     # that form this declaration.
-    def initialize(origin, symbol = nil)
+    #
+    # +symbol+ is the symbol declared by this function
+    def initialize(origin, symbol)
       super
     end
 
   end # class CeDeclaration
+
+  class CeFunctionDeclaration < CeDeclaration
+    attr_reader :param_names
+    def initialize(origin, symbol, function_signature)
+      super(origin, symbol)
+      @param_names = function_signature.params.map {|p| p.name}
+      @void = function_signature.is_void?
+    end
+    # see CeFunctionSignature#is_void?
+    def is_void?
+      @void
+    end
+  end # class CeFunctionDeclaration
+  
+  class CeVariableDeclaration < CeDeclaration; end
 
 end # module Rocc::Semantic

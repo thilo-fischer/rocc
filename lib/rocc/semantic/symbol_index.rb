@@ -59,7 +59,7 @@ module Rocc::Semantic
     def find_symbols_ce_symbol(symbol)
       symbols_matching_id = @symbols[symbol.identifier]
       if symbols_matching_id
-        result = @symbols[identifier].select do |s|
+        result = symbols_matching_id.select do |s|
           s == symbol
         end
         raise unless result.length <= 1

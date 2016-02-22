@@ -17,7 +17,7 @@ module Rocc::Semantic
 
   class CeTypedSymbol < CeSymbol
 
-    attr_reader :linkage
+    attr_reader :type_specifiers, :type_qualifiers, :storage_class, :linkage
     
     def initialize(origin, identifier, conditions, hashargs)
 
@@ -34,12 +34,12 @@ module Rocc::Semantic
       super # XXX defensive progamming => replace some day with # super(origin, conditions, identifier)
 
       # XXX Check: linkage might not apply to all symbols derived from CeTypedSymbol (CeSUMember, CeTypedef, ..?), there might be classes not derived from CeTypedSymbol where linkage applies (CeEnum, CeSymbolCompound, ..?). => If so: Add another level to inheritence hierarchy or extract linkage stuff to mixin?
-      if descend_origin(Rocc::Semantic::CeFunction)
+      if descend_origin(Rocc::Semantic::CeFunctionDefinition)
         @linkage = :none
       else
         case @storage_class
         when nil
-          @linkage = default_linkage # XXX necessary to query symbol_familiy or is it always :extern anyway?          
+          @linkage = self.class.default_linkage # XXX necessary to query symbol_familiy or is it always :extern anyway?          
         when :typedef
           raise "not yet supported" # FIXME
         when :static

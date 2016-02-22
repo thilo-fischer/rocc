@@ -17,16 +17,19 @@ module Rocc::Semantic
 
   class CeFunction < CeTypedSymbol
 
-    attr_reader :parameters, :signatures, :block
+    attr_reader :parameters #, :signatures, :block
 
     def initialize(origin, identifier, conditions, hashargs)
       parameters = pick_from_hashargs(hashargs, :parameters)
       super
       @parameters = []
       @param_list_complete = false
-      @signatures = []
-      @block = nil
-      parameters.params.each_with_index {|p,i| announce_parameter(i+1, p.type, p.storage_class_specifier)} # FIXME_R quickfix
+      #@signatures = []
+      #@block = nil
+      # FIXME_R> quickfix
+      parameters.params.each_with_index {|p,i| announce_parameter(i+1, p.type, p.storage_class_specifier)}
+      param_list_finalize
+      # <FIXME_R quickfix
     end
 
     def self.default_linkage
@@ -63,24 +66,24 @@ module Rocc::Semantic
       # XXX function definition also requires a block/compound statement
     end
 
-    def add_signature(arg)
-      @signatures << arg
-    end
+    #def add_signature(arg)
+    #  @signatures << arg
+    #end
 
-    def block=(arg)
-      #warn "*** assign block #{arg.name_dbg} to #{name_dbg} (current: #{@block.inspect})"
-      if @block
-        if @block.existence_conditions.equivalent?(arg.existence_conditions)
-          warn "XX block #{@block.existence_conditions} #{@block.existence_conditions.class}"
-          warn "XX arg   #{arg.existence_conditions} #{arg.existence_conditions.class}"
-          raise "multiple definitions for #{path_dbg}" if @block
-        else
-          @block = [ @block, arg ] # FIXME smells
-        end
-      else
-        @block = arg
-      end
-    end
+    #def block=(arg)
+    #  #warn "*** assign block #{arg.name_dbg} to #{name_dbg} (current: #{@block.inspect})"
+    #  if @block
+    #    if @block.existence_conditions.equivalent?(arg.existence_conditions)
+    #      warn "XX block #{@block.existence_conditions} #{@block.existence_conditions.class}"
+    #      warn "XX arg   #{arg.existence_conditions} #{arg.existence_conditions.class}"
+    #      raise "multiple definitions for #{path_dbg}" if @block
+    #    else
+    #      @block = [ @block, arg ] # FIXME smells
+    #    end
+    #  else
+    #    @block = arg
+    #  end
+    #end
     
     def name
       "function `#{@identifier}'"

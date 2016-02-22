@@ -71,8 +71,14 @@ module Rocc::Semantic::Temporary
     end
 
     def launch_declaration(symbol)
-      decl = Rocc::Semantic::CeDeclaration.new(origin, symbol)
-      symbol.announce_declaration(decl) unless is_definition?
+      if is_function?
+        decl = Rocc::Semantic::CeFunctionDeclaration.new(origin, symbol, @parameters)
+      elsif is_variable?
+        decl = Rocc::Semantic::CeVariableDeclaration.new(origin, symbol)
+      else
+        raise "programming error or not yet implemented" # XXX(assert)
+      end
+      symbol.add_declaration(decl) unless is_definition?
       decl
     end
 

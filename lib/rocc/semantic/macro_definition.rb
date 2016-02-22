@@ -15,6 +15,8 @@ require 'rocc/semantic/specification.rb'
 
 module Rocc::Semantic
 
+  # FIXME_R? derive MacroDefinition from CeDefinition ?!
+  
   ##
   # Represents the specification of a macro.
   class CeMacroDefinition < CeSpecification

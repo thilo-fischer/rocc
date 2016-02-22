@@ -102,4 +102,7 @@ module Rocc::Semantic
 
   end # class CeDefinition
 
+  class CeFunctionDefinition < CeDefinition; end
+  class CeVariableDefinition < CeDefinition; end
+
 end # module Rocc::Semantic

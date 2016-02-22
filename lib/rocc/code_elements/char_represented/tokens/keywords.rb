@@ -46,8 +46,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
         case keyword
             
         when :return
-          func_def = branch.find_scope(Rocc::Semantic::CeDefinition)
-          raise "`#{keyword}' used outside of function" unless func_def and func_def.symbol.is_a?(Rocc::Semantic::CeFunction) # XXX(assert)
+          func_def = branch.find_scope(Rocc::Semantic::CeFunctionDefinition)
+          raise "`#{keyword}' used outside of function" unless func_def # XXX(assert)
           s = Rocc::Semantic::ReturnStatement.new(branch.current_scope, self, func_def.symbol)
           branch.enter_scope(s)
           rv = Rocc::Semantic::CeRValue.new(s)
@@ -166,7 +166,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
       raise if branch.has_pending?
       unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
-        arising = Rocc::Semantic::Temporary::ArisingSpecification.new
+        arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.closest_symbol_origin_scope, branch.conditions)
         branch.enter_scope(arising)
       end
       branch.current_scope.add_type_qualifier(self)
@@ -194,7 +194,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       # TODO typedef needs special treatment
 
       unless branch.current_scope.is_a? Rocc::Semantic::Temporary::ArisingSpecification
-        arising = Rocc::Semantic::Temporary::ArisingSpecification.new
+        arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.closest_symbol_origin_scope, branch.conditions)
         branch.enter_scope(arising)
       end
       branch.current_scope.set_storage_class(self)

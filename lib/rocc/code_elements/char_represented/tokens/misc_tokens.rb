@@ -108,7 +108,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         # FIXME? r_val_scope.expression = 
       else
         raise unless branch.current_scope == branch.closest_symbol_origin_scope # FIXME laborious test if current scope can be symbol origin
-        arising = Rocc::Semantic::Temporary::ArisingSpecification.new
+        arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.closest_symbol_origin_scope, branch.conditions)
         branch.enter_scope(arising)
         # TODO set arising_spec TYPE (instead of identifier) if identifier is name of a typedef
         branch.current_scope.set_identifier(self)
@@ -286,10 +286,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
             branch.finish_current_scope
             prev_arising = branch.leave_scope
             
-            next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new
+            next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.closest_symbol_origin_scope, branch.conditions)
             next_arising.share_origin(prev_arising)
-            
-            branch.finish_current_scope
             branch.enter_scope(next_arising)
           else
             raise "unexpected #{self} at #{location}"
@@ -320,7 +318,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
           if branch.current_scope.is_function?
             branch.current_scope.mark_as_definition
             func_decl = branch.finish_current_scope # XXX rename method CompilationBranch#finish_current_scope
-            func_def  = Rocc::Semantic::CeDefinition.new(func_decl)
+            func_def  = Rocc::Semantic::CeFunctionDefinition.new(func_decl)
             branch.enter_scope(func_def)
             # XXX? differentiate between "blocks" (like function boby, switch block, ...) and "regular" compound statements where braces are not mandatory, but only to group several statements ?
             func_body = Rocc::Semantic::CompoundStatement.new(func_def, self)
@@ -441,9 +439,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
           branch.current_scope.mark_as_variable
           branch.current_scope.mark_as_definition
           var_decl = branch.finish_current_scope # XXX rename method CompilationBranch#finish_current_scope
-          var_def  = Rocc::Semantic::CeDefinition.new(var_decl)
+          var_def  = Rocc::Semantic::CeVariableDefinition.new(var_decl)
           branch.enter_scope(var_def)
-          var_init = Rocc::Semantic::CeInitializer.new(var_def, self)
+          var_init = Rocc::Semantic::CeInitializer.new(var_def)
           branch.enter_scope(var_init)
         when Rocc::Semantic::CompoundStatement
           if branch.current_scope.has_pending?
@@ -462,7 +460,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
   
     end # pursue_branch 
 
-    private
+    
     def wrapup_function_parameter(function_signature, arising_param)
       if arising_param.identifier
         function_signature.add_param(arising_param.origin, arising_param.type_specifiers, arising_param.identifier, arising_param.storage_class)
@@ -472,134 +470,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
         raise "not yet supported"
       end
     end
-
-    # FIXME Review the deprecated, commented out method
-    # expand_with_context below. Delete if all aspects have been
-    # addressed in the new implementation.
-    #
-#    def expand_with_context(env, ctxt)
-#
-#      dbg "#{self}.expand_with_context" # at `#{ctxt.inspect}'"
-#
-#      unbound = ctxt[:unbound_objects]
-#      grast = ctxt[:grammar_stack]
-#
-#      case @text
-#
-#      when ","
-#        case grast.last
-#        when GroTranslationUnit, GroCompoundStatement
-#          GroDeclaration.wrap_up(env, ctxt)
-#        when GroDeclaration
-#          grast.last.add_declarator(env, ctxt)
-#        when GroEnumeratorList
-#          raise "todo"
-#        else
-#          super
-#        end
-#
-#      when ";"
-#        case grast.last
-#        when GroTranslationUnit
-#          GroDeclaration.wrap_up(env, ctxt)
-#          grast.last.finalize(env, ctxt)
-#        when GroDeclaration
-#          grast.last.add_declarator(env, ctxt)
-#          grast.last.finalize(env, ctxt)
-#        when GroCompoundStatement
-#          # declaration or statement
-#          GroStatement.pick!(env, ctxt) # fixme: handle declarations properly
-#        when GroControlStructure
-#          # statement
-#          raise "todo"
-#        when GroParenthesized
-#          # expression-list in for-loop
-#          if grast[-2].is_a? GroControlStructure and grast[-2].origin[0].text == "for" # fixme
-#            super # fixme
-#          else
-#            raise
-#          end
-#        when GroStructDeclarationList
-#          raise "todo"
-#        else
-#          raise
-#          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
-#          env.context.delete(ctx)
-#          nil
-#        end
-#
-#      when "{"
-#        case grast.last
-#        when GroTranslationUnit, GroCompoundStatement
-#
-#          if tagged_declaration_list = GroTaggedDeclarationList.pick!(env, ctxt)
-#            grast << tagged_declaration_list
-#
-#          elsif grast.last.is_a? GroTranslationUnit
-#            # function definition
-#            function_definition = GroFunctionDefinition.pick!(env, ctxt)
-#            raise "assertion" unless function_definition
-#            grast << function_definition
-#            grast << GroCompoundStatement.new(self, function_definition)
-#
-#          elsif grast.last.is_a? GroCompoundStatement and unbound.empty?
-#            # GroCompoundStatement
-#            grast << GroCompoundStatement.new(self, grast.last)
-#
-#          else
-#            raise
-#
-#          end
-#            
-#        when GroControlStructure
-#          statement = GroCompoundStatement.new(self, grast.last)
-#          grast.last.add_statement(statement)
-#          grast << statement
-#
-#        else
-#          raise
-#          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
-#          env.context.delete(ctx)
-#          nil
-#        end
-#
-#      when "("
-#        grast << GroParenthesized.new(self, grast.last)
-#
-#      when "["
-#        grast << GroBracketed.new(self, grast.last)
-#
-#      when ")", "}", "]"
-#        case grast.last
-#        when GroParenthesized, GroBracketed, GroTaggedDeclarationList
-#          grast.last.finalize(env, ctxt, self)
-#        when GroCompoundStatement
-#          grast.last.finalize(env, ctxt, self)
-#          case grast.last
-#          when GroFunctionDefinition
-#            grast.last.finalize(env, ctxt)  
-#          when GroCompoundStatement
-#            # do nothing
-#          else
-#            raise
-#          end
-#
-#        else
-#          warn "Syntax error with `#{to_s}' when (#{env.preprocessing[:conditional_stack]}). Abort processing of branch with these conditions." # todo: syntax error handling
-#          env.context.delete(ctx)
-#          nil
-#         
-#        end
-#
-#      else
-#        super
-#      end
-#
-#      ctxt
-#
-#    end # expand_with_context   
+    private :wrapup_function_parameter
     
-    public
+
     FAMILY_ABBREV = 'Tkn1Pkt'
     def self.family_abbrev
       FAMILY_ABBREV

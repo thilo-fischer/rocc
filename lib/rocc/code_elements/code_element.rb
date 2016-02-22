@@ -190,6 +190,7 @@ module Rocc::CodeElements
     # a +Class+ (that is a subclass of +CodeElement+), descend until
     # an origin is found that +is_a?+ +depth+.
     def descend_origin(depth = 1)
+      warn "#{self}.decend_origin(#{depth})"
       case depth
       when Integer
         if depth == 0

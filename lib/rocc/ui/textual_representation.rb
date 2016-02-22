@@ -145,8 +145,8 @@ module Rocc::Ui
     #
     #     [P] If used together with the + flag: Add 0 to the
     #         replacement string if function has no parameters but
-    #         +void+ was given in the function's "most relevant"
-    #         function signature.
+    #         +void+ was given as parameter specification in the
+    #         function's "most relevant" function signature.
     #
     #     [c] When used in combination with _ flag: Do *not* assume
     #         stdbool.h or C++, use +1+ and +0+ instead of +true+ and
@@ -617,7 +617,7 @@ module Rocc::Ui
             if symbol.class.family == :function and
               flag?(FLAG_ALTERNATE_FORM)
               if symbol.parameters.empty? and
-                not symbol.signatures.find {|s| s.is_void?} # XXX_W determine and use the "most significant" function signature
+                not symbol.all_declarations.find {|decl| decl.is_void?} # XXX_W determine and use the "most significant" function signature
                 ''
               else
                 symbol.parameters.count.to_s

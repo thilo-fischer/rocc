@@ -17,14 +17,14 @@ module Rocc::Semantic
 
   class CeSymbol < Rocc::CodeElements::CodeElement
 
-    attr_reader :identifier, :existence_conditions, :declarations, :definitions
+    attr_reader :identifier, :existence_conditions, :pure_declarations, :definitions
 
     # origin is the unit the symbol lives in, e.g. the translation
     # unit it belongs to.  identifier is the symbols name.
     def initialize(origin, identifier, conditions, hashargs)
       raise "unprocessed hashargs: #{hashargs.inspect}" unless hashargs.empty? # XXX defensive progamming => remove some day
       super(origin)
-      @declarations = []
+      @pure_declarations = []
       @definitions  = []
       @identifier = identifier
       @existence_conditions = conditions
@@ -44,10 +44,13 @@ module Rocc::Semantic
     end
 
     def adducer
-      @declarations + @definitions
-      #@declarations + @definitions.map {|d| d.declaration}
+      @pure_declarations + @definitions
     end
 
+    def all_declarations
+      @pure_declarations + @definitions.map {|d| d.declaration}
+    end
+    
     def ==(other)
       self.class == other.class and
         @origin == other.origin and
@@ -55,7 +58,7 @@ module Rocc::Semantic
     end
 
     def add_declaration(arg)
-      @declarations << arg
+      @pure_declarations << arg
     end
 
     def add_definition(arg)
@@ -64,7 +67,7 @@ module Rocc::Semantic
           arg.existence_conditions.imply?(d.existence_conditions)
         end
       raise "double defined symbol: #{arg}" if already_defined
-      raise "programming error :(" if @declarations.include?(arg.declaration) # XXX(assert)
+      raise "programming error :(" if @pure_declarations.include?(arg.declaration) # XXX(assert)
       @definitions << arg
     end
     
@@ -73,8 +76,8 @@ module Rocc::Semantic
     end
 
     def implicit_existence_conditions
-      inject_start = (@declarations + @definitions).first.existence_conditions # XXX works, but smells
-      (@declarations + @definitions).inject(inject_start) do |conds, spec|
+      inject_start = (@pure_declarations + @definitions).first.existence_conditions # XXX works, but smells
+      (@pure_declarations + @definitions).inject(inject_start) do |conds, spec|
         conds.disjunction(spec.existence_conditions)
       end
     end
