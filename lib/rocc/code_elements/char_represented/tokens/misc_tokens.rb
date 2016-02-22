@@ -368,7 +368,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
             if a.identifier
               a.mark_as_function
               func_sig = Rocc::Semantic::Temporary::CeFunctionSignature.new(self)
-              a.signature=(func_sig)
+              a.parameters=(func_sig)
               branch.enter_scope(func_sig)
             else
               raise "not yet supported (#{a.inspect})"
@@ -465,9 +465,9 @@ module Rocc::CodeElements::CharRepresented::Tokens
     private
     def wrapup_function_parameter(function_signature, arising_param)
       if arising_param.identifier
-        function_signature.add_param(arising_param.type_specifiers, arising_param.identifier, arising_param.storage_class)
+        function_signature.add_param(arising_param.origin, arising_param.type_specifiers, arising_param.identifier, arising_param.storage_class)
       elsif arising_param.type_specifiers == [:void] and arising_param.storage_class == nil
-        function_signature.mark_as_void
+        function_signature.mark_as_void(arising_param.origin)
       else
         raise "not yet supported"
       end

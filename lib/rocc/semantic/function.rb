@@ -20,11 +20,13 @@ module Rocc::Semantic
     attr_reader :parameters, :signatures, :block
 
     def initialize(origin, identifier, conditions, hashargs)
+      parameters = pick_from_hashargs(hashargs, :parameters)
       super
       @parameters = []
       @param_list_complete = false
       @signatures = []
       @block = nil
+      parameters.params.each_with_index {|p,i| announce_parameter(i+1, p.type, p.storage_class_specifier)} # FIXME_R quickfix
     end
 
     def self.default_linkage

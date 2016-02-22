@@ -15,15 +15,23 @@ require 'rocc/semantic/function'
 
 module Rocc::Semantic::Temporary
 
+  # TODO This is *not* a function signature (as it does not specify
+  # anything about the function's return type). Rename to
+  # "FunctionParameters" or such.
   class CeFunctionSignature < Rocc::CodeElements::CodeElement
 
     class Parameter
       attr_accessor :type, :name, :storage_class_specifier
+      def initialize(type, name, storage_class_specifier)
+        @type = type
+        @name = name
+        @storage_class_specifier = storage_class_specifier
+      end        
     end
 
     alias function origin
 
-    attr_reader :adducer, :param_names
+    attr_reader :adducer, :params
 
     ##
     # +origin+ is an array of all those tokens thate make up the
@@ -39,11 +47,11 @@ module Rocc::Semantic::Temporary
     end
 
     def name_dbg
-      "FSig[#{@param_names.count}]"
+      "FSig[#{@params.count}]"
     end    
 
     def add_param(tokens, type, name, storage_class_specifier = nil)
-      origin += tokens
+      @origin += tokens
       @params << Parameter.new(type, name, storage_class_specifier)
       
       raise "register is the only storage class specifier allowed for function parameters" if storage_class_specifier and storage_class_specifier != :register # XXX(assert)
@@ -56,19 +64,26 @@ module Rocc::Semantic::Temporary
 
     # add closing parenthesis token
     def close(token)
-      origin << token
+      @origin << token
       @complete = true
     end
 
     def opening
-      origin.first
+      @origin.first
     end
     
     def closing
-      origin.last
+      @origin.last
     end
 
-    def mark_as_void
+    ##
+    # mark function signature as signature with no parameters that
+    # explicitly states `void' for its function parameters (like
+    # <tt>int foo(void);</tt>).
+    #
+    # +token+ The token that represents the void keyword.
+    def mark_as_void(token)
+      @origin << token
       @void = true
     end
 

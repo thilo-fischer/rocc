@@ -57,7 +57,7 @@ module Rocc::Semantic::Temporary
       @storage_class = nil
       @type_qualifiers = []
       @type_specifiers = []
-      @signature = nil
+      @parameters = nil
       @is_definition = false
     end
 
@@ -85,6 +85,7 @@ module Rocc::Semantic::Temporary
       hashargs[:storage_class] = @storage_class if @storage_class
       hashargs[:type_qualifiers] = @type_qualifiers unless @type_qualifiers.empty?
       hashargs[:type_specifiers] = @type_specifiers unless @type_specifiers.empty? # XXX this would be the better place to set type specififer :implicit if no type specifier is given ...
+      hashargs[:parameters] = @parameters if is_function?
       symbol = symbol_family.new(scope, identifier, existence_conditions, hashargs)
       symbol
     end
@@ -163,15 +164,15 @@ module Rocc::Semantic::Temporary
       
     end # add_type_specifier
 
-    def signature=(arg)
+    def parameters=(arg)
       raise unless is_function?
-      raise if @signature
-      @signature = arg
+      raise if @parameters
+      @parameters = arg
     end
 
-    def signature
+    def parameters
       raise unless is_function? # XXX(assert)
-      @signature
+      @parameters
     end
 
     # XXX? support symbol family CeFunctionParameter
