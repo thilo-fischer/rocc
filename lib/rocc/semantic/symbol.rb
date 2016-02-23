@@ -65,8 +65,8 @@ module Rocc::Semantic
       already_defined = @definitions.find do |d|
         d.existence_conditions.imply?(arg.existence_conditions) or
           arg.existence_conditions.imply?(d.existence_conditions)
-        end
-      raise "double defined symbol: #{arg}" if already_defined
+      end
+      raise "double defined symbol: #{arg} found at #{arg.location}, but already defined at #{already_defined.location}" if already_defined
       raise "programming error :(" if @pure_declarations.include?(arg.declaration) # XXX(assert)
       @definitions << arg
     end

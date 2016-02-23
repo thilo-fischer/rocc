@@ -121,6 +121,14 @@ module Rocc::Commands
         end
 
         opts.on(
+          "-R",
+          "--recursive",
+          "list recursively according to symbols' origins"
+        ) do |arg|
+          options[:recursive] = true
+        end
+
+        opts.on(
           "--assume condition",
           "for preprocessor conditionals, assume condition is true"
         ) do |arg|
@@ -151,11 +159,12 @@ module Rocc::Commands
         #warn "cursor: #{applctx.cursor}"
         #warn "symbols: #{applctx.cursor.find_symbols}"
         formatter = Rocc::Ui::SymbolFormatter.default_formatter
+        recursive = options[:recursive]
         if options[:spec]
+          warn "#{applctx.cursor.content.join("\n")}"
           applctx.cursor.content.each do |semantic_elem|
-            warn "XXXX #{semantic_elem}\nXX #{semantic_elem.class.ancestors}"
             if semantic_elem.is_a?(Rocc::Semantic::CeSpecification)
-              puts formatter.format(semantic_elem)
+              puts formatter.format(semantic_elem) if recursive or semantic_elem.symbol.origin.equal?(applctx.cursor)
             end
           end
         else

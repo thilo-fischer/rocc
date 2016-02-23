@@ -31,7 +31,7 @@ module Rocc::Semantic::Temporary
 
     alias function origin
 
-    attr_reader :adducer, :params
+    attr_reader :params
 
     ##
     # +origin+ is an array of all those tokens thate make up the

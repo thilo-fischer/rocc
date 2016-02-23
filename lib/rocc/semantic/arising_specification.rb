@@ -67,6 +67,9 @@ module Rocc::Semantic::Temporary
     
     def finalize
       mark_as_variable unless is_function?
+      mark_as_definition if
+        (is_variable? and not @storage_class) or
+        (is_variable? and @storage_class and not @storage_class == :extern)
       freeze # XXX(assert)
     end
 
@@ -82,7 +85,20 @@ module Rocc::Semantic::Temporary
       decl
     end
 
-    def create_symbol
+    def launch_definition(declaration)
+      c = if is_function?
+            Rocc::Semantic::CeFunctionDefinition
+          elsif is_variable?
+            Rocc::Semantic::CeVariableDefinition
+          else
+            raise "programming error or not yet implemented" # XXX(assert)
+          end
+      definition = c.new(declaration)
+      declaration.symbol.add_definition(definition)
+      definition
+    end
+
+     def create_symbol
       log.debug{"ArisingSpecification#create_symbol -> #{@identifier} [#{@conditions}]"}
       raise "missing identifier" unless @identifier # XXX(assert)
       raise "missing symbol_family" unless @symbol_family # XXX(assert)

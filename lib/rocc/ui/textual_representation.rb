@@ -160,6 +160,13 @@ module Rocc::Ui
     #         stdbool.h or C++, use +1+ and +0+ instead of +true+ and
     #         +false+.
     #
+    #     [f] Use uppercase letters for all variable definitions,
+    #         independent of whether the definition includes
+    #         initialization or not.
+    #
+    # [*] Another alternate form. This flag has different meaning for
+    #     different conversion specifier characters, specifically:
+    #
     #     [f] never use uppercase letters
     #
     # [_] Use replacement string that resembles target language
@@ -220,8 +227,10 @@ module Rocc::Ui
     #     [n] namespace (not yet, planned C++ support)
     #     
     #     When formatting CeSpecification objects, an upper case
-    #     letter will be used for definitions, a lowercase letter for
-    #     declarations.
+    #     letter will be used for function definitions and variable
+    #     definitions that include an initialization, a lowercase
+    #     letter for declarations and variable definitions without
+    #     initialization.
     #      
     # [F] Full name of the symbol's family
     # 
@@ -629,10 +638,25 @@ module Rocc::Ui
       def str_from_celem(celem)
         if celem.is_a?(Rocc::Semantic::CeSpecification)
           str = str_from_sym(celem.symbol)
-          if celem.is_a?(Rocc::Semantic::CeDefinition)
-            str.upcase
-          else
+          if flag?('#')
             str
+          else
+            case celem
+            when Rocc::Semantic::CeFunctionDefinition
+              str.upcase
+            when Rocc::Semantic::CeVariableDefinition
+              if celem.initializer? or flag?('*')
+                str.upcase
+              else
+                str
+              end
+            when Rocc::Semantic::CeMacroDefinition
+              str.upcase
+            when Rocc::Semantic::CeDefinition
+              raise "invalid argument #{celem} or not yet implemented"
+            else
+              str
+            end
           end
         else
           str_from_sym(celem)

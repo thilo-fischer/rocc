@@ -251,7 +251,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
 
         when Rocc::Semantic::Temporary::ArisingSpecification,
              Rocc::Semantic::CeInitializer
-          branch.finish_current_scope
+          spec = branch.finish_current_scope
+          #branch.compilation_context.translation_unit.announce_semantic_element(spec) if
+          #  branch.current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) and
+          #  branch.current_scope.is_definition? and
+          #  spec.is_a?(Rocc::Semantic::CeDeclaration) # TODO_R smells
           branch.leave_scope
           
         when Rocc::Semantic::Statement          
@@ -283,7 +287,11 @@ module Rocc::CodeElements::CharRepresented::Tokens
           case branch.current_scope
           when Rocc::Semantic::CeInitializer,
                Rocc::Semantic::Temporary::ArisingSpecification
-            branch.finish_current_scope
+            spec = branch.finish_current_scope
+            #branch.compilation_context.translation_unit.announce_semantic_element(spec) if
+            #  branch.current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) and
+            #  branch.current_scope.is_definition? and
+            #  spec.is_a?(Rocc::Semantic::CeDeclaration) # TODO_R smells
             prev_arising = branch.leave_scope
             
             next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.closest_symbol_origin_scope, branch.conditions)
@@ -317,8 +325,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         when Rocc::Semantic::Temporary::ArisingSpecification
           if branch.current_scope.is_function?
             branch.current_scope.mark_as_definition
-            func_decl = branch.finish_current_scope # XXX rename method CompilationBranch#finish_current_scope
-            func_def  = Rocc::Semantic::CeFunctionDefinition.new(func_decl)
+            func_def = branch.finish_current_scope # XXX rename method CompilationBranch#finish_current_scope
             branch.enter_scope(func_def)
             # XXX? differentiate between "blocks" (like function boby, switch block, ...) and "regular" compound statements where braces are not mandatory, but only to group several statements ?
             func_body = Rocc::Semantic::CompoundStatement.new(func_def, self)
@@ -438,8 +445,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
         when Rocc::Semantic::Temporary::ArisingSpecification
           branch.current_scope.mark_as_variable
           branch.current_scope.mark_as_definition
-          var_decl = branch.finish_current_scope # XXX rename method CompilationBranch#finish_current_scope
-          var_def  = Rocc::Semantic::CeVariableDefinition.new(var_decl)
+          var_def = branch.finish_current_scope # XXX rename method CompilationBranch#finish_current_scope
           branch.enter_scope(var_def)
           var_init = Rocc::Semantic::CeInitializer.new(var_def)
           branch.enter_scope(var_init)

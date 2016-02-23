@@ -23,6 +23,10 @@ module Rocc::Semantic
       super(origin)
       @expression = nil
     end
+
+    def adducer
+      @expression.adducer if @expression
+    end
     
     def complete?
       @expression and @expression.complete?

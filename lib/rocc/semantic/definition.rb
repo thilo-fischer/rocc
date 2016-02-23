@@ -30,16 +30,39 @@ module Rocc::Semantic
     # but due to the "prefer aggregation over inheritence" principle,
     # it is implemeted like this.)
     #
-    # CeDefinition#origin is the contained declaration.
+    # CeDefinition#origin is the contained declaration (in deviance to
+    # CeSpecification's meaning of origin). FIXME use origin and
+    # adducers in CeSpecification and its other child classes as in
+    # CeDefinition, use origin for the scope the specification is in.
     def initialize(declaration)
       super(declaration)
       @body = nil
     end
 
+    # Define a constant containing the string to be given as
+    # SPEC_ABBREV to avoid repeated recreation of string object from
+    # string literal.
+    SPEC_ABBREV = 'Def'
+    # Return a short string giving information on the kind of the
+    # character object. Return the string constant defined by the
+    # current class or -- if not defined by that class -- its
+    # closest ancestor defining it.
+    def self.spec_abbrev
+      SPEC_ABBREV
+    end
+    
     alias declaration origin
 
+    def location
+      declaration.location
+    end
+
     def adducer
-      declaration.adducer + body.adducer
+      if body
+        declaration.adducer + body.adducer
+      else
+        declaration.adducer
+      end
     end
 
     ##
@@ -87,13 +110,8 @@ module Rocc::Semantic
       @body = arg
     end
 
-    def complete?
-      @body
-    end
-
     def finalize
-      raise "definition without body" unless complete?
-      declaration.symbol.add_definition(self)
+      #declaration.symbol.add_definition(self)
       self
     end
 
@@ -103,7 +121,17 @@ module Rocc::Semantic
 
   end # class CeDefinition
 
-  class CeFunctionDefinition < CeDefinition; end
-  class CeVariableDefinition < CeDefinition; end
+  class CeFunctionDefinition < CeDefinition
+    def finalize
+      raise "definition without body" unless @body
+      super
+    end
+  end
+  
+  class CeVariableDefinition < CeDefinition
+    def initializer?
+      @body
+    end
+  end
 
 end # module Rocc::Semantic

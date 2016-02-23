@@ -21,12 +21,40 @@ module Rocc::Semantic
 
     ##
     # +origin+ of a specification shall be an array of those tokens
-    # that form this specification.
+    # that form this specification. (Note: Child class CeDefinition
+    # does it diffenetly and references the implicitly contained
+    # declaration's CeDeclaraiton object as its origin.) FIXME use
+    # adducers to reference the tokens, use origin for the scope the
+    # specification is in.
     #
     # +symbol+ The symbol announced by this specification.
     def initialize(origin, symbol = nil)
       super(origin)
       @symbol = symbol
+    end
+
+    # Define a constant containing the string to be given as
+    # SPEC_ABBREV to avoid repeated recreation of string object from
+    # string literal.
+    SPEC_ABBREV = 'Spec'
+    # Return a short string giving information on the kind of the
+    # character object. Return the string constant defined by the
+    # current class or -- if not defined by that class -- its
+    # closest ancestor defining it.
+    def self.spec_abbrev
+      SPEC_ABBREV
+    end
+    
+    def name_dbg
+      if symbol
+        "#{self.class.spec_abbrev}[#{symbol}]"
+      else
+        "#{self.class.spec_abbrev}[\u2205]"        
+      end
+    end
+
+    def location
+      @origin.first.location
     end
 
     def symbol=(arg)

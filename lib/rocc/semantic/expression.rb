@@ -38,7 +38,7 @@ module Rocc::Semantic
     alias content adducer
     # adducer is content
     def initialize(origin, adducer)
-      super(origin, adducer)
+      super(origin, [adducer]) # FIXME_R rework adducer to adducers => have an adducers array per default and basically always instead of an adducer that sometimes holds an array and sometimes not
     end
     def complete?
       true

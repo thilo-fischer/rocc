@@ -27,6 +27,18 @@ module Rocc::Semantic
       super
     end
 
+    # Define a constant containing the string to be given as
+    # SPEC_ABBREV to avoid repeated recreation of string object from
+    # string literal.
+    SPEC_ABBREV = 'Decl'
+    # Return a short string giving information on the kind of the
+    # character object. Return the string constant defined by the
+    # current class or -- if not defined by that class -- its
+    # closest ancestor defining it.
+    def self.spec_abbrev
+      SPEC_ABBREV
+    end
+    
   end # class CeDeclaration
 
   class CeFunctionDeclaration < CeDeclaration

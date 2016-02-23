@@ -314,8 +314,8 @@ module Rocc::Semantic
 
     # See rdoc-ref:Rocc::Semantic::CeCondition#equivalent?
     def equivalent?(other)
-      sres = super
-      return sres unless sres.nil?
+      sresult = super
+      return sresult unless sresult.nil?
       case other
       when CeAtomicCondition
         # TODO understand and compare the texts' semantics, e.g. `A > 42' is equivalent to `42 < A'
@@ -329,8 +329,8 @@ module Rocc::Semantic
     
     # See rdoc-ref:Rocc::Semantic::CeCondition#imply?
     def imply?(other)
-      sres = super
-      return sres unless sres.nil?
+      sresult = super
+      return sresult unless sresult.nil?
       case other
       when CeAtomicCondition
         # TODO understand and compare the texts' semantics, e.g. `A > 42' implies `A >= 42'
@@ -512,16 +512,11 @@ module Rocc::Semantic
 
     # XXX sensible?
     def equivalent?(other)
-      sres = super
-      return sres unless sres.nil?
+      sresult = super
+      return sresult unless sresult.nil?
       
-      if other.is_a?(self.class)
-        if @conditions.equal?(other.conditions) or
-           (self.imply?(other) and other.imply?(self))
-          true
-        else
-          false
-        end
+      if other.is_a?(self.class) and @conditions.equal?(other.conditions)
+        true
       else
         nil
       end
@@ -529,18 +524,17 @@ module Rocc::Semantic
     
    # XXX sensible?
     def imply?(other)
-      sres = super
-      return sres unless sres.nil?
+      sresult = super
+      return sresult unless sresult.nil?
       
-      if other.is_a?(self.class) and
-        equivalent?(other)
-          true
-        else
-          nil
+      if other.is_a?(self.class) and @conditions.equal?(other.conditions)
+        true
+      else
+        nil
       end
     end
     
-  end
+  end # class CeSetOfConditions
   
   class CeConjunctiveCondition < CeSetOfConditions
 
@@ -610,64 +604,20 @@ module Rocc::Semantic
       #end
     end
 
-    ###
-    ## Returns all conditions from +other+ not implied by +self+.
-    ## Result will be empty if +self.imply?(other)+.
-    #def complement(other)
-    #  case other
-    #  when CeUnconditionalCondition
-    #    other
-    #  when CeAtomicCondition
-    #    if imply?(other)
-    #      CeUnconditionalCondition.instance
-    #    else
-    #      other
-    #    end
-    #  else
-    #    if self == other
-    #      CeUnconditionalCondition.instance
-    #    else
-    #      result = []
-    #      other.conditions.each do |oc|
-    #        case oc
-    #        when CeUnconditionalCondition
-    #          raise "CeUnconditionalCondition should not be part of conjunctions."
-    #        when CeAtomicCondition
-    #          result << oc unless imply?(oc)
-    #        else
-    #          comp = complement(oc)
-    #          # FIXME smells
-    #          case comp
-    #          when Array
-    #            result += comp
-    #          when CeAtomicCondition
-    #            result << comp
-    #          end
-    #        end
-    #      end
-    #      if result.count > 1
-    #        CeConjunctiveCondition.new(result)
-    #      elsif result.count == 1
-    #        result.first
-    #      else
-    #        raise
-    #      end
-    #    end
-    #  end
-    #end
 
     # See rdoc-ref:Rocc::Semantic::CeCondition#equivalent?
     def equivalent?(other)
-      sres = super
-      return sres unless sres.nil?
+      sresult = super
+      return sresult unless sresult.nil?
       
       raise "invalid argument or not yet implemented"
     end
+
     
     # See rdoc-ref:Rocc::Semantic::CeCondition#imply?
     def imply?(other)
-      sres = super
-      return sres unless sres.nil?
+      sresult = super
+      return sresult unless sresult.nil?
       
       case other
       when CeAtomicCondition, CeNegationCondition
@@ -765,16 +715,16 @@ module Rocc::Semantic
 
     # See rdoc-ref:Rocc::Semantic::CeCondition#equivalent?
     def equivalent?(other)
-      sres = super
-      return sres unless sres.nil?
+      sresult = super
+      return sresult unless sresult.nil?
       
       raise "invalid argument or not yet implemented"
     end
     
     # See rdoc-ref:Rocc::Semantic::CeCondition#imply?
     def imply?(other)
-      sres = super
-      return sres unless sres.nil?
+      sresult = super
+      return sresult unless sresult.nil?
 
       case other
       when CeAtomicCondition, CeNegatedCondition, CeConjunctiveCondition, CeDisjunctiveCondition

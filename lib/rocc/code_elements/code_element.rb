@@ -120,39 +120,48 @@ module Rocc::CodeElements
     # Path to file and to scope in file where this element
     # resides. Might skip some elements from the origin-chain which
     # are usually not of interest for rocc applications.
+    #--
+    # XXX_R code redundancy to path_full and path_dbg
     def path
-      if @origin
-        @origin.path + path_separator + name
-      else
+      case @origin
+      when nil
         name
+      when CodeElement
+        @origin.path + path_separator + name
+      when Array
+        '[' + @origin.map {|o| o.path}.join(', ') + ']' + path_separator + name
       end
     end
 
     ##
     # Path to file and to scope in file where this element resides
     # listing all elements actually in the origin-chain.
+    #--
+    # XXX_R code redundancy to path and path_dbg
     def path_full
-      if @origin
-        @origin.path_full + path_separator + name
-      else
+      case @origin
+      when nil
         name
+      when CodeElement
+        @origin.path_full + path_separator + name
+      when Array
+        '[' + @origin.map {|o| o.path_full}.join(', ') + ']' + path_separator + name
       end
     end
 
     ##
     # Path to the element to be used in rocc debugging and internal
     # error messages.
+    #--
+    # XXX_R code redundancy to path and path_full
     def path_dbg
-      if @origin
-        origin_path_dbg = case @origin
-                          when Array
-                            '[' + @origin.map {|o| o.path_dbg}.join(', ') + ']'
-                          else
-                            @origin.path_dbg
-                          end
-        origin_path_dbg + path_separator + name_dbg
-      else
+      case @origin
+      when nil
         name_dbg
+      when CodeElement
+        @origin.path_dbg + path_separator + name
+      when Array
+        '[' + @origin.map {|o| o.path_dbg}.join(', ') + ']' + path_separator + name
       end
     end
 

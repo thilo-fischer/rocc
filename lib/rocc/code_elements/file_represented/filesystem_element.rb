@@ -28,9 +28,9 @@ module Rocc::CodeElements::FileRepresented
     alias parent_dir origin
 
     ##
-    # +origin+ is the CeDirectory element representing the objects
-    # parent direcotery (or a symbol representing the adducer or nil
-    # for base directories).
+    # +origin+ For regular directories the CeDirectory element
+    # representing the objects parent direcotery; for base directories
+    # nil or a symbol representing the adducer.
     #
     # +name+ is the element's base name as a string.
     def initialize(origin, name)

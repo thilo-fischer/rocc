@@ -238,7 +238,7 @@ module Rocc::Contexts
       #warn "finish_current_scope -> #{scope_stack_trace}"
       case current_scope
       when Rocc::Semantic::Temporary::ArisingSpecification
-        current_scope.finalize # FIXME_W set condiitons in finalize method
+        current_scope.finalize # FIXME_W set conditions in finalize method
         sym = current_scope.create_symbol
         same = find_symbols(sym)
         if same.empty?
@@ -250,8 +250,12 @@ module Rocc::Contexts
           sym = same.first
         end
         spec = current_scope.launch_declaration(sym) # XXX rename ArisingSpecification#finalize
-        compilation_context.translation_unit.announce_semantic_element(spec) unless current_scope.is_definition?
+
+        spec = current_scope.launch_definition(spec) if current_scope.is_definition?
+        
+        compilation_context.translation_unit.announce_semantic_element(spec)
         spec
+        
       when Rocc::Semantic::CeInitializer,
            Rocc::Semantic::CompoundStatement
         current_scope.finalize # FIXME_W set conditions in finalize method
@@ -259,11 +263,11 @@ module Rocc::Contexts
         leave_scope
         raise unless current_scope.is_a?(Rocc::Semantic::CeDefinition) # XXX(assert)
         current_scope.body = body
-        current_scope.finalize # FIXME_W set condiitons in finalize method
+        current_scope.finalize # FIXME_W set conditions in finalize method
         definition = current_scope
         leave_scope
         raise unless current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) # XXX(assert)
-        compilation_context.translation_unit.announce_semantic_element(definition)
+        #compilation_context.translation_unit.announce_semantic_element(definition)
         definition
       else
         warn scope_stack_trace
