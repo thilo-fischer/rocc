@@ -252,10 +252,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
         when Rocc::Semantic::Temporary::ArisingSpecification,
              Rocc::Semantic::CeInitializer
           spec = branch.finish_current_scope
-          #branch.compilation_context.translation_unit.announce_semantic_element(spec) if
-          #  branch.current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) and
-          #  branch.current_scope.is_definition? and
-          #  spec.is_a?(Rocc::Semantic::CeDeclaration) # TODO_R smells
           branch.leave_scope
           
         when Rocc::Semantic::Statement          
@@ -288,10 +284,6 @@ module Rocc::CodeElements::CharRepresented::Tokens
           when Rocc::Semantic::CeInitializer,
                Rocc::Semantic::Temporary::ArisingSpecification
             spec = branch.finish_current_scope
-            #branch.compilation_context.translation_unit.announce_semantic_element(spec) if
-            #  branch.current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) and
-            #  branch.current_scope.is_definition? and
-            #  spec.is_a?(Rocc::Semantic::CeDeclaration) # TODO_R smells
             prev_arising = branch.leave_scope
             
             next_arising = Rocc::Semantic::Temporary::ArisingSpecification.new(branch.closest_symbol_origin_scope, branch.conditions)

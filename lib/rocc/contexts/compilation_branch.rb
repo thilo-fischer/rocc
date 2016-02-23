@@ -267,7 +267,6 @@ module Rocc::Contexts
         definition = current_scope
         leave_scope
         raise unless current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) # XXX(assert)
-        #compilation_context.translation_unit.announce_semantic_element(definition)
         definition
       else
         warn scope_stack_trace
