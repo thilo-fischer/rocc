@@ -105,6 +105,10 @@ module Rocc::Contexts
       raise "unexpected termination of #{name_dbg}" unless @main_branch.finalize
     end
 
+    def announce_semantic_element(selem)
+      @translation_unit.announce_semantic_element(selem)
+    end
+
     def announce_symbol(symbol)
       @translation_unit.announce_symbol(symbol)
     end

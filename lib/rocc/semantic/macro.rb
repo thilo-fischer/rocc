@@ -26,9 +26,8 @@ module Rocc::Semantic
     #
     # +parameters+ is array with parameter names, empty array for
     # function-like macro without parameters, nil for "plain" macros
-    def initialize(origin, adducer, identifier, parameters = nil)
-      super(origin, identifier, adducer.existence_conditions, {})
-      @adducer = adducer
+    def initialize(origin, identifier, excond, parameters = nil)
+      super(origin, identifier, excond, {})
       @parameters = parameters
       @tokens = []
       log.debug{"new macro #{self}, parameters: #{@parameters.inspect}"}

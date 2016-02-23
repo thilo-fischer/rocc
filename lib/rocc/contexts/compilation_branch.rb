@@ -253,7 +253,7 @@ module Rocc::Contexts
 
         spec = current_scope.launch_definition(spec) if current_scope.is_definition?
         
-        compilation_context.translation_unit.announce_semantic_element(spec)
+        compilation_context.announce_semantic_element(spec)
         spec
         
       when Rocc::Semantic::CeInitializer,

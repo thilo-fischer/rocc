@@ -44,10 +44,10 @@ Feature: Command `ls'
     | trivial/minimal/04_local_var_decl.c   | trivial/minimal/04_local_var_decl_ls_--spec  |
     | trivial/minimal/05_var_def.c          | trivial/minimal/05_var_def_ls_--spec  |
     | trivial/minimal/06_var_ref.c          | trivial/minimal/06_var_ref_ls_--spec  |
-#    | trivial/minimal/07_func_decl.c        | trivial/minimal/07_func_decl_ls_--spec|
-#    | trivial/minimal/08_func_def.c         | trivial/minimal/08_func_def_ls_--spec |
-#    | trivial/minimal/09_macro.c            | trivial/minimal/09_macro_ls_--spec    |
-#    | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls_--spec  |
+    | trivial/minimal/07_func_decl.c        | trivial/minimal/07_func_decl_ls_--spec|
+    | trivial/minimal/08_func_def.c         | trivial/minimal/08_func_def_ls_--spec |
+    | trivial/minimal/09_macro.c            | trivial/minimal/09_macro_ls_--spec    |
+    | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls_--spec  |
 #    | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls_--spec   |
 
 

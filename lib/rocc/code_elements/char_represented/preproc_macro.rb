@@ -12,7 +12,7 @@
 # approach. See LICENSE.txt from the top-level directory for details.
 
 require 'rocc/semantic/macro'
-require 'rocc/semantic/macro_definition'
+require 'rocc/semantic/definition'
 
 module Rocc::CodeElements::CharRepresented
 
@@ -67,10 +67,17 @@ module Rocc::CodeElements::CharRepresented
       super_duty = super
       return nil if super_duty.nil?
 
-      m_def = Rocc::Semantic::CeMacroDefinition.new(self)
-      macro = Rocc::Semantic::CeMacro.new(compilation_context.translation_unit, m_def, @identifier, @parameters)
+      # TODO check for already existing macro with overlapping conditions
+
+      macro = Rocc::Semantic::CeMacro.new(compilation_context.translation_unit, @identifier, existence_conditions, @parameters)
+
+      m_def = Rocc::Semantic::CeMacroDefinition.new(self, macro)
+      compilation_context.announce_semantic_element(m_def) # FIXME extract to superclass method that does the announcement for all pp directives
+      macro.add_definition(m_def)
+
       compilation_context.announce_symbol(macro)
       compilation_context.open_token_request(macro)
+
     end # pursue
 
     def tokens

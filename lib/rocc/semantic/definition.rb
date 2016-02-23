@@ -134,4 +134,32 @@ module Rocc::Semantic
     end
   end
 
+  ##
+  # Handles macro definitions analogue to other definitions.  The
+  # CeCoPpDefine object of the preprocessor directive defining the
+  # macro is considered the macros declaration. The CeCoPpDefine
+  # object encapsulates the +#define+ token, the macros indentifier
+  # and the macros parameter list (if given). As such, the macro
+  # definition consists of a CeCoPpDefine object and a +body+ of those
+  # tokens that make up the replacement text of the macro.
+  class CeMacroDefinition < CeDefinition
+    attr_reader :symbol
+    def initialize(declaration, symbol)
+      super(declaration)
+      @symbol = symbol
+    end
+    # Define a constant containing the string to be given as
+    # SPEC_ABBREV to avoid repeated recreation of string object from
+    # string literal.
+    SPEC_ABBREV = '#def'
+    # Return a short string giving information on the kind of the
+    # character object. Return the string constant defined by the
+    # current class or -- if not defined by that class -- its
+    # closest ancestor defining it.
+    def self.spec_abbrev
+      SPEC_ABBREV
+    end
+    alias define_directive origin
+  end
+
 end # module Rocc::Semantic
