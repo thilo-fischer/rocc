@@ -153,8 +153,8 @@ module Rocc::Ui
     #
     #     [P] If used together with the + flag: Add 0 to the
     #         replacement string if function has no parameters but
-    #         +void+ was given as parameter specification in the
-    #         function's "most relevant" function signature.
+    #         +void+ was given as parameter specification in at least
+    #         one of the function's signatures.
     #
     #     [c] When used in combination with _ flag: Do *not* assume
     #         stdbool.h or C++, use +1+ and +0+ instead of +true+ and
@@ -166,6 +166,11 @@ module Rocc::Ui
     #
     # [*] Another alternate form. This flag has different meaning for
     #     different conversion specifier characters, specifically:
+    #
+    #     [P] If used together with the + flag: Add 0 to the
+    #         replacement string if function has no parameters but
+    #         +void+ was given as parameter specification in the
+    #         function's "most significant" function signature.
     #
     #     [f] never use uppercase letters
     #
@@ -390,7 +395,8 @@ module Rocc::Ui
     FLAG_AFFECT_COND_SECT  = '?'
     FLAG_SELECT_COND_SECT  = '!'
     FLAG_FILL_WIDTH        = '~'
-    FLAG_ALTERNATE_FORM    = '#'
+    FLAG_ALTERNATE_FORM_A  = '#'
+    FLAG_ALTERNATE_FORM_B  = '*'
     FLAG_CODE_ALIKE        = '_'
     FLAG_PAD_SPACE         = ' '
     FLAG_BRACKETS          = '['
@@ -598,21 +604,21 @@ module Rocc::Ui
       def format(celem)
         if applicable?(symbol_instance(celem)) # TODO_F `applicable?' is called redundantly and unnecessarily in some derived classes' str_from_celem/sym methods.
           str = str_from_celem(celem)
-        elsif flag?('~')
+        elsif flag?(FLAG_FILL_WIDTH)
           str = ''
         else
           return ''
         end
         if @min_width and str.length < @min_width
           padding = ' ' * (@min_width - str.length)
-          if flag?('-')
+          if flag?(FLAG_ADJUST_LEFT)
             str = str + padding
           else
             str = padding + str
           end
         end
         if @max_width and str.length > @max_width
-          if flag?('|')
+          if flag?(FLAG_PLAIN_TRUNCATE)
             str = str[0 ... @max_width]
           else
             Rocc::Helpers::String.str_abbrev!(str, @max_width)
@@ -638,14 +644,14 @@ module Rocc::Ui
       def str_from_celem(celem)
         if celem.is_a?(Rocc::Semantic::CeSpecification)
           str = str_from_sym(celem.symbol)
-          if flag?('#')
+          if flag?(FLAG_ALTERNATE_FORM_A)
             str
           else
             case celem
             when Rocc::Semantic::CeFunctionDefinition
               str.upcase
             when Rocc::Semantic::CeVariableDefinition
-              if celem.initializer? or flag?('*')
+              if celem.initializer? or flag?(FLAG_ALTERNATE_FORM_B)
                 str.upcase
               else
                 str
@@ -713,11 +719,26 @@ module Rocc::Ui
       def str_from_sym(symbol)
         if applicable?(symbol)
           if flag?(FLAG_NO_TRIVIAL)
-            if symbol.class.family == :function and
-              flag?(FLAG_ALTERNATE_FORM)
-              if symbol.parameters.empty? and
-                not symbol.all_declarations.find {|decl| decl.is_void?} # XXX_W determine and use the "most significant" function signature
-                ''
+            if symbol.class.family == :function
+              if symbol.parameters.empty?
+                if flag?(FLAG_ALTERNATE_FORM_A) and
+                  symbol.all_declarations.find {|decl| decl.is_void?}
+                  '0'
+                elsif flag?(FLAG_ALTERNATE_FORM_B) and
+                     symbol.significant_declaration.is_void?
+                  # XXX_F Don't need to test
+                  # symbol.significant_declaration.is_void? (which
+                  # requires determining
+                  # symbol.significant_declaration) if already tested
+                  # `symbol.all_declarations.find {|decl|
+                  # decl.is_void?}' and found that no declaration at
+                  # all is_void?. (But this only applies when both
+                  # FLAG_ALTERNATE_FORM_A and FLAG_ALTERNATE_FORM_B
+                  # are active.)
+                  '0'
+                else
+                  ''
+                end
               else
                 symbol.parameters.count.to_s
               end
@@ -758,7 +779,7 @@ module Rocc::Ui
       def str_from_sym(symbol)
         if flags.contain?(FLAG_CODE_ALIKE)
           symbol.existence_conditions.to_code(
-            flags.contain?(FLAG_ALTERNATE_FORM)
+            flags.contain?(FLAG_ALTERNATE_FORM_A)
           )
         else
           symbol.existence_conditions.to_s

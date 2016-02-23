@@ -25,7 +25,7 @@ module Rocc::Semantic
       raise "unprocessed hashargs: #{hashargs.inspect}" unless hashargs.empty? # XXX defensive progamming => remove some day
       super(origin)
       @pure_declarations = []
-      @definitions  = []
+      @definitions = []
       @identifier = identifier
       @existence_conditions = conditions
       log.info{"new symbol #{self} in #{origin} given #{conditions}"}
@@ -49,6 +49,41 @@ module Rocc::Semantic
 
     def all_declarations
       @pure_declarations + @definitions.map {|d| d.declaration}
+    end
+
+    ##
+    # Return the symbol's declaration that seems most relevant: If the
+    # symbol is a variable and the variable has an intializing
+    # definition, return the declaration implied by that
+    # definition. Otherwise, if the symbol has a definition, return
+    # the declaration implied by that definition. Otherwise, return
+    # the symbol's declaration. If multipe definitions or declarations
+    # exist with different existence conditions, consider the one with
+    # the most probable existence conditions. (If several have
+    # distinct existence conditions with same probability, an
+    # arbitrary one of these is chosen.) If multiple declaritions
+    # with identical existence condititons exist, return an arbitrary
+    # one of these.
+    #
+    #--
+    # XXX If multiple declaritions with identical existence
+    # condititons exist, return a specific one.
+    def significant_declaration
+      if @definitions.empty?
+        #if @pure_declarations.length > 1
+        #  @pure_declarations.first # TODO_W determine and return the "most significant" declaration
+        #else
+        #  @pure_declarations.first
+        #end
+        @pure_declarations.max_by {|d| d.existence_conditions.probability }
+      else
+        #if @definitions.length > 1
+        #  @definitions.first # TODO_W determine and return the "most significant" definition
+        #else
+        #  @definitions.first
+        #end
+         @definitions.max_by {|d| d.existence_conditions.probability }
+     end        
     end
     
     def ==(other)

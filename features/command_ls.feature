@@ -50,6 +50,14 @@ Feature: Command `ls'
     | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls_--spec  |
 #    | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls_--spec   |
 
+  Scenario Outline: List the most siginficant specification of each externally declared symbol in default format
+    When I invoke "ls --spec --unique" on "<code>"
+    Then the output should look as specified by "<expect>"
+
+  Scenarios: minimal
+    | code                                  | expect                                |
+    | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls_--spec_--unique  |
+
 
 #  Scenario: Get help on format used by ls
 #    When I run `rocc -e 'ls --legend'`

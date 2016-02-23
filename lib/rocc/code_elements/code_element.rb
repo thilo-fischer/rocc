@@ -272,7 +272,11 @@ module Rocc::CodeElements
       when CodeElement
         adducer.existence_conditions
       when Array
-        @cached_conditions ||= Rocc::Semantic::CeConjunctiveCondition.new(adducer.map {|a| a.existence_conditions})
+        if adducer.size == 1
+          adducer.first.existence_conditions
+        else
+          @cached_conditions ||= Rocc::Semantic::CeConjunctiveCondition.new(adducer.map {|a| a.existence_conditions})
+        end
       else
         raise
       end

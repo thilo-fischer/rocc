@@ -17,25 +17,46 @@ module Rocc::Semantic
 
   class CeVariable < CeTypedSymbol
 
-    def self.default_linkage
-      :extern
-    end
-
-    def name
-      "variable `#{@identifier}'"
-    end
+   def initialize(origin, identifier, conditions, hashargs)
+     super
+     @initialize_defs = nil
+   end
+   
+   def self.default_linkage
+     :extern
+   end
+   
+   def name
+     "variable `#{@identifier}'"
+   end
+   
+   def name_dbg
+     "Var[#{@identifier}]"
+   end
+   
+   # FIXME? define constant instead of function?
+   def self.family
+     :variable
+   end
+   def self.family_character
+     'v'
+   end
+   
+    ##
+    # +initialize_defs+ variable definitions that initilize the
+    # variable.
+   def initialize_defs
+    @initialize_defs ||= @definitions.select {|d| d.initializer?}
+   end
+   
+   def significant_declaration
+     if initialize_defs.empty?
+       super
+     else
+       initialize_defs.max_by {|d| d.existence_conditions.probability }
+     end
+   end
     
-    def name_dbg
-      "Var[#{@identifier}]"
-    end
-
-    # FIXME? define constant instead of function?
-    def self.family
-      :variable
-    end
-    def self.family_character
-      'v'
-    end
   end # class CeVariable
 
 end # module Rocc::Semantic

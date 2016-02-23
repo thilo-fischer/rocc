@@ -27,11 +27,11 @@ module Rocc::Commands
         opts.banner = "Usage: #{@name} [options] [object]..."
         
         opts.on(
-          "-t type",
-          "--type",
+          '-t type',
+          '--type',
           %w[file symbol identifier macro function variable type
              tag struct union enum label],
-          "list only objects of a certain type"
+          'list only objects of a certain type'
         ) do |arg|
           if options.key?(:type) then
             options[:type] = [arg]
@@ -41,9 +41,9 @@ module Rocc::Commands
         end
 
         opts.on(
-          "--literal [type]",
+          '--literal [type]',
           %w[string char integer float],
-          "list literals of specific type"
+          'list literals of specific type'
         ) do |arg|
           if options.key?(:literal) then
             options[:literal] = [arg]
@@ -53,9 +53,9 @@ module Rocc::Commands
         end
 
         opts.on(
-          "--comment [type]",
+          '--comment [type]',
           %w[block line],
-          "list comments"
+          'list comments'
         ) do |arg|
           if options.key?(:comment) then
             options[:comment] = [arg]
@@ -65,9 +65,9 @@ module Rocc::Commands
         end
 
         opts.on(
-          "-f criteria",
-          "--filter",
-          "list only objects matching the given filter criteria."
+          '-f criteria',
+          '--filter',
+          'list only objects matching the given filter criteria.'
           #Multiple filter criteria may be defined by repeating this flag multiple times.
         ) do |arg|
           if options.key?(:filter) then
@@ -78,67 +78,67 @@ module Rocc::Commands
         end
 
         opts.on(
-          "-l",
-          "--long",
-          "long listing format"
+          '-l',
+          '--long',
+          'long listing format'
         ) do |arg|
           options[:format] = :long
         end
 
         opts.on(
-          "--format format_string",
-          "list symbols using the given format string"
+          '--format format_string',
+          'list symbols using the given format string'
         ) do |arg|
           options[:format] = arg
         end
 
-        #opts.on("-F",
-        #        "--classify",
-        #        "append indicator representing it's type to objects") do |arg|
+        #opts.on('-F',
+        #        '--classify',
+        #        'append indicator representing it's type to objects') do |arg|
         #  options[:one_per_line] = true
         #end
 
-        #opts.on("-1",
-        #        "--one-per-line",
-        #        "list one object per line") do |arg|
+        #opts.on('-1',
+        #        '--one-per-line',
+        #        'list one object per line') do |arg|
         #  options[:one_per_line] = true
         #end
 
         opts.on(
-          "-s",
-          "--spec",
-          "list symbol specifications (i.e. declarations and definitions) of symbols"
+          '-s',
+          '--spec',
+          'list symbol specifications (i.e. declarations and definitions) of symbols'
         ) do |arg|
           options[:spec] = true
         end
 
         opts.on(
-          "-u",
-          "--unique",
-          "with -s: list just one specifications per symbol"
+          '-u',
+          '--unique',
+          'with -s: list just one specifications per symbol (the "most significant")'
         ) do |arg|
           options[:unique] = true
         end
 
         opts.on(
-          "-R",
-          "--recursive",
-          "list recursively according to symbols' origins"
+          '-R',
+          '--recursive',
+          'list recursively according to symbols\' origins'
         ) do |arg|
           options[:recursive] = true
         end
 
         opts.on(
-          "--assume condition",
-          "for preprocessor conditionals, assume condition is true"
+          '--assume condition',
+          'for preprocessor conditionals, assume condition is true'
         ) do |arg|
           list = options[:assume] ||= []
           list << arg
         end
 
         opts.on(
-          "--assume-def macro",
-          "for preprocessor conditionals, assume a macro with the given name is defined"
+          '--assume-def macro',
+          'for preprocessor conditionals, assume a macro with the given name is defined'
         ) do |arg|
           list = options[:assume] ||= []
           list << "defined(#{arg})"
@@ -154,17 +154,22 @@ module Rocc::Commands
     def self.run(applctx, args, options)
       
       if applctx.cursor == Dir then
-        puts `ls #{args.join(" ")}`
+        puts `ls #{args.join(' ')}`
       elsif args.empty?
         #warn "cursor: #{applctx.cursor}"
         #warn "symbols: #{applctx.cursor.find_symbols}"
         formatter = Rocc::Ui::SymbolFormatter.default_formatter
         recursive = options[:recursive]
         if options[:spec]
-          warn "#{applctx.cursor.content.join("\n")}"
-          applctx.cursor.content.each do |semantic_elem|
-            if semantic_elem.is_a?(Rocc::Semantic::CeSpecification)
-              puts formatter.format(semantic_elem) if recursive or semantic_elem.symbol.origin.equal?(applctx.cursor)
+          if options[:unique]
+            applctx.cursor.find_symbols(:origin => applctx.cursor).each do |s|
+              puts formatter.format(s.significant_declaration)
+            end
+          else
+            applctx.cursor.content.each do |semantic_elem|
+              if semantic_elem.is_a?(Rocc::Semantic::CeSpecification)
+                puts formatter.format(semantic_elem) if recursive or semantic_elem.symbol.origin.equal?(applctx.cursor)
+              end
             end
           end
         else
