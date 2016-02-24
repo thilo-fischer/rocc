@@ -37,11 +37,16 @@ Then /^the output should look as specified by "([^"]*)"$/ do |basepath|
       literals << slc[0]
       regexps  << slc[1]
     end
-    regexp_source = ''
+    
+    # don't care for trailing \n character XXX? take into account?
+    literals.last.chomp!
+    
+    regexp_source = '\A'
     literals.each_with_index do |l, idx|
       regexp_source << Regexp.escape(l)
       regexp_source << regexps[idx] if regexps[idx]
     end
+    regexp_source << '\Z'
     #warn "AAAA #{regexp_source}"
     
     # XXX_R is there a better syntax? e.g. with `step' instead of
