@@ -61,8 +61,8 @@ module Rocc::CodeElements::CharRepresented::Tokens
     # Shall not overridden in child classes, override pursue_branch
     # instead.
     #
-    # TODO_R super_duty mechanism smells and does not seem necessary
-    # anymore. remove?
+    # TODO_R(super_duty) super_duty mechanism smells and does not seem
+    # necessary anymore. remove?
     def pursue(compilation_context)
       super_duty = super
       return nil if super_duty.nil?

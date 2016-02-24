@@ -152,7 +152,7 @@ module Rocc::CodeElements::CharRepresented
     ##
     # CharObject's implementation of CodeElement#pursue.
     #
-    # TODO_R? Make pursue methods of CeCharObject's subclasses
+    # TODO_R(super_duty)? Make pursue methods of CeCharObject's subclasses
     # private, rename it to char_object_subclass_specific_pursue (or
     # alike) and call it from CeCharObject#pursue instead of assuming
     # derived classes call super in their pursue method?

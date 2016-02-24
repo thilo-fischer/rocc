@@ -63,7 +63,7 @@ module Rocc::CodeElements::CharRepresented
 
 
     def pursue(compilation_context)
-      
+
       super_duty = super
       return nil if super_duty.nil?
 

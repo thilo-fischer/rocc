@@ -70,19 +70,9 @@ module Rocc::Semantic
     # condititons exist, return a specific one.
     def significant_declaration
       if @definitions.empty?
-        #if @pure_declarations.length > 1
-        #  @pure_declarations.first # TODO_W determine and return the "most significant" declaration
-        #else
-        #  @pure_declarations.first
-        #end
-        @pure_declarations.max_by {|d| d.existence_conditions.probability }
+        @pure_declarations.max_by {|d| d.existence_conditions.probability}
       else
-        #if @definitions.length > 1
-        #  @definitions.first # TODO_W determine and return the "most significant" definition
-        #else
-        #  @definitions.first
-        #end
-         @definitions.max_by {|d| d.existence_conditions.probability }
+        @definitions.max_by {|d| d.existence_conditions.probability}
      end        
     end
     
@@ -114,10 +104,6 @@ module Rocc::Semantic
       @definitions << arg
     end
     
-    def existence_probability
-      existence_conditions.probability
-    end
-
     def implicit_existence_conditions
       inject_start = (@pure_declarations + @definitions).first.existence_conditions # XXX works, but smells
       (@pure_declarations + @definitions).inject(inject_start) do |conds, spec|

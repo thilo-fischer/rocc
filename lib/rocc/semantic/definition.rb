@@ -160,6 +160,9 @@ module Rocc::Semantic
       SPEC_ABBREV
     end
     alias define_directive origin
+    def existence_conditions
+      declaration.existence_conditions
+    end
   end
 
 end # module Rocc::Semantic
