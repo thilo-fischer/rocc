@@ -172,6 +172,11 @@ module Rocc::Ui
     #         +void+ was given as parameter specification in the
     #         function's "most significant" function signature.
     #
+    #     [c, C]
+    #         When being applied to a specification: Use the existence
+    #         conditions of the specified symbol instead of those of
+    #         the specification itself.
+    #
     #     [f] never use uppercase letters
     #
     # [_] Use replacement string that resembles target language
@@ -271,15 +276,16 @@ module Rocc::Ui
     #
     # === Conditions
     #
-    # [c] Existence conditions of the symbol.
+    # [c] Existence conditions of the symbol or specification to be
+    #     formatted.
     # 
-    # [C] A probability value for the symbol's existence conditions to
-    #     apply based on the assumption that every preprocessor
-    #     conditional that is not trivial (like e.g. <tt>#if 0</tt>,
-    #     <tt>#if 1</tt> or include guards) has a 50% chance to
-    #     apply. Exact meaning of the vaule might change in future,
-    #     but meaning when combinend with the + flag should be
-    #     preserved.
+    # [C] A probability value for the symbol's or specification's
+    #     existence conditions to apply based on the assumption that
+    #     every preprocessor conditional that is not trivial (like
+    #     e.g. <tt>#if 0</tt>, <tt>#if 1</tt> or include guards) has a
+    #     50% chance to apply. Exact meaning of the vaule might change
+    #     in future, but meaning when combinend with the + flag should
+    #     be preserved.
     #
     # === Specifications
     #
@@ -386,8 +392,6 @@ module Rocc::Ui
       new(format_str)
     end # def self.compile
 
-    DEFAULT_FORMAT_STR = "%f %i%^(%+#P%{%32T[%?C]%}"
-
     FLAG_ADJUST_LEFT       = '-'
     FLAG_PLAIN_TRUNCATE    = '|'
     FLAG_APPLICABLE        = '^'
@@ -406,6 +410,9 @@ module Rocc::Ui
     FLAG_GRAVE_QUOTES      = '`'
     FLAG_C_COMMENT         = '*'
  
+    DEFAULT_FORMAT_STR = "%f %i%^(%+#P%{%32T[%?C]%}"
+    DEFAULT_SPEC_UNIQUE_FORMAT_STR = DEFAULT_FORMAT_STR.sub('%?C', "%?#{FLAG_ALTERNATE_FORM_B}C")
+
     def self.default_formatter
       @default_formatter ||= compile(DEFAULT_FORMAT_STR)
     end        
@@ -582,10 +589,20 @@ module Rocc::Ui
       # whether the information this conversion uses from the symbol
       # is trivial (wrt ? and ! flag)
       #
-      # Child classes need to override this method to respond to ? and
-      # ! flags properly.
+      # Child classes need to override this method or trivial_celem?
+      # to respond to ? and ! flags properly.
       def trivial?(symbol)
         false
+      end
+
+      ##
+      # whether the information this conversion uses from the code element
+      # +celem+ is trivial (wrt ? and ! flag)
+      #
+      # Child classes need to override this method or trivial? to
+      # respond to ? and ! flags properly.
+      def trivial_celem?(celem)
+        trivial?(symbol_instance(celem))
       end
 
       ##
@@ -597,12 +614,21 @@ module Rocc::Ui
         true
       end
 
+      ##
+      # whether the conversion is applicable to code elements like +celem+
+      #
+      # Child classes which are not applicable to every specification
+      # need to override this method.
+      def applicable_celem?(celem)
+        applicable?(symbol_instance(celem))
+      end
+
       def append(destination, celem)
         destination << format(celem)
       end
       
       def format(celem)
-        if applicable?(symbol_instance(celem)) # TODO_F `applicable?' is called redundantly and unnecessarily in some derived classes' str_from_celem/sym methods.
+        if applicable_celem?(celem)
           str = str_from_celem(celem)
         elsif flag?(FLAG_FILL_WIDTH)
           str = ''
@@ -706,54 +732,46 @@ module Rocc::Ui
 
     class ConvSymParamTypeList < ConvSymParamConversion
       def str_from_sym(symbol)
-        if applicable?(symbol)
-          raise "not yet implemented" # FIXME
+        raise "not yet implemented" # FIXME
         #parameters.map {|p| p.type_string}.join(', ')
-        else
-          ''
-        end
       end
     end # class ConvSymParamTypeList
     
     class ConvSymParamCount < ConvSymParamConversion
       def str_from_sym(symbol)
-        if applicable?(symbol)
-          if flag?(FLAG_NO_TRIVIAL)
-            if symbol.class.family == :function
-              if symbol.parameters.empty?
-                if flag?(FLAG_ALTERNATE_FORM_A) and
-                  symbol.all_declarations.find {|decl| decl.is_void?}
-                  '0'
-                elsif flag?(FLAG_ALTERNATE_FORM_B) and
-                     symbol.significant_declaration.is_void?
-                  # XXX_F Don't need to test
-                  # symbol.significant_declaration.is_void? (which
-                  # requires determining
-                  # symbol.significant_declaration) if already tested
-                  # `symbol.all_declarations.find {|decl|
-                  # decl.is_void?}' and found that no declaration at
-                  # all is_void?. (But this only applies when both
-                  # FLAG_ALTERNATE_FORM_A and FLAG_ALTERNATE_FORM_B
-                  # are active.)
-                  '0'
-                else
-                  ''
-                end
+        if flag?(FLAG_NO_TRIVIAL)
+          if symbol.class.family == :function
+            if symbol.parameters.empty?
+              if flag?(FLAG_ALTERNATE_FORM_A) and
+                symbol.all_declarations.find {|decl| decl.is_void?}
+                '0'
+              elsif flag?(FLAG_ALTERNATE_FORM_B) and
+                   symbol.significant_declaration.is_void?
+                # XXX_F Don't need to test
+                # symbol.significant_declaration.is_void? (which
+                # requires determining
+                # symbol.significant_declaration) if already tested
+                # `symbol.all_declarations.find {|decl|
+                # decl.is_void?}' and found that no declaration at
+                # all is_void?. (But this only applies when both
+                # FLAG_ALTERNATE_FORM_A and FLAG_ALTERNATE_FORM_B
+                # are active.)
+                '0'
               else
-                symbol.parameters.count.to_s
+                ''
               end
             else
-              if symbol.parameters.empty?
-                ''
-              else
-                symbol.parameters.count.to_s
-              end
+              symbol.parameters.count.to_s
             end
           else
-            symbol.parameters.count.to_s
+            if symbol.parameters.empty?
+              ''
+            else
+              symbol.parameters.count.to_s
+            end
           end
         else
-          ''
+          symbol.parameters.count.to_s
         end
       end
     end # class ConvSymParamCount
@@ -770,26 +788,34 @@ module Rocc::Ui
     end # class ConvSymParamNamedList
 
     class ConditionConversion < Conversion
-      def trivial?(symbol)
-        symbol.existence_conditions.tautology?
+      def relevant_celem(celem)
+        if celem.is_a?(Rocc::Semantic::CeSpecification) and flag?(FLAG_ALTERNATE_FORM_B)
+          celem.symbol
+        else
+          celem
+        end
+      end
+      def trivial_celem?(celem)
+        relevant_celem(celem).existence_conditions.tautology?
       end
     end
     
     class ConvSymExistCond < ConditionConversion
-      def str_from_sym(symbol)
-        if flags.contain?(FLAG_CODE_ALIKE)
-          symbol.existence_conditions.to_code(
-            flags.contain?(FLAG_ALTERNATE_FORM_A)
+      def str_from_celem(celem)
+        celem = relevant_celem(celem)
+        if flag?(FLAG_CODE_ALIKE)
+          celem.existence_conditions.to_code(
+            flag?(FLAG_ALTERNATE_FORM_A)
           )
         else
-          symbol.existence_conditions.to_s
+          celem.existence_conditions.to_s
         end
       end
     end # class ConvSymExistCond
     
     class ConvSymExistProb < ConditionConversion
-      def str_from_sym(symbol)
-        symbol.existence_probability.to_s
+      def str_from_celem(celem)
+        relevant_celem(celem).existence_conditions.probability.to_s
       end
     end # class ConvSymExistProb
     
@@ -853,10 +879,9 @@ module Rocc::Ui
         latest_candidate_part = nil
         active_part = @parts.find do |part|
           part.format_spec.find do |spec|
-            sym = symbol_instance(celem)
             if spec.is_a?(Conversion) and spec.affect_conditional?
               latest_candidate_part = part
-              spec.applicable?(sym) and not spec.trivial?(sym)
+              spec.applicable_celem?(celem) and not spec.trivial_celem?(celem)
             else
               false
             end
@@ -937,13 +962,12 @@ module Rocc::Ui
       end
 
       def append(destination, celem)
-        symbol = symbol_instance(celem)
         if flag?(FLAG_APPLICABLE) and
-          not @target_spec.applicable?(symbol)
+          not @target_spec.applicable_celem?(celem)
           @target_spec.append(destination, celem)
         elsif flag?(FLAG_NO_TRIVIAL) and
-          (not @target_spec.applicable?(symbol) or
-           @target_spec.trivial?(symbol))
+          (not @target_spec.applicable_celem?(celem) or
+           @target_spec.trivial_celem?(celem))
           @target_spec.append(destination, celem)
         else
           destination << '('

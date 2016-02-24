@@ -162,6 +162,7 @@ module Rocc::Commands
         recursive = options[:recursive]
         if options[:spec]
           if options[:unique]
+            formatter = Rocc::Ui::SymbolFormatter.compile(Rocc::Ui::SymbolFormatter::DEFAULT_SPEC_UNIQUE_FORMAT_STR)
             applctx.cursor.find_symbols(:origin => applctx.cursor).each do |s|
               puts formatter.format(s.significant_declaration)
             end
@@ -178,7 +179,11 @@ module Rocc::Commands
           end
         end
       else
-        args.each {|o| o.list(STDOUT, options) } # FIXME_W
+        args.each do |a|
+          applctx.cursor.find_symbols(:origin => applctx.cursor, :identifier => a).each do |s|
+            puts formatter.format(s)
+          end
+        end
       end
 
     end # run
