@@ -92,8 +92,6 @@ module Rocc::CodeElements::FileRepresented
       super(lineread_context)
     end
 
-    private
-    
     ##
     # Test if file changed since we parsed it the last time.
     #
@@ -123,6 +121,8 @@ module Rocc::CodeElements::FileRepresented
       return true
     end
 
+    private
+    
     ##
     # Update modification timestamp and checksum values used to detect
     # file modification to the values given as parameters or to the

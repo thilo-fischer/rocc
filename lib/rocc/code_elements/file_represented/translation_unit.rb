@@ -46,7 +46,23 @@ module Rocc::CodeElements::FileRepresented
       main_file.basename + ".o"
     end
 
+    ##
+    # Get all symbols found in this translation unit matching the
+    # given +criteria+.
+    #
+    # Includes updating the translation unit's symbol table if symbol
+    # table has not yet been created or is outdated (due to
+    # translation unit's files having been changed).
+    # 
+    # TODO_F check up_to_date? less often, only once per Command#run
+    # or similar (up_to_date? queries file's modification times)
     def find_symbols(criteria = {})
+      # update symbols if not yet populated or outdated (lazy loading
+      # -- sort of ...)
+      unless @symbol_idx and up_to_date?
+        populate
+      end
+      
       @symbol_idx.find_symbols(criteria)
     end
 
@@ -85,31 +101,15 @@ module Rocc::CodeElements::FileRepresented
     end
 
     ##
-    # Get all symbols found in this translation unit. Restrict to only
-    # those symbols matching specific criteria if filter is given.
-    #
-    # Includes updating the translation unit's symbol table if symbol
-    # table has not yet been created or is outdated (due to
-    # translation unit's files having been changed).
-    def symbols(criteria = {})
-      # update symbols if not yet populated or outdated (lazy loading -- sort of ...)
-      unless @symbol_idx and up_to_date?
-        populate
-      end
-      
-      @symbol_idx.find_symbols(criteria)
-    end
-
-    ##
     # Check if files of this translation unit changed on disk.
     def up_to_date?
       # If symbol table is not (yet) available, return false.
       # (Normally checked implicitly by +up_to_date?+ because the main
       # file's +@mod_time+ and/or +@checksum+ would be +nil+ as long
-      # as +@symbols+ is nil; this logic will fail though when one
+      # as +@symbol_idx+ is nil; this logic will fail though when one
       # translation unit's main file +#include+s the main file of
       # another translation unit.)
-      return false unless @symbols
+      return false unless @symbol_idx
       # If the main file has changed, return false.
       return false unless main_file.up_to_date?
       # If none of the files included from the main file (directly or
