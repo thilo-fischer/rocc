@@ -17,4 +17,4 @@ F i_func_v(0)
 F i_func_i(1)
 F pc_func_ui_c_pc(3)
 F main(2)
-V foobar => []
+V foobar///\s*\[0\.\d+\]///

@@ -15,7 +15,44 @@ Then /^the output should look as specified by "([^"]*)"$/ do |basepath|
   @basepath = File.join(TESTDATA_DIR, 'expect', basepath)
 
   filename_out = @basepath + '.stdout'
-  @expect_out = IO.read(filename_out) 
+
+  filecontent = IO.read(filename_out)
+  parts = filecontent.split('///')
+  if parts.length == 1
+    # use string match if no regular expression specified in
+    # expectiation file => better diff display if test fails
+    @expect_out = filecontent
+    # XXX_R is there a better syntax? e.g. with `step' instead of
+    # `steps'?
+    steps %Q{
+    Then the output should contain exactly:
+"""
+#{@expect_out}
+"""
+    }
+  else
+    literals = []
+    regexps  = []
+    parts.each_slice(2) do |slc|
+      literals << slc[0]
+      regexps  << slc[1]
+    end
+    @expect_out = ''
+    literals.each_with_index do |l, idx|
+      @expect_out << Regexp.escape(l)
+      @expect_out << regexps[idx] if regexps[idx]
+    end
+    #warn "AAAA #{@expect_out}"
+    
+    # XXX_R is there a better syntax? e.g. with `step' instead of
+    # `steps'?
+    steps %Q{
+    Then the output should match:
+"""
+#{@expect_out}
+"""
+    }
+  end
   
   filename_err = @basepath + '.stderr'
   if File.exist?(filename_err)
@@ -24,16 +61,9 @@ Then /^the output should look as specified by "([^"]*)"$/ do |basepath|
     @expect_err = nil
   end
   
-  # fixme: is there a better syntax? e.g. with `step' instead of `steps'?
-  steps %Q{
-    Then the stdout should contain exactly:
-"""
-#{@expect_out}
-"""
-  }
-  
   if @expect_err
-    # fixme: is there a better syntax? e.g. with `step' instead of `steps'?
+    # XXX_R is there a better syntax? e.g. with `step' instead of
+    # `steps'?
     steps %Q{
       And the stderr should contain exactly:
 """

@@ -30,5 +30,6 @@ F v_func()
 F i_func_v(0)
 F main(2)
 F i_func_i(1)
-F pc_func_ui_c_pc(3)
-V foobar => []
+F pc_func_ui_c_pc(3)///\s*\[0\.\d+\]///
+V foobar///\s*\[0\.\d+\]///
+F pc_func_ui_c_pc(3)///\s*\[0\.\d+\]///
