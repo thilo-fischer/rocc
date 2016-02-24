@@ -47,7 +47,7 @@ module Rocc::Contexts # XXX rename Contexts => Context
 
     def initialize
       @fs_elem_idx = Rocc::CodeElements::FileRepresented::FilesystemElementIndex.new
-      Rocc::Session::Session.current_session.include_dirs.each {|bd| @fs_elem_idx.announce_element(CeBaseDirectory, bd, :include_dir)}
+      Rocc::Session::Session.instance.include_dirs.each {|bd| @fs_elem_idx.announce_element(CeBaseDirectory, bd, :include_dir)}
     end
     
     ##

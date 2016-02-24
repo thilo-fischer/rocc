@@ -11,6 +11,8 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+require 'singleton'
+
 require 'rocc/session/logging'
 require 'rocc/session/options'
 require 'rocc/session/application_context'
@@ -24,28 +26,20 @@ require 'rocc/code_elements/file_represented/file'
 
 ##
 # Things related to the currently running program instance.
-#--
-# XXX? use Singleton mixin? (TRPL 7.4.5)
 module Rocc::Session
 
   class Session
+
+    include Singleton
 
     extend  Rocc::Session::LogClientClassMixin
     include Rocc::Session::LogClientInstanceMixin
 
     attr_reader :input_files, :include_dirs, :action, :working_dir, :options
 
-    @@session = nil
-    
-    def self.current_session
-      @@session
-    end
-
     attr_reader :modules
     
     def initialize
-      raise "There can only be one!" if @@session
-      
       # parse command line arguments
       cmdlineparser = Rocc::Ui::CommandLineParser.new
       cmdlineparser.parse
@@ -74,8 +68,6 @@ module Rocc::Session
       # previous rocc session (which might have had a different
       # working dir).
       @working_dir = Dir.pwd
-
-      @@session = self
     end
 
     def options

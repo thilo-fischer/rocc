@@ -93,11 +93,11 @@ module Rocc::CodeElements::CharRepresented
         # include directive gives absolute pathname
         path_abs = path
       else
-        #warn "try to find `#{path}' for #{name_dbg}: will test #{File.absolute_path(path, current_dir.path_full)} if #{quote}==doublequote, include dirs are: `#{Rocc::Session::Session.current_session.include_dirs}'"
+        #warn "try to find `#{path}' for #{name_dbg}: will test #{File.absolute_path(path, current_dir.path_full)} if #{quote}==doublequote, include dirs are: `#{Rocc::Session::Session.instance.include_dirs}'"
         if quote == :doublequote and File.exist?(File.absolute_path(path, current_dir.path_full))
           path_abs = File.absolute_path(path, current_dir.path_full)
         else
-          session = Rocc::Session::Session.current_session
+          session = Rocc::Session::Session.instance
           dir = session.include_dirs.find {|d| File.exist?(File.absolute_path(path, d))}
           raise "Cannot find file included from #{self}: #{path}" unless dir
           path_abs = File.absolute_path(path, dir)

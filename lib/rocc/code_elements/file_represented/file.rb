@@ -163,11 +163,11 @@ module Rocc::CodeElements::FileRepresented
     end
 
     def change_detection_mtime?
-      Rocc::Session::Session::current_session.options.value(:change_detection).include?("mtime")
+      Rocc::Session::Session.instance.options.value(:change_detection).include?("mtime")
     end
 
     def change_detection_sha1?
-      Rocc::Session::Session::current_session.options.value(:change_detection).include?("sha1")
+      Rocc::Session::Session.instance.options.value(:change_detection).include?("sha1")
     end
 
   end # class CeFile

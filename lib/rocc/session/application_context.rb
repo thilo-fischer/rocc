@@ -26,14 +26,13 @@ module Rocc::Session
 
     def initialize
 
-      @cursor = Session.current_session.modules
+      @cursor = Session.instance.modules
       if @cursor.count == 1
         @cursor = @cursor.first
         if @cursor.translation_units.count == 1
           @cursor = @cursor.translation_units.first
         end
       end
-
     end
     
   end # class ApplicationContext
