@@ -1,23 +1,9 @@
 M NOTHING
 M FORTYTWO
 M POINTER_TO(1)
-v i_var
-v cusi_var
-v es_var
-v sll_var
-v c_var_a
-v c_var_b
-v pc_var_a
-v c_var_c
-v pc_var_b
-v pc_var_c
-v c_var_d
-f v_func()
-f i_func_v(0)
-f i_func_i(1)
-f pc_func_ui_c_pc(3)
 V i_var
 V cusi_var
+v es_var
 V sll_var
 V c_var_a
 V c_var_b
@@ -28,7 +14,7 @@ V pc_var_c
 V c_var_d
 F v_func()
 F i_func_v(0)
-F main(2)
 F i_func_i(1)
 F pc_func_ui_c_pc(3)
+F main(2)
 V foobar => []

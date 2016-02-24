@@ -199,7 +199,7 @@ module Rocc::CodeElements
     # a +Class+ (that is a subclass of +CodeElement+), descend until
     # an origin is found that +is_a?+ +depth+.
     def descend_origin(depth = 1)
-      warn "#{self}.decend_origin(#{depth})"
+      #warn "#{self}.decend_origin(#{depth})"
       case depth
       when Integer
         if depth == 0
@@ -275,7 +275,15 @@ module Rocc::CodeElements
         if adducer.size == 1
           adducer.first.existence_conditions
         else
-          @cached_conditions ||= Rocc::Semantic::CeConjunctiveCondition.new(adducer.map {|a| a.existence_conditions})
+          # XXX_F
+          unless @cached_conditions
+            @cached_conditions = adducer.first.existence_conditions
+            
+            adducer[1..-1].each do |a|
+              @cached_conditions = @cached_conditions.conjunction(a.existence_conditions)
+            end
+          end
+          @cached_conditions
         end
       else
         raise

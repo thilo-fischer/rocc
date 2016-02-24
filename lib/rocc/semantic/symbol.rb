@@ -96,12 +96,20 @@ module Rocc::Semantic
       @pure_declarations << arg
     end
 
-    def add_definition(arg)
+    def check_double_symbol(arg)
       already_defined = @definitions.find do |d|
         d.existence_conditions.imply?(arg.existence_conditions) or
           arg.existence_conditions.imply?(d.existence_conditions)
       end
-      raise "double defined symbol: #{arg} found at #{arg.location}, but already defined at #{already_defined.location}" if already_defined
+      if already_defined
+        #warn "arg[#{arg}]@#{arg.existence_conditions.inspect}(#{arg.existence_conditions}) #{already_defined.existence_conditions.imply?(arg.existence_conditions)?'<':''}==#{arg.existence_conditions.imply?(already_defined.existence_conditions)?'>':''} already_defined[#{already_defined}]@#{already_defined.existence_conditions.inspect}(#{already_defined.existence_conditions})"
+        raise "doubly defined symbol: #{arg} found at #{arg.location}, but already defined at #{already_defined.location}"
+      end
+    end
+    private :check_double_symbol
+
+    def add_definition(arg)
+      check_double_symbol(arg)
       raise "programming error :(" if @pure_declarations.include?(arg.declaration) # XXX(assert)
       @definitions << arg
     end

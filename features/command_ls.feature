@@ -48,7 +48,7 @@ Feature: Command `ls'
     | trivial/minimal/08_func_def.c         | trivial/minimal/08_func_def_ls_--spec |
     | trivial/minimal/09_macro.c            | trivial/minimal/09_macro_ls_--spec    |
     | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls_--spec  |
-#    | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls_--spec   |
+    | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls_--spec   |
 
   Scenario Outline: List the most siginficant specification of each externally declared symbol in default format
     When I invoke "ls --spec --unique" on "<code>"
@@ -57,6 +57,7 @@ Feature: Command `ls'
   Scenarios: minimal
     | code                                  | expect                                |
     | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls_--spec_--unique  |
+    | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls_--spec_--unique   |
 
 
 #  Scenario: Get help on format used by ls
