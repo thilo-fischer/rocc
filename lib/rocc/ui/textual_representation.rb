@@ -536,6 +536,7 @@ module Rocc::Ui
         if celem.is_a?(Rocc::Semantic::CeSymbol)
           celem
         else
+          #warn "CELEM #{celem}"
           celem.symbol
         end
       end

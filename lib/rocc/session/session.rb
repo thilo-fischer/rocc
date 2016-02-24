@@ -89,7 +89,13 @@ module Rocc::Session
         isession = Rocc::Ui::Interactive::Session.new(@application_context)
         isession.start
       else
-        Rocc::Commands::Command::invoke(@application_context, @action)
+        # TODO_R quick and dirty
+        actions = @action.split(';')
+        #warn "ACTIONS #{actions}"
+        actions.each do |a|
+          #warn "INVOKE #{a}"
+          Rocc::Commands::Command::invoke(@application_context, a.strip)
+        end
       end
 
     end # run

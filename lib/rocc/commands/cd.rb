@@ -16,7 +16,7 @@ module Rocc::Commands
   class Cd < Command
 
     @name = 'cd'
-    @description = 'Change current directory or object.'
+    @description = 'Change current code element (or directory).'
     
     def self.option_parser(options)
       
@@ -29,39 +29,24 @@ module Rocc::Commands
     end # option_parser
 
 
-    def self.run(env, args, options)
+    def self.run(applctx, args, options)
       
       if args.length == 0
+        # cd with no arguments cds into the highest level of the
+        # current module (or into the module's translation unit if
+        # module has only one translation unit)
         arg = "//"
       elsif args.length == 1
-        arg = args[0]
+        arg = args.first
       else
-        # providing several arguments cds into all these sequentially (putting them into the oldpwd history)
-        args.each { |a| run(env, [a], options) }
+        # providing several arguments cds into all these sequentially
+        # (putting them into the cursor history)
+        #
+        # XXX sensible?
+        args.each {|a| run(applctx, [a], options)}
       end
 
-      target = env.eval_path(arg)
-      
-      if target
-
-        env.oldpwd << env.cursor
-
-        case target
-        when CodeObject
-          env.obj_cursor = target
-          env.cursor = env.obj_cursor
-        when String
-          Dir.chdir(target)
-          env.cursor = Dir
-        else
-          raise
-        end
-
-      else
-
-        log.error{"Cannot #{name} to `#{arg}': No such directory or object."}
-
-      end
+      applctx.cursor_cd(arg)
 
     end # run
 

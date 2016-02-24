@@ -42,6 +42,7 @@ module Rocc::Commands
       argv = commandline.split(/\s+/) # fixme: quotes, escapes
 
       cmd = argv.shift
+      #warn "CMD #{cmd}"
       @@command_classes[cmd].call(env, argv)
 
     end # invoke
