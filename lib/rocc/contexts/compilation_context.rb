@@ -52,8 +52,8 @@ module Rocc::Contexts
     # join as many (active) branches as possible
     def consolidate_branches
       log.debug{"active branches:       #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
-      @main_branch.consolidate_branches
-      log.info {"consolidated branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
+      has_joint = @main_branch.consolidate_branches
+      log.add(has_joint ? Logger::INFO : Logger::DEBUG){"consolidated branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
     end
 
     def terminate

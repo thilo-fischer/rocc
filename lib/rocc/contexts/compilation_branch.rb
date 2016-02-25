@@ -460,23 +460,27 @@ module Rocc::Contexts
     def join_forks
       raise "join_fork called, but #{self} still has forks #{@forks}" unless @forks.length == 1 # XXX(assert)
       raise "distinct conditions of branch and last remaining fork: parent <=> #{@branching_condition}, fork <=> #{@forks.first.branching_condition}" unless @branching_condition.equivalent?(@forks.first.branching_condition) # XXX(assert)
-      log.info{"join and #{@forks.first} into #{self}"}
+      log.info{"join #{@forks.first} into #{self}"}
       derive_progress_info(self)
       @forks = []
       self
     end
     private :join_forks
 
-    # join as many (active) branches as possible
+    # Join as many (active) branches as possible.
+    #
+    # Returns false if no branches could be joined, true otherwise.
     def consolidate_branches
       if @forks.empty?
         raise "programming error: method should not be invoked on leaf nodes" unless is_root? # XXX(assert)
-        return
+        return false
       end
 
       consol_forks = []
+      joint_some = false
 
-      @forks.first.consolidate_branches if @forks.first.has_forks? and @forks.first.is_active?
+      has_joint = @forks.first.consolidate_branches if @forks.first.has_forks? and @forks.first.is_active?
+      joint_some ||= has_joint
 
       #warn "FOO"
 
@@ -487,7 +491,8 @@ module Rocc::Contexts
           if another.is_active?
             
             if another.has_forks?
-              another.consolidate_branches
+              has_joint = another.consolidate_branches
+              joint_some ||= has_joint
             end
 
             joint = nil
@@ -497,11 +502,8 @@ module Rocc::Contexts
               joint = one.try_join(another)
             end
             consol_forks << one unless joint
-
-            #warn "BAR #{Rocc::Helpers::Debug.dbg_to_s(consol_forks)}"
-            raise if consol_forks.length > 8
-            raise if "#{one}".length > 9
-
+            joint_some ||= joint
+            
             # pass either joint or another to next inject iteration
             joint ? joint : another
 
@@ -532,9 +534,10 @@ module Rocc::Contexts
 
       @forks = consol_forks
 
-      tjf_result = try_join_forks
+      has_joint = try_join_forks
+      joint_some ||= has_joint
       
-      tjf_result ? self : @forks
+      joint_some
     end # def consolidate_branches
     
     

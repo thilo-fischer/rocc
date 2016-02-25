@@ -45,13 +45,14 @@ module Rocc::Session
   # LogConfig.
   SPECIFIC_LOGLEVELS = {
     "Rocc::Session::LogConfig" => 2,
-    "Rocc::Semantic::SymbolIndex" => 1,
-    #"Rocc::CodeElements::CharRepresented::CharObjectPicker" => 1,
+    "Rocc::Semantic::SymbolIndex" => 2,
+    "Rocc::CodeElements::CharRepresented::CharObjectPicker" => 2,
     #"Rocc::CodeElements::CharRepresented::Tokens" => 0,
     #"Rocc::CodeElements::CharRepresented::" => 0,
     #/Rocc::CodeElements::CharRepresented::.*Comment/ => 0,
     "Rocc::CodeElements" => 1,
-    "Rocc::Contexts" => 0,
+    "Rocc::Semantic" => 1,
+    "Rocc::Contexts" => 1,
     #/pursue/ => 0,
     "tkn_pursue" => 1,
   }
