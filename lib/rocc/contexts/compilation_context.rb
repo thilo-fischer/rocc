@@ -22,9 +22,11 @@ module Rocc::Contexts
     extend  Rocc::Session::LogClientClassMixin
     include Rocc::Session::LogClientInstanceMixin
 
-    # XXX implement active_branches as method returning an iterator that recursively iterates the branches tree (performance improvement?)
+    # XXX implement active_branches as method returning an iterator
+    # that recursively iterates the branches tree (performance
+    # improvement?)
     
-    attr_reader :translation_unit, :active_branches, :fs_element_index
+    attr_reader :translation_unit, :fs_element_index
 
     # See open_token_request
     attr_reader :token_requester
@@ -33,76 +35,34 @@ module Rocc::Contexts
       super(translation_unit)
       @translation_unit = translation_unit # XXX_R redundant to CodeElement#origin
       @main_branch = CompilationBranch.root_branch(self)
-      @active_branches = [ @main_branch ].to_set
-      @all_branches = @active_branches.dup
-      @branches_new = Set[]
-      @branches_deactivated = Set[]
-      @branches_activated = Set[]
-      @branches_terminated = Set[]
       @fs_element_index = fs_element_index
       @ppcond_stack = []
       @token_requester = nil
+      @active = true
     end
 
     def name_dbg
       "CcCtx[#{@translation_unit.name}]"
     end
 
-    def add_branch(branch)
-      @branches_new << branch
+    def active_branches
+      @main_branch.active_branches
     end
-
-    def deactivate_branch(branch)
-      @branches_deactivated << branch
-    end
-
-    def activate_branch(branch)
-      @branches_activated << branch
-    end
-
-    def terminate_branch(branch)
-      @branches_terminated << branch
-    end
-
-    # adapt set of active branches according to the pending branch
-    # activations and deactivations
-    #
-    # FIXME_R Most invokations of
-    # CompilationBranch#activate/deactivate happen/fork/join/terminate
-    # while *not* iterating @active_branches. The according operations
-    # could be processed right away from the according functions then
-    # and would not require a downstream status synchronization then.
-    def sync_branch_statuses
-      @active_branches -= @branches_deactivated
-      @branches_deactivated = Set[]
-      @active_branches |= @branches_activated
-      @branches_activated = Set[]
-
-      @active_branches -= @branches_terminated
-      @all_branches    -= @branches_terminated
-      @branches_terminated = Set[]
-
-      @active_banches |= @branches_new.select {|b| b.is_active?}
-      @all_branches   |= @branches_new
-      @branches_new = Set[]
-    end
-
-    # join as many (active) branches as possible and sync branch statuses
+    
+    # join as many (active) branches as possible
     def consolidate_branches
       log.debug{"active branches:       #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
-      # FIXME iterate through active branches of a common parent branch comparing each branch with its direct successor. (inject should do ...)
-      active_branches.each do |b|
-        next if b == @main_branch
-        join_candidate = b.parent.forks.last
-        next if b == join_candidate
-        b.try_join(join_candidate)
-      end
-      sync_branch_statuses
-      log.info{"consolidated branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
+      @main_branch.consolidate_branches
+      log.info {"consolidated branches: #{active_branches.map {|b| b.name_dbg}.join(', ')}"}
     end
 
     def terminate
       raise "unexpected termination of #{name_dbg}" unless @main_branch.finalize
+      @active = false
+    end
+
+    def active_branch_adducer?
+      @active
     end
 
     def announce_semantic_element(selem)

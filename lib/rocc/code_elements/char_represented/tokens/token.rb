@@ -77,7 +77,7 @@ module Rocc::CodeElements::CharRepresented::Tokens
       end
 
       active_branches = compilation_context.active_branches
-      raise "no active branches" if active_branches.empty? # XXX(ut)
+      raise "no active branches" if active_branches.empty? # XXX(assert)
 
       # pursue all active branches
       active_branches.each do |b|

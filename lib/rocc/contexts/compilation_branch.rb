@@ -132,8 +132,9 @@ module Rocc::Contexts
     end
 
     def self.root_branch(compilation_context)
-      # XXX? use compilation_context as adducer instead of as parent?
-      self.new(compilation_context, nil, Rocc::Semantic::CeUnconditionalCondition.instance, nil)
+      # XXX? use compilation_context as adducer only and not as
+      # adducer and as parent?
+      self.new(compilation_context, nil, Rocc::Semantic::CeUnconditionalCondition.instance, compilation_context)
     end
 
     def register(forked_branch)
@@ -148,9 +149,6 @@ module Rocc::Contexts
     def fork(branching_condition, adducer)
       f = self.class.new(self, self, branching_condition, adducer)
       log.info{"fork #{f} from #{self} due to #{adducer}"}
-      compilation_context.add_branch(f)
-      deactivate_self
-      f.activate
       f
     end
 
@@ -406,56 +404,116 @@ module Rocc::Contexts
         false
       end
     end
+    protected :try_join
 
-    # FIXME_R when an #else directive exists, it might happen that forks never get to a point where join_poissible?. E.g., assume parent has pending tokens and/or an arising specification on the scope stack and both get resolved in the #if- and the #else-fork. join_possible? will (very likely) not be true until the end of the program and parent branch might fail, though the code is absolutely correct. Resolution(?):
+    # FIXME_R? IS THIS STILL TRUE?! TEST!! When an #else directive
+    # exists, it might happen that forks never get to a point where
+    # join_poissible?. E.g., assume parent has pending tokens and/or
+    # an arising specification on the scope stack and both get
+    # resolved in the #if- and the #else-fork. join_possible? will
+    # (very likely) not be true until the end of the program and
+    # parent branch might fail, though the code is absolutely correct.
+    # Resolution(?):
     # - #else branch must always join with the parent branch ??
     # - pursue parent branch with additional conditions as #else branch ??
     def join_possible?(other)
-      raise "function shall not be invoked on root branch" if is_root? # XXX(assert)
       raise "programming error" unless other.is_active? # XXX(assert)
+      raise "programming error" if other.has_forks? # XXX(assert)
       #warn "forks? #{has_forks?}, other.forks? #{other.has_forks?}, pending: #{@pending_tokens == other.pending_tokens}, scope: #{@scope_stack == other.scope_stack}, tkn_rq: #{@token_requester == other.token_requester}"
-      return false unless @parent == other.parent
-      not has_forks? and not other.has_forks? and
+      not adducer.active_branch_adducer? and
+        not has_forks? and not other.has_forks? and
         @pending_tokens == other.pending_tokens and
         @scope_stack == other.scope_stack and
         @token_requester == other.token_requester
     end
+    protected :join_possible?
 
     def join(other)
-      raise "not yet supported" unless @parent == other.parent
-      bc = @branching_condition.disjunction(other.branching_condition)
-      if bc.is_a?(Rocc::Semantic::CeUnconditionalCondition) and @parent.forks.count == 2
-        @parent.derive_progress_info(self)
-        @parent.terminate_fork(self)
-        @parent.terminate_fork(other)
-        @parent.activate
+      raise "not yet supported" unless @parent == other.parent # XXX(assert)
+      raise unless @parent.forks.count > 2 # XXX(assert)
+      
+      common_bcond = @branching_condition.disjunction(other.branching_condition)
+      joint = self.class.new(@parent, self, common_bcond, [self, other])
 
-        log.info{"joined #{self} and #{other} into #{@parent}"}
-
-        @parent
-      else
-        raise unless @parent.forks.count > 2
-        joint = self.class.new(@parent, self, bc, [self, other])
-
-        @parent.terminate_fork(self)
-        @parent.terminate_fork(other)
-        joint.activate
-
-        log.info{"joined #{self} and #{other} into #{joint}"}
-        
-        joint
-      end
+      log.info{"join #{self} and #{other} into #{joint}"}
+      
+      joint
     end
     private :join
-    
-    def terminate_fork(forked_branch)
-      idx = @forks.index(forked_branch)
-      raise unless idx
-      @forks.delete_at(idx)
-      compilation_context.terminate_branch(forked_branch)
-    end
-    protected :terminate_fork
 
+    def join_forks
+      raise "join_fork called, but #{self} still has forks #{@forks}" unless @forks.length == 1 # XXX(assert)
+      raise "distinct conditions of branch and last remaining fork: parent <=> #{@branching_condition}, fork <=> #{@forks.first.branching_condition}" unless @branching_condition.equivalent?(@forks.first.branching_condition) # XXX(assert)
+      log.info{"join and #{@forks.first} into #{self}"}
+      derive_progress_info(self)
+      @forks = []
+      self
+    end
+    private :join_forks
+
+    # join as many (active) branches as possible
+    def consolidate_branches
+      raise "programming error: method should not be invoked on leaf nodes" if @forks.empty? # XXX(assert)
+
+      consol_forks = []
+
+      @forks.first.consolidate_branches if @forks.first.has_forks? and @forks.first.is_active?
+
+      final_fork = @forks.inject do |one, another|
+        if one.is_active?
+          if another.is_active?
+            
+            if another.has_forks?
+              another.consolidate_branches
+            end
+
+            joint = nil
+            if another.has_forks?
+            #joint = one.try_join(another.first_active_fork) # XXX
+            else
+              joint = one.try_join(another)
+            end
+            consol_forks << one unless joint
+
+            # pass either joint or another to next inject iteration
+            joint ? joint : another
+
+          else # another.is_active?
+
+            # should not occure, active branches should be after
+            # inactive branches in @forks array ... I think ...
+            log.warn{"Unexpected: Inactive #{another} after active #{one}! (rocc developer should have a closer look into this ...)"}
+            
+            # try to join one with the next in next iteration
+            # TODO_R changes order of branches in @forks array
+            consol_forks << another
+            one
+
+          end
+          
+        else # one.is_active?
+
+          # try to join another with the next in next iteration
+          consol_forks << one
+          another
+
+        end
+        
+      end
+
+      consol_forks << final_fork
+
+      @forks = consol_forks
+
+      if @forks.length == 1
+        join_forks
+      else
+        @forks
+      end
+
+    end # def consolidate_branches
+    
+    
     def finalize
       raise "function shall not be invoked on any non-root branch" unless is_root? # XXX(assert)
       if @forks.empty? and
@@ -491,55 +549,20 @@ module Rocc::Contexts
     def is_active?
       @active
     end
-
+    
     ##
-    # If branch has no fork, set branch as active branch. Else,
-    # propagate activation to the branch's forks.
-    #
-    # Returns true if the branch itself got activated, false
-    # otherwise.
+    # activate branch
     def activate
-      if has_forks?
-        @forks.each {|f| f.activate}
-        false
-      else
-        activate_self
-        true
-      end
-    end
-
-    def activate_self
-      @active = true
-      compilation_context.activate_branch(self)
       log.debug{"Activate #{self}"}
-      #log.debug{Rocc::Helpers::Debug.dbg_backtrace(12, 4)}
-    end
-    private :activate_self
-    
-    ##
-    # If branch has no fork, set branch as inactive branch. Else,
-    # propagate deactivation to the branch's forks.
-    #
-    # Returns true if the branch itself got deactivated, false
-    # otherwise.
-    def deactivate
-      if has_forks?
-        @forks.each {|f| f.deactivate}
-        false
-      else
-        deactivate_self
-        true
-      end
+      @active = true
     end
 
-    def deactivate_self
-      @active = false
-      compilation_context.deactivate_branch(self)
+    ##
+    # mark branch as inactive
+    def deactivate
       log.debug{"Deactivate #{self}"}
-      #log.debug{Rocc::Helpers::Debug.dbg_backtrace(12, 4)}
+      @active = false
     end
-    private :deactivate_self
-    
 
     ##
     # Redirect all tokens to code_object instead of invoking
@@ -558,6 +581,19 @@ module Rocc::Contexts
     # See open_token_request
     def has_token_request?
       @token_requester
+    end
+
+    # return array of all active leaf node branches from this branch
+    def active_branches
+      if is_active?
+        if has_forks?
+          @forks.map {|f| f.active_branches}.flatten
+        else
+          [ self ]
+        end
+      else
+        []
+      end
     end
 
   end # class CompilationBranch

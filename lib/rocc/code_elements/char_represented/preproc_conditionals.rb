@@ -44,7 +44,8 @@ module Rocc::CodeElements::CharRepresented
       else
         super(compilation_context.ppcond_stack_top)
       end
-      @affected_branches = compilation_context.active_branches.dup
+      @affected_branches = compilation_context.active_branches
+      #warn "AFFECTED_BRANCHES #{@affected_branches}"
     end
 
     # XXX_R smells
@@ -171,6 +172,14 @@ module Rocc::CodeElements::CharRepresented
         conjunction(own_induced_condition)
     end
 
+    def active_branch_adducer?
+      not group_complete?
+    end
+
+    def group_complete?
+      @ppcond_group.end_directive
+    end
+
     private
     
     def make_stack_top(compilation_context)
@@ -258,8 +267,6 @@ module Rocc::CodeElements::CharRepresented
       make_stack_top(compilation_context)
 
       branch_out(compilation_context)
-      
-      compilation_context.sync_branch_statuses
       
       nil
     end
