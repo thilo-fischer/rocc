@@ -29,13 +29,14 @@ Feature: Code Analysis
     When I invoke "ls --spec" on "<code>"
     Then the output should look as specified by "<expect>"
 
+    # TODO_W should notice expression 1 is always true (=> planned feature) and thus should contain `v i_var_1' instead of `v i_var_1///\s*///[0.5]'. 
+    # c01_if_else_endif.c output should contain `v i_var_1' instead of `v i_var_1///\s*///[0.5]' and no `i_var_no_1'
   Examples:
     | code                                  | expect                                           |
     | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls_--spec              |
-    # TODO_W should contain `v i_var_1' instead of `v i_var_1///\s*///[0.5]', but this requires (a minimal) expression evaluation => planned feature
     | specific/preprocessor/c00_if_endif.c  | specific/preprocessor/c00_if_endif_ls_--spec     |
-    # TODO_W should contain `v i_var_1' instead of `v i_var_1///\s*///[0.5]' and no `i_var_no_1', but this requires (a minimal) expression evaluation => planned feature
     | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec     |
+    | specific/preprocessor/c02_elif.c      | specific/preprocessor/c02_elif_ls_--spec     |
 
   Scenario Outline: Understand preprocessor conditional directives
     # FIXME format string
@@ -46,6 +47,7 @@ Feature: Code Analysis
     | code                                  | expect                                           |
     | specific/preprocessor/c00_if_endif.c  | specific/preprocessor/c00_if_endif_ls_--spec_--format_i_C     |
     | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec_--format_i_C    |
+    | specific/preprocessor/c02_elif.c      | specific/preprocessor/c02_elif_ls_--spec_--format_i_C     |
 
 #  Scenario: List function local variables
 #    When I invoke "cd main; ls" on "trivial/minimal/04_local_var_decl.c"

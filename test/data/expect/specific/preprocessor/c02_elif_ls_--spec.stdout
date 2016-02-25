@@ -1,0 +1,5 @@
+v i_var_1///\s*///[0.5]
+v i_var_no_1_but_42///\s*///[0.25]
+v i_var_foo///\s*///[0.5]
+v i_var_no_foo_but_bar///\s*///[0.25]
+v i_var_neither_foo_nor_bar///\s*///[0.25]
