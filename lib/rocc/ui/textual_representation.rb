@@ -506,12 +506,12 @@ module Rocc::Ui
           pars_ctx.cursor = next_spec_idx
         else
           str = pars_ctx.format_str[start..-1]
-          next_spec_idx = pars_ctx.format_str.length
+          pars_ctx.cursor = pars_ctx.format_str.length
         end
         if str.empty?
           nil
         else
-          self.new(pars_ctx.format_str[start...next_spec_idx])
+          self.new(pars_ctx.format_str[start...pars_ctx.cursor])
         end
       end
       
