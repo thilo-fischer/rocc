@@ -57,25 +57,41 @@ module Rocc::Session
     # before logger usage. (logger usage before setup will trigger
     # exceptions due to method invokations on nil.) XXX unclean ...
     def initialize
-      @default_logger = nil
-      @specific_loggers = nil
+      @default_logger = create_logger
+      @specific_loggers = {}
     end # initialize
 
     def setup(generic_loglevel = DEFAULT_LOGLEVEL)
-      @default_logger = create_logger
-      @specific_loggers = {}
-      
+      @own_logger = own_logger(generic_loglevel)
+
       set_default_threshold(generic_loglevel)
+      @own_logger.info{"Default log level is #{@default_logger.sev_threshold}."}
 
-      @default_logger.debug{"Default log level is #{@default_logger.sev_threshold}."}
-
-      # XXX development aid
-      if defined? SPECIFIC_LOGLEVELS and
-        [Logger::DEBUG, Logger::INFO].include?(generic_loglevel)
-        SPECIFIC_LOGLEVELS.each_pair {|k,v| set_logtag_threshold(k,v)}
-      end
+      specific_loglevels(generic_loglevel).each_pair {|k,v| set_logtag_threshold(k,v)}
       #warn "@specific_loggers=#{@specific_loggers}"
+
     end # setup
+
+    def own_logger(generic_loglevel)
+      level = specific_loglevels(generic_loglevel)[self.class.name]
+      if level
+        create_logger(level, self.class.name)
+      else
+        @default_logger
+      end
+    end
+    private :own_logger
+
+    def specific_loglevels(generic_loglevel)
+      if defined? SPECIFIC_LOGLEVELS and
+        # use specific loglevels only with default loglevel configured
+        # to either debug or info
+        [Logger::DEBUG, Logger::INFO].include?(generic_loglevel)
+        SPECIFIC_LOGLEVELS
+      else
+        {}
+      end
+    end
 
     def set_default_threshold(level)
       @default_logger.sev_threshold = level
@@ -85,7 +101,7 @@ module Rocc::Session
       pattern = logtag_pattern_from_object(object)
       progname = pattern.to_s.sub(/\A\(\?-mix:\\A/, '').sub(/\\b\)\Z/, '')
       logger = @specific_loggers[pattern] ||= create_logger(level, progname)
-      @default_logger.debug {"Set log level #{level} for #{pattern} (-> #{object})"}
+      @own_logger.info {"Set log level #{level} for #{pattern} (-> #{object})"}
     end # set_threshold
 
     ##
@@ -109,9 +125,8 @@ module Rocc::Session
         end
       end
 
-      result =
-      best_match || @default_logger
-      @default_logger.debug{"get_logger for #{object} -> logtag=#{logtag} -> best_match=#{best_match_pattern.inspect} -> logger: #{result.progname}, lvl#{result.level}"}
+      result = best_match || @default_logger
+      @own_logger.debug{"get_logger for #{object} -> logtag=#{logtag} -> best_match=#{best_match_pattern.inspect} -> logger: #{result.progname}, lvl#{result.level}"}
       result
     end # get_logger
 

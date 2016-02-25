@@ -29,8 +29,22 @@ module Rocc::Session
   #  2 => Logger::WARN
   #  1 => Logger::INFO
   #  0 => Logger::DEBUG
+  #
+  # The keys that map to the log levels shall be either +String+s or
+  # +Regexp+s that will be matched to the logtags used when
+  # logging. The logtag of the default logger of a class including the
+  # LogClient mixins is its class' name.
+  #
+  # Will only have effect if file is +require+d from logging.rb and
+  # the default loglevel is either debug or info (i.e. will be
+  # disabled when default loglevel is configured to warning or above).
+  #
+  # LogConfig does not include the LogClient mixins, but may also be
+  # assigned a loglevel. A Sting (i.e. "Rocc::Session::LogConfig")
+  # must be used as key then, a Regexp pattern is not supported for
+  # LogConfig.
   SPECIFIC_LOGLEVELS = {
-    "Rocc::Session::LogConfig" => 1,
+    "Rocc::Session::LogConfig" => 2,
     "Rocc::Semantic::SymbolIndex" => 1,
     #"Rocc::CodeElements::CharRepresented::CharObjectPicker" => 1,
     #"Rocc::CodeElements::CharRepresented::Tokens" => 0,
