@@ -1,0 +1,6 @@
+v i_var_1///\s*///[0.5]
+v i_var_no_1///\s*///[0.5]
+v i_var_foo///\s*///[0.5]
+v i_var_no_foo///\s*///[0.5]
+v i_var_bar///\s*///[0.5]
+v i_var_no_bar///\s*///[0.5]

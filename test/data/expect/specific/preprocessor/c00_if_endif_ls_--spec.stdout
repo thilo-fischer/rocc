@@ -1,3 +1,3 @@
-V i_var_1
-V i_var_foo///\s*///[0.5]
-V i_var_bar///\s*///[0.5]
+v i_var_1///\s*///[0.5]
+v i_var_foo///\s*///[0.5]
+v i_var_bar///\s*///[0.5]

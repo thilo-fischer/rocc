@@ -32,7 +32,10 @@ Feature: Code Analysis
   Examples:
     | code                                  | expect                                           |
     | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls_--spec              |
+    # TODO_W should contain `v i_var_1' instead of `v i_var_1///\s*///[0.5]', but this requires (a minimal) expression evaluation => planned feature
     | specific/preprocessor/c00_if_endif.c  | specific/preprocessor/c00_if_endif_ls_--spec     |
+    # TODO_W should contain `v i_var_1' instead of `v i_var_1///\s*///[0.5]' and no `i_var_no_1', but this requires (a minimal) expression evaluation => planned feature
+    | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec     |
 
 #  Scenario: List function local variables
 #    When I invoke "cd main; ls" on "trivial/minimal/04_local_var_decl.c"
