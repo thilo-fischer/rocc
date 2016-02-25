@@ -104,7 +104,7 @@ module Rocc::Contexts
         @scope_stack = [ parent.translation_unit ]
         @token_requester = nil
       else
-        parent.register(self) # will set @id
+        @id = parent.next_fork_id
         @compilation_context = master.compilation_context
         derive_progress_info(master)
       end
@@ -137,10 +137,16 @@ module Rocc::Contexts
       self.new(compilation_context, nil, Rocc::Semantic::CeUnconditionalCondition.instance, compilation_context)
     end
 
-    def register(forked_branch)
-      forked_branch.id = @id + ':' + @next_fork_id.to_s
+    #def register(forked_branch)
+    #  forked_branch.id = @id + ':' + @next_fork_id.to_s
+    #  @next_fork_id += 1
+    #  @forks << forked_branch
+    #end
+
+    def next_fork_id
+      id = @id + ':' + @next_fork_id.to_s
       @next_fork_id += 1
-      @forks << forked_branch
+      id
     end
 
     ##
@@ -148,6 +154,7 @@ module Rocc::Contexts
     # compilation done when +branching_condition+ applies.
     def fork(branching_condition, adducer)
       f = self.class.new(self, self, branching_condition, adducer)
+      @forks << f
       log.info{"fork #{f} from #{self} due to #{adducer}"}
       f
     end
@@ -267,7 +274,7 @@ module Rocc::Contexts
         raise unless current_scope.is_a?(Rocc::Semantic::Temporary::ArisingSpecification) # XXX(assert)
         definition
       else
-        warn scope_stack_trace
+        #warn scope_stack_trace
         raise "programming error or not yet implemented"
       end
     end
@@ -419,9 +426,9 @@ module Rocc::Contexts
     def join_possible?(other)
       raise "programming error" unless other.is_active? # XXX(assert)
       raise "programming error" if other.has_forks? # XXX(assert)
-      warn "ADDUCER #{Rocc::Helpers::Debug.dbg_to_s(adducer)} (#{self})"
-      not adducer.active_branch_adducer? and
-        not has_forks? and not other.has_forks? and
+      #warn "ADDUCER #{Rocc::Helpers::Debug.dbg_to_s(adducer)} (#{self})"
+      #not adducer.active_branch_adducer? and
+      not has_forks? and not other.has_forks? and
         @pending_tokens == other.pending_tokens and
         @scope_stack == other.scope_stack and
         @token_requester == other.token_requester
@@ -441,6 +448,15 @@ module Rocc::Contexts
     end
     private :join
 
+    def try_join_forks
+      if @forks.length == 1 and
+         #not @forks.first.adducer.active_branch_adducer? and
+         @branching_condition.equivalent?(@forks.first.branching_condition)
+        join_forks
+      end
+    end
+    private :try_join_forks
+
     def join_forks
       raise "join_fork called, but #{self} still has forks #{@forks}" unless @forks.length == 1 # XXX(assert)
       raise "distinct conditions of branch and last remaining fork: parent <=> #{@branching_condition}, fork <=> #{@forks.first.branching_condition}" unless @branching_condition.equivalent?(@forks.first.branching_condition) # XXX(assert)
@@ -453,13 +469,20 @@ module Rocc::Contexts
 
     # join as many (active) branches as possible
     def consolidate_branches
-      raise "programming error: method should not be invoked on leaf nodes" if @forks.empty? # XXX(assert)
+      if @forks.empty?
+        raise "programming error: method should not be invoked on leaf nodes" unless is_root? # XXX(assert)
+        return
+      end
 
       consol_forks = []
 
       @forks.first.consolidate_branches if @forks.first.has_forks? and @forks.first.is_active?
 
+      #warn "FOO"
+
       final_fork = @forks.inject do |one, another|
+        #warn "INJECT ITER #{one}, #{another}"
+        
         if one.is_active?
           if another.is_active?
             
@@ -474,6 +497,10 @@ module Rocc::Contexts
               joint = one.try_join(another)
             end
             consol_forks << one unless joint
+
+            #warn "BAR #{Rocc::Helpers::Debug.dbg_to_s(consol_forks)}"
+            raise if consol_forks.length > 8
+            raise if "#{one}".length > 9
 
             # pass either joint or another to next inject iteration
             joint ? joint : another
@@ -505,12 +532,9 @@ module Rocc::Contexts
 
       @forks = consol_forks
 
-      if @forks.length == 1 and not @forks.first.adducer.active_branch_adducer?
-        join_forks
-      else
-        @forks
-      end
-
+      tjf_result = try_join_forks
+      
+      tjf_result ? self : @forks
     end # def consolidate_branches
     
     

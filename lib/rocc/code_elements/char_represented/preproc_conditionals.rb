@@ -172,10 +172,10 @@ module Rocc::CodeElements::CharRepresented
         conjunction(own_induced_condition)
     end
 
-    def active_branch_adducer?
-      warn "ACTIVE_BRANCH_ADDUCER #{self} in #{@ppcond_group} -> complete: #{group_complete?}"
-      not group_complete?
-    end
+    #def active_branch_adducer?
+    #  warn "ACTIVE_BRANCH_ADDUCER #{self} in #{@ppcond_group} -> complete: #{group_complete?}"
+    #  not group_complete?
+    #end
 
     def group_complete?
       @ppcond_group.end_directive
@@ -339,7 +339,7 @@ module Rocc::CodeElements::CharRepresented
       pred.pause_branches
       branch_out(compilation_context)
 
-      compilation_context.sync_branch_statuses
+      #compilation_context.sync_branch_statuses
       
       nil
     end
@@ -366,7 +366,7 @@ module Rocc::CodeElements::CharRepresented
       pred.pause_branches
       branch_out(compilation_context)
 
-      compilation_context.sync_branch_statuses
+      #compilation_context.sync_branch_statuses
       
       nil
     end

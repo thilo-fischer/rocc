@@ -38,7 +38,7 @@ module Rocc::Contexts
       @fs_element_index = fs_element_index
       @ppcond_stack = []
       @token_requester = nil
-      @active = true
+      #@active = true
     end
 
     def name_dbg
@@ -58,12 +58,12 @@ module Rocc::Contexts
 
     def terminate
       raise "unexpected termination of #{name_dbg}" unless @main_branch.finalize
-      @active = false
+    #  @active = false
     end
 
-    def active_branch_adducer?
-      @active
-    end
+    #def active_branch_adducer?
+    #  @active
+    #end
 
     def announce_semantic_element(selem)
       @translation_unit.announce_semantic_element(selem)
