@@ -1,0 +1,9 @@
+i_var_1@1
+i_var_1_and_foo@(1) && (defined(FOO))
+i_var_1_and_no_foo@(1) && (!(defined(FOO)))
+i_var_no_1@!(1)
+i_var_no_1_and_foo@(!(1)) && (defined(FOO))
+i_var_no_1_and_foo_and_bar@(!(1)) && (defined(FOO)) && (defined(BAR))
+i_var_no_1_and_foo_no_bar@(!(1)) && (defined(FOO)) && (!(defined(BAR)))
+i_var_no_1_no_foo_but_bar@(!(1)) && (!(defined(FOO))) && (defined(BAR))
+i_var_neither_1_nor_foo_nor_bar@(!(1)) && (!(defined(FOO))) && (!(defined(BAR)))

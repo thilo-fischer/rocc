@@ -2,6 +2,8 @@
  * Basic test for preprocessor conditionals
  */
 
+int i_var;
+
 #if 1
 int i_var_1;
 #endif

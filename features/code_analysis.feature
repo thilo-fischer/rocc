@@ -25,7 +25,7 @@ Feature: Code Analysis
     | trivial/minimal/09_macro.c            | trivial/minimal/09_macro_ls                      |
     | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls                    |
 
-  Scenario Outline: Understand preprocessor conditional directives
+  Scenario Outline: Understand preprocessor conditional directives and list probability estimations of specifications
     When I invoke "ls --spec" on "<code>"
     Then the output should look as specified by "<expect>"
 
@@ -38,7 +38,7 @@ Feature: Code Analysis
     | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec     |
     | specific/preprocessor/c02_elif.c           | specific/preprocessor/c02_elif_ls_--spec              |
 
-  Scenario Outline: Understand preprocessor conditional directives
+  Scenario Outline: Understand preprocessor conditional directives and list conditions of specifications
     # FIXME format string
     When I invoke "ls --spec --format %i@%_c" on "<code>"
     Then the output should look as specified by "<expect>"
@@ -48,6 +48,11 @@ Feature: Code Analysis
     | specific/preprocessor/c00_if_endif.c       | specific/preprocessor/c00_if_endif_ls_--spec_--format_i_C         |
     | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec_--format_i_C    |
     | specific/preprocessor/c02_elif.c           | specific/preprocessor/c02_elif_ls_--spec_--format_i_C             |
+
+  @wip
+  Examples:
+    | code                                       | expect                                                            |
+    | specific/preprocessor/c03_nested.c         | specific/preprocessor/c03_nested_ls_--spec_--format_i_C           |
 
 #  Scenario: List function local variables
 #    When I invoke "cd main; ls" on "trivial/minimal/04_local_var_decl.c"
