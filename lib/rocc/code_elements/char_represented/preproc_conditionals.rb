@@ -166,10 +166,10 @@ module Rocc::CodeElements::CharRepresented
     attr_reader :own_induced_condition
 
     def ppcond_branch_conditions
-      #warn "ec: #{existence_conditions}; gc: #{fromgroup_induced_conditions}; oc: #{own_induced_condition}"
-      existence_conditions.
-        conjunction(fromgroup_induced_conditions).
-        conjunction(own_induced_condition)
+      #warn "COND #{self} ec: #{existence_conditions}; gc: #{fromgroup_induced_conditions}; oc: #{own_induced_condition} ; bc: #{@ppcond_branch_conditions} (<= #{@ppcond_branch_conditions.inspect})" unless @ppcond_branch_conditions
+      @ppcond_branch_conditions ||= existence_conditions.
+                                  conjunction(fromgroup_induced_conditions).
+                                  conjunction(own_induced_condition)
     end
 
     #def active_branch_adducer?

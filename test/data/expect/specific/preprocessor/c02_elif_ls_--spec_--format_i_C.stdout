@@ -1,5 +1,5 @@
 i_var_1@1
-i_var_no_1_but_42@!(1) && 42
+i_var_no_1_but_42@(!(1)) && (42)
 i_var_foo@defined(FOO)
-i_var_no_foo_but_bar@!(defined(FOO)) && defined(BAR)
-i_var_neither_foo_nor_bar@!(defined(FOO)) && !(defined(BAR))
+i_var_no_foo_but_bar@(!(defined(FOO))) && (defined(BAR))
+i_var_neither_foo_nor_bar@(!(defined(FOO))) && (!(defined(BAR)))

@@ -342,7 +342,8 @@ module Rocc::Semantic
         if imply?(other.negation)
           false
         elsif other.negation.is_a?(CeAtomicCondition)
-          not imply?(other.negation) # XXX correct?
+          #not imply?(other.negation) # XXX correct?
+          false # FIXME_W
         else
           warn "#{self}, #{other}"
           raise "not yet implemented"
