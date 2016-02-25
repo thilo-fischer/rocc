@@ -1,0 +1,3 @@
+i_var_1@1
+i_var_foo@defined(FOO)
+i_var_bar@defined(BAR)

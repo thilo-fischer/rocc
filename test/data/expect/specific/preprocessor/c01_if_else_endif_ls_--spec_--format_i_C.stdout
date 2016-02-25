@@ -1,0 +1,6 @@
+i_var_1@1
+i_var_no_1@!(1)
+i_var_foo@defined(FOO)
+i_var_no_foo@!(defined(FOO))
+i_var_bar@defined(BAR)
+i_var_no_bar@!(defined(BAR))

@@ -158,11 +158,16 @@ module Rocc::Commands
       elsif args.empty?
         #warn "cursor: #{applctx.cursor}"
         #warn "symbols: #{applctx.cursor.find_symbols}"
-        formatter = Rocc::Ui::SymbolFormatter.default_formatter
+        #warn "FORMAT #{options[:format]}"
+        if options[:format]
+          formatter = Rocc::Ui::SymbolFormatter.compile(options[:format])
+        else
+          formatter = Rocc::Ui::SymbolFormatter.default_formatter
+        end
         recursive = options[:recursive]
         if options[:spec]
           if options[:unique]
-            formatter = Rocc::Ui::SymbolFormatter.compile(Rocc::Ui::SymbolFormatter::DEFAULT_SPEC_UNIQUE_FORMAT_STR)
+            formatter = Rocc::Ui::SymbolFormatter.compile(Rocc::Ui::SymbolFormatter::DEFAULT_SPEC_UNIQUE_FORMAT_STR) unless options[:format]
             applctx.find_symbols(:origin => applctx.cursor).each do |s|
               puts formatter.format(s.significant_declaration)
             end

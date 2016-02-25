@@ -37,6 +37,16 @@ Feature: Code Analysis
     # TODO_W should contain `v i_var_1' instead of `v i_var_1///\s*///[0.5]' and no `i_var_no_1', but this requires (a minimal) expression evaluation => planned feature
     | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec     |
 
+  Scenario Outline: Understand preprocessor conditional directives
+    # FIXME format string
+    When I invoke "ls --spec --format %i@%_c" on "<code>"
+    Then the output should look as specified by "<expect>"
+
+  Examples:
+    | code                                  | expect                                           |
+    | specific/preprocessor/c00_if_endif.c  | specific/preprocessor/c00_if_endif_ls_--spec_--format_i_C     |
+    | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec_--format_i_C    |
+
 #  Scenario: List function local variables
 #    When I invoke "cd main; ls" on "trivial/minimal/04_local_var_decl.c"
 #    Then the output should contain exactly:

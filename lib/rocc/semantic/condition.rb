@@ -310,7 +310,9 @@ module Rocc::Semantic
       @text
     end
 
-    alias to_code to_s
+    def to_code(ansi_c = false)
+      to_s
+    end
 
     # See rdoc-ref:Rocc::Semantic::CeCondition#equivalent?
     def equivalent?(other)
@@ -423,7 +425,7 @@ module Rocc::Semantic
       "\u00AC#{@negation}"
     end
 
-    def to_code
+    def to_code(ansi_c = false)
       "!(#{@negation})"
     end
 
@@ -506,8 +508,8 @@ module Rocc::Semantic
       end.join(join_str_to_s)
     end
 
-    def to_code
-      @conditions.map {|c| '(' + c.to_s + ')'}.join(join_str_to_code)
+    def to_code(ansi_c = false)
+      @conditions.map {|c| '(' + c.to_code(ansi_c) + ')'}.join(join_str_to_code)
     end
 
     # XXX sensible?
