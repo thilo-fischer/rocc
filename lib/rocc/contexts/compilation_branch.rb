@@ -419,7 +419,7 @@ module Rocc::Contexts
     def join_possible?(other)
       raise "programming error" unless other.is_active? # XXX(assert)
       raise "programming error" if other.has_forks? # XXX(assert)
-      #warn "forks? #{has_forks?}, other.forks? #{other.has_forks?}, pending: #{@pending_tokens == other.pending_tokens}, scope: #{@scope_stack == other.scope_stack}, tkn_rq: #{@token_requester == other.token_requester}"
+      warn "ADDUCER #{Rocc::Helpers::Debug.dbg_to_s(adducer)} (#{self})"
       not adducer.active_branch_adducer? and
         not has_forks? and not other.has_forks? and
         @pending_tokens == other.pending_tokens and
@@ -430,7 +430,7 @@ module Rocc::Contexts
 
     def join(other)
       raise "not yet supported" unless @parent == other.parent # XXX(assert)
-      raise unless @parent.forks.count > 2 # XXX(assert)
+      raise unless @parent.forks.count >= 2 # XXX(assert)
       
       common_bcond = @branching_condition.disjunction(other.branching_condition)
       joint = self.class.new(@parent, self, common_bcond, [self, other])
@@ -505,7 +505,7 @@ module Rocc::Contexts
 
       @forks = consol_forks
 
-      if @forks.length == 1
+      if @forks.length == 1 and not @forks.first.adducer.active_branch_adducer?
         join_forks
       else
         @forks

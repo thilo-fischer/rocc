@@ -24,6 +24,17 @@ module Rocc::Helpers
       stack.inject("Backtrace:\n") {|result, element| result + "\t#{element}\n" }
     end # def backtrace
 
+    def dbg_to_s(obj)
+      case obj
+      when Array
+        '[ ' + obj.map {|e| dbg_to_s(e)}.join(', ') + ' ]'
+      when Rocc::CodeElements::CodeElement
+        obj.name_dbg
+      else
+        obj.inspect
+      end
+    end
+
   end # module Debug
 
   module String

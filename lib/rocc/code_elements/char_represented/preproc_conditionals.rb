@@ -173,6 +173,7 @@ module Rocc::CodeElements::CharRepresented
     end
 
     def active_branch_adducer?
+      warn "ACTIVE_BRANCH_ADDUCER #{self} in #{@ppcond_group} -> complete: #{group_complete?}"
       not group_complete?
     end
 
@@ -401,8 +402,8 @@ module Rocc::CodeElements::CharRepresented
 
       @ppcond_group.directives.each {|d| d.release_branches}
 
-      # TODO_R unclean
-      compilation_context.sync_branch_statuses
+      # TODO_R? unclean?
+      #compilation_context.sync_branch_statuses
       compilation_context.consolidate_branches
       
       nil
