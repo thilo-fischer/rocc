@@ -54,11 +54,12 @@ Feature: Code Analysis
     | code                                       | expect                                                            |
     | specific/preprocessor/c03_nested.c         | specific/preprocessor/c03_nested_ls_--spec_--format_i_C           |
 
-#  Scenario: List function local variables
-#    When I invoke "cd main; ls" on "trivial/minimal/04_local_var_decl.c"
-#    Then the output should contain exactly:
-#"""
-#v lcc_var
-#v lcuc_var
-#"""
+  @planned
+  Scenario: List function local variables
+    When I invoke "cd main; ls" on "trivial/minimal/04_local_var_decl.c"
+    Then the output should contain exactly:
+"""
+v lcc_var
+v lcuc_var
+"""
 

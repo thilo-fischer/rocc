@@ -55,14 +55,25 @@ Feature: Command `ls'
     | trivial/minimal/11_ppcond.c           | trivial/minimal/11_ppcond_ls_--spec_--unique     |
 
 
+  @broken
+  Scenario Outline: List all externally declared symbols in default format
+    When I invoke "ls -R" on "<code>"
+    Then the output should look as specified by "<expect>"
 
-  # TODO
-  #Scenario: Get help on format used by ls
-  #  When I run `rocc -e 'ls --legend'`
-  #  Then the output should look as specified by "general/ls_--legend"
-  #
-  #Scenario: Get help on format used by ls -l
-  #  When I run `rocc -e 'ls -l --legend'`
-  #  Then the output should look as specified by "general/ls_-l_--legend"
+  Examples:
+    | code                                  | expect                                           |
+    | trivial/minimal/04_local_var_decl.c   | trivial/minimal/04_local_var_decl_ls_--recursive |
+    #| trivial/minimal/05_var_def.c          | trivial/minimal/05_var_def_ls_--recursive        |
+
+
+  @planned
+  Scenario: Get help on format used by ls
+    When I run `rocc -e 'ls --legend'`
+    Then the output should look as specified by "general/ls_--legend"
+  
+  @planned
+  Scenario: Get help on format used by ls -l
+    When I run `rocc -e 'ls -l --legend'`
+    Then the output should look as specified by "general/ls_-l_--legend"
 
 
