@@ -27,7 +27,13 @@ Feature: Command `ls'
     | trivial/minimal/09_macro.c            | trivial/minimal/09_macro_ls                      |
     | trivial/minimal/10_include.c          | trivial/minimal/10_include_ls                    |
 
+  Scenario:
+    When I invoke "ls --short" on "trivial/minimal/10_include.c"
+    Then the output should look as specified by "trivial/minimal/10_include_ls_--short"
 
+  #Scenario:
+  #  When I invoke "ls --long" on "trivial/minimal/10_include.c"
+  #  Then the output should look as specified by "trivial/minimal/10_include_ls_--long"
 
   Scenario Outline: List specifications of all externally declared symbols in default format
     When I invoke "ls --spec" on "<code>"

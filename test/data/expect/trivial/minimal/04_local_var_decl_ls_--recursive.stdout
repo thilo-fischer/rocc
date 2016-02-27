@@ -1,0 +1,14 @@
+v i_var
+v cusi_var
+v es_var
+v sll_var
+v c_var_a
+v c_var_b
+v pc_var_a
+v c_var_c
+v pc_var_b
+v pc_var_c
+v c_var_d
+v lcc_var
+v lcuc_var
+f main(2)

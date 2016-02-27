@@ -15,6 +15,7 @@ require 'rocc/ui/textual_representation'
 
 module Rocc::Commands
 
+  # FIXME_R module instead of class? no instance methods or instance data members
   class Ls < Command
 
     @name = 'ls'
@@ -31,7 +32,7 @@ module Rocc::Commands
           '--type',
           %w[file symbol identifier macro function variable type
              tag struct union enum label],
-          'list only objects of a certain type'
+          'TODO(planned) list only objects of a certain type'
         ) do |arg|
           if options.key?(:type) then
             options[:type] = [arg]
@@ -43,7 +44,7 @@ module Rocc::Commands
         opts.on(
           '--literal [type]',
           %w[string char integer float],
-          'list literals of specific type'
+          'TODO(planned) list literals of specific type'
         ) do |arg|
           if options.key?(:literal) then
             options[:literal] = [arg]
@@ -55,7 +56,7 @@ module Rocc::Commands
         opts.on(
           '--comment [type]',
           %w[block line],
-          'list comments'
+          'TODO(planned) list comments'
         ) do |arg|
           if options.key?(:comment) then
             options[:comment] = [arg]
@@ -67,7 +68,7 @@ module Rocc::Commands
         opts.on(
           '-f criteria',
           '--filter',
-          'list only objects matching the given filter criteria.'
+          'TODO(planned) list only objects matching the given filter criteria.'
           #Multiple filter criteria may be defined by repeating this flag multiple times.
         ) do |arg|
           if options.key?(:filter) then
@@ -86,8 +87,23 @@ module Rocc::Commands
         end
 
         opts.on(
-          '--format format_string',
+          '-S',
+          '--short',
+          'sort listing format: list only identifiers'
+        ) do |arg|
+          options[:format] = :short
+        end
+
+        opts.on(
+          '--format :preset|+format_str',
           'list symbols using the given format string'
+          # :preset may be used to select a certain predefined format
+          # (long, short, gmock, ...), +format may be used to specify
+          # a format string. E.g., the following command line switches
+          # are equivalent:
+          #  --short
+          #  --format :short
+          #  --format +%i
         ) do |arg|
           options[:format] = arg
         end
@@ -130,7 +146,7 @@ module Rocc::Commands
 
         opts.on(
           '--assume condition',
-          'for preprocessor conditionals, assume condition is true'
+          'TODO(planned) for preprocessor conditionals, assume condition is true'
         ) do |arg|
           list = options[:assume] ||= []
           list << arg
@@ -138,17 +154,46 @@ module Rocc::Commands
 
         opts.on(
           '--assume-def macro',
-          'for preprocessor conditionals, assume a macro with the given name is defined'
+          'TODO(planned) for preprocessor conditionals, assume a macro with the given name is defined'
         ) do |arg|
           list = options[:assume] ||= []
           list << "defined(#{arg})"
         end
 
-        
-
       end
       
     end # option_parser
+
+
+    class << self
+      def format_str(format_option)
+        case format_option
+        when nil
+          Rocc::Ui::SymbolFormatter::DEFAULT_FORMAT_STR
+        when String
+          case
+          when format_option.start_with?(':')
+            format_str(Symbol.new(format_option[1..-1]))
+          when format_option.start_with?('+')
+            format_option[1..-1]
+          else
+            raise
+          end
+        when Symbol
+          str = Rocc::Ui::SymbolFormatter::FORMAT_STR_PRESETS[format_option]
+          raise "Unsupported format: #{format_option} (Programming error?)" unless str
+          str
+        else
+          raise "Programming error :(  => #{format_option.inspect}"
+        end
+      end # def format_str
+      
+      def formatter(format_option, existence_conditions_from_spec = false)
+        fmt_str = format_str(format_option)
+        fmt_str.gsub!(/%([^A-Za-z]*)([Cc])/, '%*\1\2') if existence_conditions_from_spec # FIXME_R smells
+        Rocc::Ui::SymbolFormatter.compile(fmt_str)
+      end # def formatter
+    end
 
 
     def self.run(applctx, args, options)
@@ -159,34 +204,29 @@ module Rocc::Commands
         #warn "cursor: #{applctx.cursor}"
         #warn "symbols: #{applctx.cursor.find_symbols}"
         #warn "FORMAT #{options[:format]}"
-        if options[:format]
-          formatter = Rocc::Ui::SymbolFormatter.compile(options[:format])
-        else
-          formatter = Rocc::Ui::SymbolFormatter.default_formatter
-        end
+        fmtr = formatter(options[:format], (options[:spec] and options[:unique] and not options[:format]))
         recursive = options[:recursive]
         if options[:spec]
           if options[:unique]
-            formatter = Rocc::Ui::SymbolFormatter.compile(Rocc::Ui::SymbolFormatter::DEFAULT_SPEC_UNIQUE_FORMAT_STR) unless options[:format]
             applctx.find_symbols(:origin => applctx.cursor).each do |s|
-              puts formatter.format(s.significant_declaration)
+              puts fmtr.format(s.significant_declaration)
             end
           else
             applctx.cursor.content.each do |semantic_elem|
               if semantic_elem.is_a?(Rocc::Semantic::CeSpecification)
-                puts formatter.format(semantic_elem) if recursive or semantic_elem.symbol.origin.equal?(applctx.cursor)
+                puts fmtr.format(semantic_elem) if recursive or semantic_elem.symbol.origin.equal?(applctx.cursor)
               end
             end
           end
         else
           applctx.find_symbols(:origin => applctx.cursor).each do |s|
-            puts formatter.format(s)
+            puts fmtr.format(s)
           end
         end
       else
         args.each do |a|
           applctx.find_symbols(:origin => applctx.cursor, :identifier => a).each do |s|
-            puts formatter.format(s)
+            puts fmtr.format(s)
           end
         end
       end

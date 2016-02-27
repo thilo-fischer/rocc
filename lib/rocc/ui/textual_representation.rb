@@ -410,8 +410,12 @@ module Rocc::Ui
     FLAG_GRAVE_QUOTES      = '`'
     FLAG_C_COMMENT         = '*'
  
-    DEFAULT_FORMAT_STR = "%f %i%^(%+#P%{%32T[%?C]%}"
-    DEFAULT_SPEC_UNIQUE_FORMAT_STR = DEFAULT_FORMAT_STR.sub('%?C', "%?#{FLAG_ALTERNATE_FORM_B}C")
+    DEFAULT_FORMAT_STR = '%f %i%^(%+#P%{%32T[%?C]%}'
+
+    FORMAT_STR_PRESETS = {
+      :short => '%i',
+      :long  => '%f %-16.16i%^~(%+~#2.2P%{%32T '"\u21d4"' %?-32.32c%}',
+    }
 
     def self.default_formatter
       @default_formatter ||= compile(DEFAULT_FORMAT_STR)
@@ -525,7 +529,7 @@ module Rocc::Ui
     module SpecifierWithFlagsMixin
       
       def flag?(*test_chars)
-        test_chars.find {|tc| flags.include?(tc)}
+        @flags and test_chars.find {|tc| @flags.include?(tc)}
       end
       
     end # module SpecifierWithFlagsMixin
@@ -564,25 +568,18 @@ module Rocc::Ui
         @min_width = @min_width.to_i if @min_width
         @max_width = Regexp.last_match[:max]
         @max_width = @max_width.to_i if @max_width
+        #warn "FOO #{self.class} (#{@spec_str}) min_w #{@min_width}, max_w #{@max_width}, flags #{@flags}"
+        @spec_str = nil
       end
       private :parse_spec_str
 
-      def flags
-        parse_spec_str unless @flags
-        @flags
+      def spec_str_parsed?
+        not @spec_str
       end
-
-      def min_width
-        parse_spec_str unless @min_width
-        @min_width
-      end
-      
-      def max_width
-        parse_spec_str unless @max_width
-        @max_width
-      end
+      private :spec_str_parsed?
 
       def affect_conditional?
+        parse_spec_str unless spec_str_parsed?
         flag?(FLAG_AFFECT_COND_SECT, FLAG_SELECT_COND_SECT)
       end
 
@@ -625,10 +622,12 @@ module Rocc::Ui
       end
 
       def append(destination, celem)
+        parse_spec_str unless spec_str_parsed?
         destination << format(celem)
       end
       
       def format(celem)
+        #warn "FORMAT A #{self.class}"
         if applicable_celem?(celem)
           str = str_from_celem(celem)
         elsif flag?(FLAG_FILL_WIDTH)
@@ -636,6 +635,7 @@ module Rocc::Ui
         else
           return ''
         end
+        #warn "FORMAT B #{self.class} `#{str}' -- min: #{@min_width.inspect}, max: #{@max_width.inspect}"
         if @min_width and str.length < @min_width
           padding = ' ' * (@min_width - str.length)
           if flag?(FLAG_ADJUST_LEFT)
@@ -843,10 +843,11 @@ module Rocc::Ui
     class ConvSpecialTabstop < Conversion
 
       def append(destination, celem)
-        if min_width and destination.length < min_width
-          destination << ' ' * (min_width - destination.length)
-        elsif max_width
-          Rocc::Helpers::String.str_abbrev!(destination, max_width)
+        parse_spec_str unless spec_str_parsed?
+        if @min_width and destination.length < @min_width
+          destination << ' ' * (@min_width - destination.length)
+        elsif @max_width
+          Rocc::Helpers::String.str_abbrev!(destination, @max_width)
         end        
       end
       
@@ -963,23 +964,61 @@ module Rocc::Ui
       end
 
       def append(destination, celem)
-        if flag?(FLAG_APPLICABLE) and
-          not @target_spec.applicable_celem?(celem)
-          @target_spec.append(destination, celem)
-        elsif flag?(FLAG_NO_TRIVIAL) and
-          (not @target_spec.applicable_celem?(celem) or
-           @target_spec.trivial_celem?(celem))
-          @target_spec.append(destination, celem)
-        else
-          destination << '('
-          @target_spec.append(destination, celem)
-          destination << ')'
+        # XXX_F determine before and after only once in initialize
+        # method and save as instance varible. (same applies for other
+        # specifier implementaitons: frontload more logic to
+        # initialize or parse_spec_str method and save as instance
+        # varible.)
+        before, after = '(', ')'
+
+        case
+        when flag?(FLAG_ALTERNATE_FORM_A)
+          before, after = '{', '}'
+        when flag?(FLAG_BRACKETS)
+          before, after = '[', ']'
+        when flag?(FLAG_ANGLE_BRACKETS)
+          before, after = '<', '>'
+        when flag?(FLAG_SINGLE_QUOTES)
+          before, after = "'", "'"
+        when flag?(FLAG_DOUBLE_QUOTES)
+          before, after = '"', '"'
+        when flag?(FLAG_GRAVE_QUOTES)
+          before, after = '`', "'"
+        when flag?(FLAG_DOUBLE_QUOTES)
+          before, after = '"', '"'
+        when flag?(FLAG_C_COMMENT)
+          before, after = '/*', '*/'
         end
+        
+        if (
+          flag?(FLAG_APPLICABLE) and
+          not @target_spec.applicable_celem?(celem)
+        ) or (
+            flag?(FLAG_NO_TRIVIAL) and
+            (
+              not @target_spec.applicable_celem?(celem) or
+              @target_spec.trivial_celem?(celem)
+            )
+          )
+          if flag?(FLAG_FILL_WIDTH)
+            before = ' ' * before.length
+            after  = ' ' * after.length
+          else
+            before = after = ''
+          end
+        end
+        
+        destination << before
+        @target_spec.append(destination, celem)
+        destination << after
+       
       end # def append
 
     end # class ConvExtWrap
 
-    class SpecialCharacter; end
+    class SpecialCharacter
+      def initialize(pars_ctx); end
+    end
 
     class SpecialCharPercent < SpecialCharacter
       def append(destination, celem)

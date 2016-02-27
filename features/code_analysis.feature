@@ -40,7 +40,7 @@ Feature: Code Analysis
 
   Scenario Outline: Understand preprocessor conditional directives and list conditions of specifications
     # FIXME format string
-    When I invoke "ls --spec --format %i@%_c" on "<code>"
+    When I invoke "ls --spec --format +%i@%_c" on "<code>"
     Then the output should look as specified by "<expect>"
 
   Examples:
