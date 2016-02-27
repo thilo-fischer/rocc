@@ -156,6 +156,7 @@ module Rocc::Contexts
       f = self.class.new(self, self, branching_condition, adducer)
       @forks << f
       log.info{"fork #{f} from #{self} due to #{adducer}"}
+      log.debug{" \u21AA #{f} branching condition: #{f.branching_condition}"}
       f
     end
 
@@ -449,9 +450,11 @@ module Rocc::Contexts
     private :join
 
     def try_join_forks
+      #warn "TRY_JOIN_FORKS: count #{@forks.count}, first #{@forks.first}, condition equiv? #{@branching_condition.equivalent?(@forks.first.branching_condition)}, conditions: #{@branching_condition} / #{@forks.first.branching_condition}"
       if @forks.length == 1 and
          #not @forks.first.adducer.active_branch_adducer? and
-         @branching_condition.equivalent?(@forks.first.branching_condition)
+         #@branching_condition.equivalent?(@forks.first.branching_condition)
+         Rocc::Semantic::CeUnconditionalCondition.instance.equivalent?(@forks.first.branching_condition)
         join_forks
       end
     end
@@ -459,7 +462,7 @@ module Rocc::Contexts
 
     def join_forks
       raise "join_fork called, but #{self} still has forks #{@forks}" unless @forks.length == 1 # XXX(assert)
-      raise "distinct conditions of branch and last remaining fork: parent <=> #{@branching_condition}, fork <=> #{@forks.first.branching_condition}" unless @branching_condition.equivalent?(@forks.first.branching_condition) # XXX(assert)
+      #raise "distinct conditions of branch and last remaining fork: parent <=> #{@branching_condition}, fork <=> #{@forks.first.branching_condition}" unless @branching_condition.equivalent?(@forks.first.branching_condition) # XXX(assert)
       log.info{"join #{@forks.first} into #{self}"}
       derive_progress_info(self)
       @forks = []
@@ -542,7 +545,7 @@ module Rocc::Contexts
     
     
     def finalize
-      raise "function shall not be invoked on any non-root branch" unless is_root? # XXX(assert)
+      raise "function shall not be invoked on any non-root branch" unless is_root? # XXX(assert) / XXX_R smells
       if @forks.empty? and
          @pending_tokens.empty? and
          @scope_stack == [ parent.translation_unit ] and

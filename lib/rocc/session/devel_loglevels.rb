@@ -52,9 +52,9 @@ module Rocc::Session
     #/Rocc::CodeElements::CharRepresented::.*Comment/ => 0,
     "Rocc::CodeElements" => 1,
     "Rocc::Semantic" => 1,
-    "Rocc::Contexts" => 1,
+    "Rocc::Contexts" => 0,
     #/pursue/ => 0,
-    "tkn_pursue" => 1,
+    "tkn_pursue" => 2,
   }
 
 end

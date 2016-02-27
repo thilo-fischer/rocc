@@ -342,11 +342,14 @@ module Rocc::Semantic
         if imply?(other.negation)
           false
         elsif other.negation.is_a?(CeAtomicCondition)
+          log.info{"operations on conditions might give wrong results, not properly implemented @ #{caller(0)[0]}"}
           #not imply?(other.negation) # XXX correct?
-          false # FIXME_W
+          false # FIXME_W XXXXXXXXXXXXXXX
         else
-          warn "#{self}, #{other}"
-          raise "not yet implemented"
+          #warn "#{self}, #{other}"
+          #raise "not yet implemented"
+          log.info{"operations on conditions might give wrong results, not properly implemented @ #{caller(0)[0]}"}
+          nil # FIXME_W XXXXXXXXXXXXXXX
         end
       when CeConjunctiveCondition
         not other.conditions.find do |c|
@@ -423,7 +426,12 @@ module Rocc::Semantic
     end
     
     def to_s
-      "\u00AC#{@negation}"
+      case @negation
+      when CeSetOfConditions
+        "\u00AC(#{@negation})"
+      else
+        "\u00AC#{@negation}"
+      end
     end
 
     def to_code(ansi_c = false)
@@ -435,7 +443,15 @@ module Rocc::Semantic
       1 - @negation.probability
     end
     
-  end # class CeUnconditionalCondition
+    def conjunction(other)
+      if @negation.equivalent?(other)
+        CeUnconditionalCondition.instance
+      else
+        super
+      end
+    end
+      
+   end # class CeNegationCondition
 
 
   class CeSetOfConditions < CeCondition
