@@ -58,6 +58,7 @@ module Rocc::Session
     # exceptions due to method invokations on nil.) XXX unclean ...
     def initialize
       @default_logger = create_logger
+      @own_logger = @default_logger
       @specific_loggers = {}
     end # initialize
 
