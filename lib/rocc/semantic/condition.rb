@@ -578,7 +578,7 @@ module Rocc::Semantic
     def initialize(conditions, adducer = conditions)
       super
       @conditions = @conditions.delete(CeUnconditionalCondition.instance)
-      raise "too few elements" if @conditions.length < 2 # XXX(assert)
+      raise ArgumentError, "too few elements after removing CeUnconditionalConditions, conjunction with CeUnconditionalConditions should return the other condition" if @conditions.length < 2 # XXX(assert)
     end
 
     # Define a constant containing the string to be given as
@@ -737,8 +737,7 @@ module Rocc::Semantic
 
     def initialize(conditions, adducer = conditions)
       super
-      @conditions = [ CeUnconditionalCondition.instance ].to_set if @conditions.include?(CeUnconditionalCondition.instance)
-      raise "too few elements" if @conditions.length < 2 # XXX(assert)
+      raise ArgumentError, "disjunction with CeUnconditionalCondition shold return CeUnconditionalCondition.instance, not a CeDisjunctiveCondition" if @conditions.include?(CeUnconditionalCondition.instance)
     end
 
     # Define a constant containing the string to be given as

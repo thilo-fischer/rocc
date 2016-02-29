@@ -95,15 +95,17 @@ class CeConditionTest < Test::Unit::TestCase
   def test__conjunction__unconditional_other__other
     u = CeUnconditionalCondition.instance
     a = CeAtomicCondition.new('A')
-    c = CeConjunctiveCondition.new([u, a])
-    assert_equal(a, c)
+    assert_raise (ArgumentError) do
+      c = CeConjunctiveCondition.new([u, a])
+    end
   end
 
   def test__conjunction__other_unconditional__other
     u = CeUnconditionalCondition.instance
     a = CeAtomicCondition.new('A')
-    c = CeConjunctiveCondition.new([a, u])
-    assert_equal(a, c)
+    assert_raise (ArgumentError) do
+      c = CeConjunctiveCondition.new([a, u])
+    end
   end
 
   def test__unconditional__conjuncted_condition__condition
@@ -118,6 +120,12 @@ class CeConditionTest < Test::Unit::TestCase
     a = CeAtomicCondition.new('A')
     c = a.conjunction(u)
     assert_equal(a, c)
+  end
+
+  def test__unconditional__conjuncted_unconditional__unconditional
+    u = CeUnconditionalCondition.instance
+    c = u.conjunction(u)
+    assert_equal(u, c)
   end
 
   
