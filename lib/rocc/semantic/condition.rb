@@ -100,7 +100,9 @@ module Rocc::Semantic
     # derived classes have to do further checks in their overriding
     # implementations to provide a valid result.
     def equivalent?(other)
-      if equal?(other)
+      # TODO_F
+      #if equal?(other)
+      if self == other
         true
       elsif other.is_a? CeUnconditionalCondition
         # nothing but a CeUnconditionalCondition is equivalent to a
@@ -111,6 +113,11 @@ module Rocc::Semantic
       else
         nil
       end
+    end
+
+    def ==(other)
+      # TODO_F
+      equal?(other) or to_code == other.to_code
     end
 
     ##
@@ -148,12 +155,15 @@ module Rocc::Semantic
     # i.e. a CeCondition that applies if and only if +self+ and
     # +other+ apply.
     def conjunction(other)
+      warn "!! #{self} CeCondition##{__method__}(#{other})"
       log.debug{"#{name_dbg}.conjunction(#{other.name_dbg})"}
       case
       when other.is_a?(CeUnconditionalCondition),
            self.imply?(other)
+      warn "!! #{self}.#{__method__}(#{other}) 01"
         self
       when other.imply?(self)
+      warn "!! #{self}.#{__method__}(#{other}) 02"
         other
       when (
         (other.is_a?(CeNegationCondition) and
@@ -173,6 +183,7 @@ module Rocc::Semantic
         warn "#{self}, #{other}"
         raise "contradiction, not yet implemented"
       else
+      warn "!! #{self}.#{__method__}(#{other}) 03"
         CeConjunctiveCondition.new([self, other])
       end
     end
@@ -459,10 +470,12 @@ module Rocc::Semantic
     attr_reader :conditions
 
     def initialize(conditions, adducer = conditions)
-      raise "invalid argument: should create CeUnconditionalCondition instead" if conditions.empty? # XXX(assert)
-      raise "invalid argument: conditions contains only a single element" if conditions.count == 1 # XXX(assert)
-      super(conditions, adducer)
+      warn "!! CeSetOfConditions#initialize(#{conditions.inspect})"
       @conditions = flatten_conditions(conditions.to_set)
+      warn "!! CeSetOfConditions#initialize => @conditions = #{@conditions.inspect}"
+      raise ArgumentError, "invalid argument: should create CeUnconditionalCondition instead" if @conditions.empty? # XXX(assert)
+      raise ArgumentError, "invalid argument: conditions contains only a single element" if @conditions.count == 1 # XXX(assert)
+      super(@conditions, adducer)
     end
 
     def flatten_conditions(input_set)
@@ -662,6 +675,7 @@ module Rocc::Semantic
     
     # See rdoc-ref:Rocc::Semantic::CeCondition#conjunction
     def conjunction(other)
+      warn "!! #{self} CeConjunctiveCondition##{__method__}(#{other})"
       if other.is_a?(CeConjunctiveCondition)
         merge(other)
       else
