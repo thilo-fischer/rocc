@@ -155,15 +155,15 @@ module Rocc::Semantic
     # i.e. a CeCondition that applies if and only if +self+ and
     # +other+ apply.
     def conjunction(other)
-      warn "!! #{self} CeCondition##{__method__}(#{other})"
+      #warn "!! #{self} CeCondition##{__method__}(#{other})"
       log.debug{"#{name_dbg}.conjunction(#{other.name_dbg})"}
       case
       when other.is_a?(CeUnconditionalCondition),
            self.imply?(other)
-      warn "!! #{self}.#{__method__}(#{other}) 01"
+      #warn "!! #{self}.#{__method__}(#{other}) 01"
         self
       when other.imply?(self)
-      warn "!! #{self}.#{__method__}(#{other}) 02"
+      #warn "!! #{self}.#{__method__}(#{other}) 02"
         other
       when (
         (other.is_a?(CeNegationCondition) and
@@ -183,7 +183,7 @@ module Rocc::Semantic
         warn "#{self}, #{other}"
         raise "contradiction, not yet implemented"
       else
-      warn "!! #{self}.#{__method__}(#{other}) 03"
+      #warn "!! #{self}.#{__method__}(#{other}) 03"
         CeConjunctiveCondition.new([self, other])
       end
     end
@@ -470,22 +470,27 @@ module Rocc::Semantic
     attr_reader :conditions
 
     def initialize(conditions, adducer = conditions)
-      warn "!! CeSetOfConditions#initialize(#{conditions.inspect})"
+      #warn "!! CeSetOfConditions#initialize(#{conditions.inspect})"
       @conditions = flatten_conditions(conditions.to_set)
-      warn "!! CeSetOfConditions#initialize => @conditions = #{@conditions.inspect}"
+      #warn "!! CeSetOfConditions#initialize => @conditions = #{@conditions.inspect}"
       raise ArgumentError, "invalid argument: should create CeUnconditionalCondition instead" if @conditions.empty? # XXX(assert)
       raise ArgumentError, "invalid argument: conditions contains only a single element" if @conditions.count == 1 # XXX(assert)
       super(@conditions, adducer)
     end
 
     def flatten_conditions(input_set)
+      #warn "!! CeSetOfConditions#flatten_conditions => #{input_set.inspect}"
       result_set = Set.new
       input_set.each do |c|
+        #warn "!! CeSetOfConditions#flatten_conditions 00 => #{c}"
         if c.is_a?(self.class)
-          result_set.union(c.conditions)
+          #warn "!! CeSetOfConditions#flatten_conditions 01 => #{c.conditions.inspect}"
+          result_set |= c.conditions
         else
+          #warn "!! CeSetOfConditions#flatten_conditions 02"
           result_set << c
         end
+        #warn "!! CeSetOfConditions#flatten_conditions 03 => #{result_set.inspect}"
       end
       result_set
     end
@@ -569,6 +574,12 @@ module Rocc::Semantic
   end # class CeSetOfConditions
   
   class CeConjunctiveCondition < CeSetOfConditions
+
+    def initialize(conditions, adducer = conditions)
+      super
+      @conditions = @conditions.delete(CeUnconditionalCondition.instance)
+      raise "too few elements" if @conditions.length < 2 # XXX(assert)
+    end
 
     # Define a constant containing the string to be given as
     # FAMILY_ABBREV to avoid repeated recreation of string object from
@@ -675,7 +686,7 @@ module Rocc::Semantic
     
     # See rdoc-ref:Rocc::Semantic::CeCondition#conjunction
     def conjunction(other)
-      warn "!! #{self} CeConjunctiveCondition##{__method__}(#{other})"
+      #warn "!! #{self} CeConjunctiveCondition##{__method__}(#{other})"
       if other.is_a?(CeConjunctiveCondition)
         merge(other)
       else
@@ -723,6 +734,12 @@ module Rocc::Semantic
 
 
   class CeDisjunctiveCondition < CeSetOfConditions
+
+    def initialize(conditions, adducer = conditions)
+      super
+      @conditions = [ CeUnconditionalCondition.instance ].to_set if @conditions.include?(CeUnconditionalCondition.instance)
+      raise "too few elements" if @conditions.length < 2 # XXX(assert)
+    end
 
     # Define a constant containing the string to be given as
     # FAMILY_ABBREV to avoid repeated recreation of string object from
