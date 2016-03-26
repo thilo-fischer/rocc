@@ -12,6 +12,7 @@
 # approach. See LICENSE.txt from the top-level directory for details.
 
 require 'rocc/session/logging'
+require 'rocc/meta/rocc_op_track'
 
 module Rocc::CodeElements
 
@@ -25,6 +26,9 @@ module Rocc::CodeElements
     extend  Rocc::Session::LogClientClassMixin
     include Rocc::Session::LogClientInstanceMixin
 
+    extend  Rocc::Meta::OpTrackClientClassMixin
+    include Rocc::Meta::OpTrackClientInstanceMixin
+    
     ##
     # Each CodeElement shall have an origin which refers to the object
     # it is a part of. The origin can be of various kind depending on

@@ -19,12 +19,19 @@ require 'rocc/semantic/condition'
 
 require 'rocc/semantic/function'
 
+require 'rocc/session/logging'
+require 'rocc/meta/rocc_op_track'
+
 module Rocc::Contexts
 
   class CompilationBranch < Rocc::CodeElements::CodeElement
 
     extend  Rocc::Session::LogClientClassMixin
     include Rocc::Session::LogClientInstanceMixin
+
+    extend  Rocc::Meta::OpTrackClientClassMixin
+    include Rocc::Meta::OpTrackClientInstanceMixin
+    
 
     ##
     # Data members wrt managing a tree of compilation branches.
@@ -110,6 +117,15 @@ module Rocc::Contexts
       end
 
       log.debug{"new cc_branch: #{self} from #{master}, child of #{parent}"}
+      track do
+        {
+          :incident  => :ccbranch_new,
+          :id        => @id,
+          :parent    => is_root? ? nil : parent.id,
+          :master    => is_root? ? nil : master.id,
+          :condition => @branching_condition.to_s,
+        }
+      end
     end
 
     def name_dbg
@@ -157,6 +173,15 @@ module Rocc::Contexts
       @forks << f
       log.info{"fork #{f} from #{self} due to #{adducer}"}
       log.debug{" \u21AA #{f} branching condition: #{f.branching_condition}"}
+      track do
+        {
+          :incident  => :ccbranch_fork,
+          :fork_id   => f.id,
+          :parent    => id,
+          :condition => branching_condition.to_s,
+          :adducer => adducer.name_dbg,
+        }
+      end
       f
     end
 
@@ -330,6 +355,13 @@ module Rocc::Contexts
 
     def declare_symbol(newly_created_symbol)
       log.debug{"#{name_dbg}.declare_symbol: #{newly_created_symbol}"}
+      track do
+        {
+          :incident  => :ccbranch_declare_symbol,
+          :branch_id => id,
+          :symbol    => newly_created_symbol.to_s,
+        }
+      end
       
       overlapping_symbols = find_symbols(
         :identifier => identifier,
@@ -444,6 +476,14 @@ module Rocc::Contexts
       joint = self.class.new(@parent, self, common_bcond, [self, other])
 
       log.info{"join #{self} and #{other} into #{joint}"}
+      track do
+        {
+          :incident  => :ccbranch_join,
+          :first_id  => id,
+          :second_id => other.id,
+          :into_id   => joint.id,
+        }
+      end
       
       joint
     end
@@ -464,6 +504,13 @@ module Rocc::Contexts
       raise "join_fork called, but #{self} still has forks #{@forks}" unless @forks.length == 1 # XXX(assert)
       #raise "distinct conditions of branch and last remaining fork: parent <=> #{@branching_condition}, fork <=> #{@forks.first.branching_condition}" unless @branching_condition.equivalent?(@forks.first.branching_condition) # XXX(assert)
       log.info{"join #{@forks.first} into #{self}"}
+      track do
+        {
+          :incident  => :ccbranch_join_forks,
+          :from_id   => forks.first.id,
+          :into_id   => id,
+        }
+      end
       derive_progress_info(self)
       @forks = []
       self
@@ -584,6 +631,12 @@ module Rocc::Contexts
     # activate branch
     def activate
       log.debug{"Activate #{self}"}
+      track do
+        {
+          :incident  => :ccbranch_activate,
+          :branch_id => id,
+        }
+      end
       @active = true
     end
 
@@ -591,6 +644,12 @@ module Rocc::Contexts
     # mark branch as inactive
     def deactivate
       log.debug{"Deactivate #{self}"}
+      track do
+        {
+          :incident  => :ccbranch_deactivate,
+          :branch_id => id,
+        }
+      end
       @active = false
     end
 

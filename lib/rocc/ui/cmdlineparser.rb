@@ -88,6 +88,11 @@ module Rocc::Ui
           @include_dirs << arg
         end
 
+        opts.on("--track-rocc-op 'filename'",
+                "Write info about rocc's internal operation to given file.") do |arg|
+          @options[:track_rocc_op] = arg
+        end
+
       end # OptionParser.new
 
       # parse all arguments until a --compiler argument
@@ -125,7 +130,7 @@ module Rocc::Ui
         case key
         when :on_the_fly
           optsobj.enable(key)
-        when :verbosity, :change_detection
+        when :verbosity, :change_detection, :track_rocc_op
           optsobj.set(key, value)
         else
           log.warn{"No option associated with command line argument of `#{key}'"}

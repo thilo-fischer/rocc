@@ -22,6 +22,9 @@ require 'rocc/session/devel_loglevels'
 # logging levels for different modules and classes.
 module Rocc::Session
 
+  ##
+  # To be extended by all classes that shall do logging in class
+  # methods or class instance methods.
   module LogClientClassMixin
 
     def log(logtag = self)
@@ -39,6 +42,9 @@ module Rocc::Session
 
   end
 
+  ##
+  # To be included by all classes that shall do logging in class
+  # instance methods.
   module LogClientInstanceMixin
 
     def log(logtag = self.class)

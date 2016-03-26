@@ -99,6 +99,7 @@ module Rocc::Session
       @flags = {
         :verbosity => "WARN",
         :change_detection => "mtime",
+        :track_rocc_op => nil,
       }
     end
 

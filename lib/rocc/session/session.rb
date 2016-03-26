@@ -19,10 +19,10 @@ require 'rocc/session/application_context'
 require 'rocc/contexts/parsing_context' # XXX? make paring context a subcontext of application context?
 require 'rocc/ui/cmdlineparser'
 require 'rocc/ui/interactive'
+require 'rocc/meta/rocc_op_track'
 require 'rocc/code_elements/file_represented/translation_unit'
 require 'rocc/code_elements/file_represented/module'
 require 'rocc/code_elements/file_represented/file'
-
 
 ##
 # Things related to the currently running program instance.
@@ -79,7 +79,16 @@ module Rocc::Session
     end
 
     def run
-      
+
+      if @options.active?(:track_rocc_op)
+        filename = @options.value(:track_rocc_op)
+        if filename == '-'
+          outstream = STDOUT
+        else
+          outstream = File.open(filename, 'w')
+        end
+        Rocc::Meta::RoccOpTracker.instance.outstream = outstream
+      end
       
       parse_input
 
@@ -97,7 +106,9 @@ module Rocc::Session
           Rocc::Commands::Command::invoke(@application_context, a.strip)
         end
       end
-
+      
+      Rocc::Meta::RoccOpTracker.instance.finalize
+      
     end # run
 
     private
