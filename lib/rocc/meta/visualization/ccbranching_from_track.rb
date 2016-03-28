@@ -12,6 +12,13 @@
 # project's main codebase without restricting the multi-license
 # approach. See LICENSE.txt from the top-level directory for details.
 
+##
+# converts a YAML stream of rocc operations track data from STDIN to a
+# SVG graphic vizualizing how the parsing process divides into several
+# compilation branches and outputs the SVG document to STDOUT.
+#
+# SVG reference: https://www.w3.org/TR/SVG/
+
 require 'yaml'
 
 require 'rexml/document'
@@ -27,6 +34,13 @@ svgdoc = Document.new <<SVGDOCUMENT
       orient="auto">
       <path d="M 0 0 L 10 4 L 0 8 z" />
     </marker>
+    <marker id="Circle"
+      viewBox="0 0 10 10" refX="5" refY="5" 
+      markerUnits="strokeWidth"
+      markerWidth="5" markerHeight="5"
+      orient="auto">
+      <path d="M 5,0 A 5,5 0 1,0 5,10 A 5,5 0 1,0 5,0" /><!-- XXX_F draw circle at once instead of drawing two 180 degree arcs -->
+    </marker>
   </defs>
 
 </svg>
@@ -39,7 +53,9 @@ CODE_X = 0.0
 Y_DIFF = 25.0
 WIDTH = 1000.0
 CURVE_RADIUS = 20.0
-TEXT_PAD = 2.5
+TEXT_X_PAD = 2.5
+TEXT_Y_PAD_BTM = 2.5
+TEXT_Y_SHIFT_TOP = 10.0
 
 def svg_line(from, to, attributes = {})
   attributes['x1'] = from[0]
@@ -61,6 +77,7 @@ def svg_fork_arrow(from, to, attributes = {})
   attributes['fill'] = 'none'
   attributes['stroke'] ||= 'black'
   attributes['stroke-width'] ||= '1'
+  attributes['marker-start'] = 'url(#Circle)'
   attributes['marker-end'] = 'url(#Triangle)'
   $svgroot.add_element('path', attributes)
 end
@@ -107,7 +124,7 @@ class Branch
     @recent_y_pos = y_creation
     @active = true
     @forks = 0
-    svg_text([@x_pos + TEXT_PAD, y_creation - LABEL_PAD], @id) #, {'text-anchor' => 'middle'})
+    svg_text([@x_pos + TEXT_X_PAD, y_creation - LABEL_PAD], @id) #, {'text-anchor' => 'middle'})
     hbar(y_creation)
   end
 
@@ -116,12 +133,17 @@ class Branch
   end
 
   def activate(y_pos)
-    dashed_vline(@recent_y_pos, y_pos)
+    if active?
+      dbl_vline(@recent_y_pos, y_pos)
+    else
+      dashed_vline(@recent_y_pos, y_pos)
+    end
     @active = true
     @recent_y_pos = y_pos
   end
 
   def deactivate(y_pos)
+    #warn "deactivate #{id} @ #{y_pos}"
     if @forks > 0
       thick_vline(@recent_y_pos, y_pos)
     else
@@ -136,6 +158,9 @@ class Branch
     if @forks == 0
       dbl_vline(@recent_y_pos, y_pos)
       hbar(y_pos)
+    else
+      thick_vline(@recent_y_pos, y_pos)
+      hbar(y_pos)      
     end
     @forks += 1
     @recent_y_pos = y_pos
@@ -143,10 +168,8 @@ class Branch
 
   def rm_fork(y_pos)
     @forks -= 1
-    if @forks == 0
-      thick_vline(@recent_y_pos, y_pos)
-      hbar(y_pos)
-    end
+    thick_vline(@recent_y_pos, y_pos)
+    hbar(y_pos)
     @recent_y_pos = y_pos
   end
 
@@ -184,20 +207,23 @@ YAML.load_stream(STDIN) do |incident|
       raise
       
     when :logic_line_pursue
+      warn "INCIDENT #{incident[:incident]}: #{incident[:content]}"
       y_pos += Y_DIFF
       svg_line([0.0, y_pos], [WIDTH, y_pos], {'stroke' => 'gray', 'stroke-dasharray' => '5,5'})
-      svg_codetext([CODE_X, y_pos], incident[:content])
+      svg_codetext([CODE_X, y_pos + TEXT_Y_SHIFT_TOP], incident[:content])
       
     when :ccbranch_fork
+      warn "INCIDENT #{incident[:incident]}: #{incident[:fork_id]}"
       parent = branches[incident[:parent]]
       fork_y_pos = y_pos + Y_DIFF
       fork_id = incident[:fork_id]
       fork = branches[fork_id] = Branch.new(fork_y_pos, fork_id, parent)
       parent.add_fork(y_pos)
-      svg_text([parent.x_pos + Branch::BAR_WIDTH + TEXT_PAD, y_pos], incident[:condition], {'fill' => 'blue'})
+      svg_text([parent.x_pos + Branch::BAR_WIDTH + TEXT_X_PAD, y_pos - TEXT_Y_PAD_BTM], incident[:condition], {'fill' => 'blue'})
       svg_fork_arrow([parent.x_pos, y_pos], [fork.x_pos, fork_y_pos]) if parent
       y_pos = fork_y_pos
     when :ccbranch_join
+      warn "INCIDENT #{incident[:incident]}: #{incident[:first_id]}, #{incident[:second_id]}"
       next_y_pos = y_pos + Y_DIFF
 
       first = branches.delete(incident[:first_id])
@@ -214,8 +240,9 @@ YAML.load_stream(STDIN) do |incident|
 
       y_pos = next_y_pos
     when :ccbranch_join_forks
-      warn branches.inspect
-      warn incident.inspect
+      warn "INCIDENT #{incident[:incident]}: #{incident[:from_id]}"
+      #warn branches.inspect
+      #warn incident.inspect
       
       from = branches.delete(incident[:from_id])
       from.deactivate(y_pos)
@@ -227,8 +254,10 @@ YAML.load_stream(STDIN) do |incident|
       y_pos = next_y_pos
       
     when :ccbranch_activate
+      warn "INCIDENT #{incident[:incident]}: #{incident[:branch_id]}"
       branches[incident[:branch_id]].activate(y_pos)
     when :ccbranch_deactivate
+      warn "INCIDENT #{incident[:incident]}: #{incident[:branch_id]}"
       branches[incident[:branch_id]].deactivate(y_pos)
       
     else

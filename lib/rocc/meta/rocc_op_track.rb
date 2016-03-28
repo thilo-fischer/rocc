@@ -15,6 +15,7 @@ require 'singleton'
 require 'yaml'
 
 require 'rocc/session/logging'
+require 'rocc/helpers'
 
 module Rocc::Meta
 
@@ -68,14 +69,14 @@ module Rocc::Meta
 
     def track(incident)
       log.debug do
-        "TRACK: `" +
-          Rocc::Helper::String.str_abbrev_inline(
+        "TRACK `" +
+          Rocc::Helpers::String.str_abbrev_inline(
           case incident
           when Hash
             incident.inspect
           else
             incident.to_s
-          end
+          end, 64
         ) + "'"
       end
       @outstream.puts(incident.to_yaml)
