@@ -161,6 +161,7 @@ module Rocc::CodeElements::CharRepresented
       # object. Existence_Conditions of a char object depend only on
       # the preprocessor conditional directives and on nothing else.
       @existence_conditions = compilation_context.current_ppcond_induced_conditions
+      #warn "!!!! #{self} ec #{@existence_conditions}"
       true
     end
 

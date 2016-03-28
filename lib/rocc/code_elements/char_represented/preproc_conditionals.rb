@@ -94,6 +94,12 @@ module Rocc::CodeElements::CharRepresented
 
     alias adducer directives
 
+    ##
+    # existence conditions that apply to all directives of this group
+    def existence_conditions
+      @if_directive.existence_conditions
+    end
+
     # Conjunction of negations of the conditions induced by those
     # directives in the group. If +until_directive+ is given, take
     # into account only those directives before +until_directive+.
@@ -286,12 +292,18 @@ module Rocc::CodeElements::CharRepresented
       super_duty = super
       return nil if super_duty.nil?
 
-      @existence_conditions = @existence_conditions.disjunction(compilation_context.ppcond_stack_top.own_induced_condition.negation) unless compilation_context.ppcond_stack_top.own_induced_condition.is_a?(Rocc::Semantic::CeUnconditionalCondition) # XXX_R quick and dirty fix too strict existence_conditions
+      #@existence_conditions = @existence_conditions.disjunction(compilation_context.ppcond_stack_top.own_induced_condition.negation) unless compilation_context.ppcond_stack_top.own_induced_condition.is_a?(Rocc::Semantic::CeUnconditionalCondition) # XXX_R quick and dirty fix too strict existence_conditions
 
       associate(compilation_context.ppcond_stack_top)
       @fromgroup_induced_conditions = @ppcond_group.negated_induced_conditions(self)
 
       :handle_own_induced_condition
+    end
+
+    ##
+    # override CeCharObject's existence_conditions
+    def existence_conditions
+      @ppcond_group.existence_conditions
     end
 
   end # class CeCoPpCondNonautonomous
