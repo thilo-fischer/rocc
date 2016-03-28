@@ -38,6 +38,18 @@ Feature: Code Analysis
     | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec     |
     | specific/preprocessor/c02_elif.c           | specific/preprocessor/c02_elif_ls_--spec              |
 
+  Scenario Outline: Understand preprocessor conditional directives and list conditions of declared symbols
+    # FIXME format string
+    When I invoke "ls --format +%i@%_c" on "<code>"
+    Then the output should look as specified by "<expect>"
+
+  Examples:
+    | code                                       | expect                                                            |
+    | specific/preprocessor/c00_if_endif.c       | specific/preprocessor/c00_if_endif_ls_--spec_--format_i_C         |
+    | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec_--format_i_C    |
+    | specific/preprocessor/c02_elif.c           | specific/preprocessor/c02_elif_ls_--spec_--format_i_C             |
+    | specific/preprocessor/c03_nested.c         | specific/preprocessor/c03_nested_ls_--spec_--format_i_C           |
+
   Scenario Outline: Understand preprocessor conditional directives and list conditions of specifications
     # FIXME format string
     When I invoke "ls --spec --format +%i@%_c" on "<code>"

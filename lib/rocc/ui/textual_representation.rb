@@ -804,6 +804,7 @@ module Rocc::Ui
     class ConvSymExistCond < ConditionConversion
       def str_from_celem(celem)
         celem = relevant_celem(celem)
+        #warn "XXX #{celem} ex_cond: #{celem.existence_conditions}"
         if flag?(FLAG_CODE_ALIKE)
           celem.existence_conditions.to_code(
             flag?(FLAG_ALTERNATE_FORM_A)
