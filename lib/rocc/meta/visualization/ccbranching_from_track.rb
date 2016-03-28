@@ -130,7 +130,7 @@ class Branch
     @@next_x_pos += PADDING
     @recent_y_pos = y_creation
     @active = true
-    @forks = 0
+    @forks = []
     svg_text([@x_pos + TEXT_X_PAD, y_creation - LABEL_PAD], @id) #, {'text-anchor' => 'middle'})
     hbar(y_creation)
   end
@@ -142,11 +142,13 @@ class Branch
   def activate(y_pos)
     catch_up_lines(y_pos)
     @active = true
+    @forks.each {|f| f.activate(y_pos)}
   end
 
   def deactivate(y_pos)
     catch_up_lines(y_pos)
     @active = false
+    @forks.each {|f| f.deactivate(y_pos)}
   end
   
   def quit(y_pos)
@@ -154,23 +156,23 @@ class Branch
     hbar(y_pos) if @continue_dblline
   end
 
-  def add_fork(y_pos)
+  def add_fork(y_pos, fork)
     catch_up_lines(y_pos)
-    @forks += 1
+    @forks << fork
   end
 
-  def rm_fork(y_pos)
+  def rm_fork(y_pos, fork)
     catch_up_lines(y_pos)
-    @forks -= 1
+    @forks.delete(fork)
   end
 
   def catch_up_lines(y_pos)
     return if y_pos == @recent_y_pos
     if active?
-      if @forks > 0
-        thick_vline(@recent_y_pos, y_pos)
-      else
+      if @forks.empty?
         dbl_vline(@recent_y_pos, y_pos)
+      else
+        thick_vline(@recent_y_pos, y_pos)
       end
     else
       dashed_vline(@recent_y_pos, y_pos)
@@ -231,7 +233,7 @@ YAML.load_stream(STDIN) do |incident|
       fork_y_pos = y_pos + Y_DIFF
       fork_id = incident[:fork_id]
       fork = branches[fork_id] = Branch.new(fork_y_pos, fork_id, parent)
-      parent.add_fork(y_pos)
+      parent.add_fork(y_pos, fork)
       svg_text([parent.x_pos + Branch::BAR_WIDTH + TEXT_X_PAD, y_pos - TEXT_Y_PAD_BTM], incident[:condition], {'fill' => 'blue'})
       svg_fork_arrow([parent.x_pos, y_pos], [fork.x_pos, fork_y_pos]) if parent
       y_pos = fork_y_pos
@@ -248,7 +250,9 @@ YAML.load_stream(STDIN) do |incident|
 
       into_id = incident[:into_id]
       into = branches[into_id] = Branch.new(next_y_pos, into_id, first.parent)
-      first.parent.rm_fork(y_pos)
+      first.parent.rm_fork(y_pos, first)
+      first.parent.rm_fork(y_pos, second)
+      first.parent.add_fork(y_pos, into)
 
       svg_join_arrow([first.x_pos , y_pos], [into.x_pos, next_y_pos])
       svg_join_arrow([second.x_pos, y_pos], [into.x_pos, next_y_pos])
@@ -265,9 +269,12 @@ YAML.load_stream(STDIN) do |incident|
       into = branches[incident[:into_id]]
       
       next_y_pos = y_pos + Y_DIFF
-      into.rm_fork(next_y_pos)
+      into.rm_fork(next_y_pos, from)
       svg_join_arrow([from.x_pos, y_pos], [into.x_pos, next_y_pos])
       y_pos = next_y_pos
+      
+      into.dbl_vline(y_pos, y_pos + 2.0)
+      y_pos += 2.0
       
     when :ccbranch_activate
       warn "INCIDENT #{incident[:incident]}: #{incident[:branch_id]}"
@@ -287,7 +294,7 @@ end
 y_pos += Y_DIFF
 
 rootbranch = branches.delete('*')
-rootbranch.deactivate(y_pos)
+rootbranch.quit(y_pos)
 
 branches.each do |id, obj|
   b.abort(y_pos)
