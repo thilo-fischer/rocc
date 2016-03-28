@@ -42,13 +42,14 @@ svgdoc = Document.new <<SVGDOCUMENT
       <path d="M 5,0 A 5,5 0 1,0 5,10 A 5,5 0 1,0 5,0" /><!-- XXX_F draw circle at once instead of drawing two 180 degree arcs -->
     </marker>
   </defs>
-
+  <g stroke-linecap="round" /> <!-- stroke="black" stroke-width="1.0" -->
 </svg>
 SVGDOCUMENT
 
-$svgroot = svgdoc.root
+$svgroot = svgdoc.root.elements['g']
 
-
+# Some default value constants
+STROKE_WIDTH = 1.0
 CODE_X = 0.0
 Y_DIFF = 25.0
 WIDTH = 1000.0
@@ -56,6 +57,7 @@ CURVE_RADIUS = 20.0
 TEXT_X_PAD = 2.5
 TEXT_Y_PAD_BTM = 2.5
 TEXT_Y_SHIFT_TOP = 10.0
+FONT_SIZE = 12
 
 def svg_line(from, to, attributes = {})
   attributes['x1'] = from[0]
@@ -63,7 +65,7 @@ def svg_line(from, to, attributes = {})
   attributes['x2'] = to[0]
   attributes['y2'] = to[1]
   attributes['stroke'] ||= 'black'
-  attributes['stroke-width'] ||= '1'
+  attributes['stroke-width'] ||= STROKE_WIDTH.to_s
   $svgroot.add_element('line', attributes)
 end
 
@@ -76,17 +78,22 @@ def svg_fork_arrow(from, to, attributes = {})
   attributes['d'] = "M #{from[0]},#{from[1]} H #{to[0]-CURVE_RADIUS} a #{CURVE_RADIUS},#{CURVE_RADIUS} 0 0,1 #{'-' if from[0] > to[0]}#{CURVE_RADIUS},#{CURVE_RADIUS} V #{to[1]}"
   attributes['fill'] = 'none'
   attributes['stroke'] ||= 'black'
-  attributes['stroke-width'] ||= '1'
+  attributes['stroke-width'] ||= STROKE_WIDTH.to_s
   attributes['marker-start'] = 'url(#Circle)'
   attributes['marker-end'] = 'url(#Triangle)'
   $svgroot.add_element('path', attributes)
 end
 
 def svg_join_arrow(from, to, attributes = {})
-  attributes['d'] = "M #{from[0]},#{from[1]} V #{to[1]-CURVE_RADIUS} a #{CURVE_RADIUS},#{CURVE_RADIUS} 0 0,#{from[0] > to[0] ? '1 -' : '0 '}#{CURVE_RADIUS},#{CURVE_RADIUS} H #{to[0]}"
+  if from[0] < to[0]
+    to_x = to[0] - (Branch::BAR_WIDTH * 0.5)
+  else
+    to_x = to[0] + (Branch::BAR_WIDTH * 0.5)
+  end
+  attributes['d'] = "M #{from[0]},#{from[1]} V #{to[1]-CURVE_RADIUS} a #{CURVE_RADIUS},#{CURVE_RADIUS} 0 0,#{from[0] > to[0] ? '1 -' : '0 '}#{CURVE_RADIUS},#{CURVE_RADIUS} H #{to_x}"
   attributes['fill'] = 'none'
   attributes['stroke'] ||= 'black'
-  attributes['stroke-width'] ||= '1'
+  attributes['stroke-width'] ||= STROKE_WIDTH.to_s
   attributes['marker-end'] = 'url(#Triangle)'
   $svgroot.add_element('path', attributes)
 end
@@ -94,7 +101,7 @@ end
 def svg_text(pos, text, attributes = {})
   attributes['x'] = pos[0]
   attributes['y'] = pos[1]
-  attributes['style'] ||= 'font-size:12'
+  attributes['style'] ||= 'font-size:#{FONT_SIZE}'
   e = Element.new('text')
   e.add_attributes(attributes)
   e.text = text
@@ -102,13 +109,13 @@ def svg_text(pos, text, attributes = {})
 end
 
 def svg_codetext(pos, text, attributes = {})
-  attributes['style'] ||= 'font-size:12;font-family:Courier New'
+  attributes['style'] ||= 'font-size:#{FONT_SIZE};font-family:Courier New'
   svg_text(pos, text, attributes)
 end
 
 class Branch
 
-  BAR_WIDTH = 8.0
+  BAR_WIDTH = 12.0
   PADDING = 80.0
   LABEL_PAD = 5.0
 
@@ -133,65 +140,69 @@ class Branch
   end
 
   def activate(y_pos)
-    if active?
-      dbl_vline(@recent_y_pos, y_pos)
-    else
-      dashed_vline(@recent_y_pos, y_pos)
-    end
+    catch_up_lines(y_pos)
     @active = true
-    @recent_y_pos = y_pos
   end
 
   def deactivate(y_pos)
-    #warn "deactivate #{id} @ #{y_pos}"
-    if @forks > 0
-      thick_vline(@recent_y_pos, y_pos)
-    else
-      dbl_vline(@recent_y_pos, y_pos)
-      hbar(y_pos)
-    end
-    @active = true
-    @recent_y_pos = y_pos
+    catch_up_lines(y_pos)
+    @active = false
   end
   
+  def quit(y_pos)
+    catch_up_lines(y_pos)
+    hbar(y_pos) if @continue_dblline
+  end
+
   def add_fork(y_pos)
-    if @forks == 0
-      dbl_vline(@recent_y_pos, y_pos)
-      hbar(y_pos)
-    else
-      thick_vline(@recent_y_pos, y_pos)
-      hbar(y_pos)      
-    end
+    catch_up_lines(y_pos)
     @forks += 1
-    @recent_y_pos = y_pos
   end
 
   def rm_fork(y_pos)
+    catch_up_lines(y_pos)
     @forks -= 1
-    thick_vline(@recent_y_pos, y_pos)
-    hbar(y_pos)
-    @recent_y_pos = y_pos
+  end
+
+  def catch_up_lines(y_pos)
+    return if y_pos == @recent_y_pos
+    if active?
+      if @forks > 0
+        thick_vline(@recent_y_pos, y_pos)
+      else
+        dbl_vline(@recent_y_pos, y_pos)
+      end
+    else
+      dashed_vline(@recent_y_pos, y_pos)
+    end
+    @recent_y_pos = y_pos    
   end
 
   def hbar(y_pos)
-    svg_line([@x_pos - BAR_WIDTH, y_pos], [@x_pos + BAR_WIDTH, y_pos])
+    svg_line([@x_pos - BAR_WIDTH * 0.5, y_pos], [@x_pos + BAR_WIDTH * 0.5, y_pos])
   end
 
   def dbl_vline(y_from, y_to)
-    svg_line([@x_pos - BAR_WIDTH, y_from], [@x_pos - BAR_WIDTH, y_to])
-    svg_line([@x_pos + BAR_WIDTH, y_from], [@x_pos + BAR_WIDTH, y_to])
+    hbar(y_from) unless @continue_dblline
+    svg_line([@x_pos - BAR_WIDTH * 0.5, y_from], [@x_pos - BAR_WIDTH * 0.5, y_to])
+    svg_line([@x_pos + BAR_WIDTH * 0.5, y_from], [@x_pos + BAR_WIDTH * 0.5, y_to])
+    @continue_dblline = true
   end
   
   def thick_vline(y_from, y_to)
+    hbar(y_from) if @continue_dblline
     svg_line([@x_pos, y_from], [@x_pos, y_to],
              {} # TODO
             )
+    @continue_dblline = false
   end
 
   def dashed_vline(y_from, y_to)
+    hbar(y_from) if @continue_dblline
     svg_line([@x_pos, y_from], [@x_pos, y_to],
              {'stroke-dasharray' => '10,10'}
             )
+    @continue_dblline = false
   end
 
 end # class Branch
@@ -210,8 +221,10 @@ YAML.load_stream(STDIN) do |incident|
       warn "INCIDENT #{incident[:incident]}: #{incident[:content]}"
       y_pos += Y_DIFF
       svg_line([0.0, y_pos], [WIDTH, y_pos], {'stroke' => 'gray', 'stroke-dasharray' => '5,5'})
-      svg_codetext([CODE_X, y_pos + TEXT_Y_SHIFT_TOP], incident[:content])
+      svg_codetext([CODE_X, y_pos - TEXT_Y_PAD_BTM], incident[:content], {'fill' => 'gray'})
       
+    when :ccbranch_new
+      warn "INCIDENT #{incident[:incident]}: #{incident[:id]}"
     when :ccbranch_fork
       warn "INCIDENT #{incident[:incident]}: #{incident[:fork_id]}"
       parent = branches[incident[:parent]]
@@ -222,14 +235,16 @@ YAML.load_stream(STDIN) do |incident|
       svg_text([parent.x_pos + Branch::BAR_WIDTH + TEXT_X_PAD, y_pos - TEXT_Y_PAD_BTM], incident[:condition], {'fill' => 'blue'})
       svg_fork_arrow([parent.x_pos, y_pos], [fork.x_pos, fork_y_pos]) if parent
       y_pos = fork_y_pos
-    when :ccbranch_join
+      fork.dbl_vline(y_pos, y_pos + 2.0)
+      y_pos += 2.0
+    when :ccbranch_merge
       warn "INCIDENT #{incident[:incident]}: #{incident[:first_id]}, #{incident[:second_id]}"
       next_y_pos = y_pos + Y_DIFF
 
       first = branches.delete(incident[:first_id])
-      first.deactivate(y_pos)
+      first.quit(y_pos)
       second = branches.delete(incident[:second_id])
-      second.deactivate(y_pos)
+      second.quit(y_pos)
 
       into_id = incident[:into_id]
       into = branches[into_id] = Branch.new(next_y_pos, into_id, first.parent)
@@ -239,13 +254,14 @@ YAML.load_stream(STDIN) do |incident|
       svg_join_arrow([second.x_pos, y_pos], [into.x_pos, next_y_pos])
 
       y_pos = next_y_pos
-    when :ccbranch_join_forks
+      
+      into.dbl_vline(y_pos, y_pos + 2.0)
+      y_pos += 2.0
+    when :ccbranch_join
       warn "INCIDENT #{incident[:incident]}: #{incident[:from_id]}"
-      #warn branches.inspect
-      #warn incident.inspect
       
       from = branches.delete(incident[:from_id])
-      from.deactivate(y_pos)
+      from.quit(y_pos)
       into = branches[incident[:into_id]]
       
       next_y_pos = y_pos + Y_DIFF

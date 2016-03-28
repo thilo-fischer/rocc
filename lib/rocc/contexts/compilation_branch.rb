@@ -243,6 +243,12 @@ module Rocc::Contexts
     def enter_scope(scope)
       #warn "enter scope: #{"  " * (@scope_stack.count - 0)}> #{scope_name_dbg(scope)}"
       raise if scope == nil
+      track do
+        {
+          :incident  => :ccbranch_enter_scope,
+          :scope     => scope_name_dbg(scope),
+        }
+      end
       @scope_stack << scope
     end
 
@@ -307,6 +313,11 @@ module Rocc::Contexts
 
     def leave_scope
       #warn "leave scope: #{"  " * (@scope_stack.count - 1)}< #{scope_name_dbg(@scope_stack.last)}"
+      track do
+        {
+          :incident  => :ccbranch_leave_scope,
+        }
+      end
       @scope_stack.pop
     end
 
@@ -468,6 +479,10 @@ module Rocc::Contexts
     end
     protected :join_possible?
 
+    ##
+    # merge two branches with the same parent into one branch
+    #
+    # XXX rename join => merge
     def join(other)
       raise "not yet supported" unless @parent == other.parent # XXX(assert)
       raise unless @parent.forks.count >= 2 # XXX(assert)
@@ -478,7 +493,7 @@ module Rocc::Contexts
       log.info{"join #{self} and #{other} into #{joint}"}
       track do
         {
-          :incident  => :ccbranch_join,
+          :incident  => :ccbranch_merge,
           :first_id  => id,
           :second_id => other.id,
           :into_id   => joint.id,
@@ -500,13 +515,17 @@ module Rocc::Contexts
     end
     private :try_join_forks
 
+    ##
+    # join a branches into its parent
+    #
+    # XXX rename join_forks => join
     def join_forks
       raise "join_fork called, but #{self} still has forks #{@forks}" unless @forks.length == 1 # XXX(assert)
       #raise "distinct conditions of branch and last remaining fork: parent <=> #{@branching_condition}, fork <=> #{@forks.first.branching_condition}" unless @branching_condition.equivalent?(@forks.first.branching_condition) # XXX(assert)
       log.info{"join #{@forks.first} into #{self}"}
       track do
         {
-          :incident  => :ccbranch_join_forks,
+          :incident  => :ccbranch_join,
           :from_id   => forks.first.id,
           :into_id   => id,
         }
