@@ -347,20 +347,17 @@ module Rocc::Semantic
       case other
       when CeAtomicCondition
         # TODO understand and compare the texts' semantics, e.g. `A > 42' implies `A >= 42'
-        @text == other.text
+        text == other.text
       when CeNegationCondition
         # TODO_W
         if imply?(other.negation)
           false
         elsif other.negation.is_a?(CeAtomicCondition)
-          log.info{"operations on conditions might give wrong results, not properly implemented @ #{caller(0)[0]}"}
-          #not imply?(other.negation) # XXX correct?
-          false # FIXME_W XXXXXXXXXXXXXXX
+          # TODO understand and compare the texts' semantics, e.g. `!(A > 42)' implies `A <= 42'
+          text == other.negation.text or negation.to_s == other.to_s
         else
-          #warn "#{self}, #{other}"
-          #raise "not yet implemented"
-          log.info{"operations on conditions might give wrong results, not properly implemented @ #{caller(0)[0]}"}
-          nil # FIXME_W XXXXXXXXXXXXXXX
+          # XXX correct?
+          other.negation.imply?(negation)
         end
       when CeConjunctiveCondition
         not other.conditions.find do |c|
@@ -652,8 +649,9 @@ module Rocc::Semantic
     def equivalent?(other)
       sresult = super
       return sresult unless sresult.nil?
-      
-      raise "invalid argument or not yet implemented"
+
+      # TODO_F room for performance improvement (?)
+      self.imply?(other) and other.imply?(self)
     end
 
     
@@ -776,7 +774,7 @@ module Rocc::Semantic
       return sresult unless sresult.nil?
 
       case other
-      when CeAtomicCondition, CeNegatedCondition, CeConjunctiveCondition, CeDisjunctiveCondition
+      when CeAtomicCondition, CeNegationCondition, CeConjunctiveCondition, CeDisjunctiveCondition
         # return false if there is at least one condition in self not
         # implying other
         not conditions.find do |own_c|
