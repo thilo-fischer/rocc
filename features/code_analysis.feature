@@ -60,11 +60,11 @@ Feature: Code Analysis
     | specific/preprocessor/c00_if_endif.c       | specific/preprocessor/c00_if_endif_ls_--spec_--format_i_C         |
     | specific/preprocessor/c01_if_else_endif.c  | specific/preprocessor/c01_if_else_endif_ls_--spec_--format_i_C    |
     | specific/preprocessor/c02_elif.c           | specific/preprocessor/c02_elif_ls_--spec_--format_i_C             |
+    | specific/preprocessor/c03_nested.c         | specific/preprocessor/c03_nested_ls_--spec_--format_i_C           |
 
   @wip
   Examples:
     | code                                       | expect                                                            |
-    | specific/preprocessor/c03_nested.c         | specific/preprocessor/c03_nested_ls_--spec_--format_i_C           |
 
   @planned
   Scenario: List function local variables
